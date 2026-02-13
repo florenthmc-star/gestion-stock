@@ -870,168 +870,132 @@
             }));
         }
 
-        // Sauvegarder un article en utilisant un iframe caché (contourne CORS)
+        // Sauvegarder un article en utilisant GET (le plus fiable)
         async function saveArticle(articleData) {
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enregistrement...';
             
-            return new Promise((resolve, reject) => {
-                // Créer un formulaire caché
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = API_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-                
-                // Créer un iframe caché
-                let iframe = document.getElementById('hiddenFrame');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.name = 'hiddenFrame';
-                    iframe.id = 'hiddenFrame';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-                
-                // Préparer les données
-                const postData = {
+            return new Promise((resolve) => {
+                // Créer l'URL avec tous les paramètres
+                const params = new URLSearchParams({
                     action: 'addArticle',
-                    article: {
-                        ID: articleData.id,
-                        Magasin: articleData.magasin,
-                        Type: articleData.type,
-                        Client: articleData.client,
-                        NumeroAR: articleData.numeroAR,
-                        Article: articleData.article,
-                        Reference: articleData.reference,
-                        NombreColis: articleData.nombreColis,
-                        QuantiteStock: articleData.quantiteStock,
-                        QuantiteInitiale: articleData.quantiteInitiale,
-                        Emplacement: articleData.emplacement,
-                        Kitchener: articleData.kitchener,
-                        Notes: articleData.notes,
-                        Statut: articleData.statut,
-                        DateReception: articleData.dateReception,
-                        Historique: true
-                    }
-                };
+                    ID: articleData.id,
+                    Magasin: articleData.magasin,
+                    Type: articleData.type,
+                    Client: articleData.client,
+                    NumeroAR: articleData.numeroAR || '',
+                    Article: articleData.article,
+                    Reference: articleData.reference,
+                    NombreColis: articleData.nombreColis,
+                    QuantiteStock: articleData.quantiteStock !== null ? articleData.quantiteStock : '',
+                    QuantiteInitiale: articleData.quantiteInitiale !== null ? articleData.quantiteInitiale : '',
+                    Emplacement: articleData.emplacement,
+                    Kitchener: articleData.kitchener,
+                    Notes: articleData.notes || '',
+                    Statut: articleData.statut,
+                    DateReception: articleData.dateReception,
+                    Historique: 'true'
+                });
                 
-                // Ajouter les données au formulaire
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'data';
-                input.value = JSON.stringify(postData);
-                form.appendChild(input);
-                
-                document.body.appendChild(form);
-                
-                // Soumettre et nettoyer après un délai
-                form.submit();
-                
-                setTimeout(async () => {
-                    form.remove();
+                // Créer un script tag pour faire la requête
+                const callbackName = 'saveCallback_' + Date.now();
+                window[callbackName] = function(result) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Générer le QR Code';
                     
-                    // Recharger les données pour confirmer
-                    await loadData();
-                    resolve(true);
-                }, 2000);
+                    if (result.error) {
+                        alert('Erreur: ' + result.error);
+                        resolve(false);
+                    } else {
+                        // Recharger les données
+                        setTimeout(() => loadData(), 1000);
+                        resolve(true);
+                    }
+                    
+                    // Nettoyer
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script) script.remove();
+                };
+                
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `${API_URL}?${params.toString()}&callback=${callbackName}`;
+                script.onerror = function() {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Générer le QR Code';
+                    alert('Erreur de connexion');
+                    resolve(false);
+                    delete window[callbackName];
+                };
+                
+                document.body.appendChild(script);
             });
         }
 
         // Mettre à jour un article
         async function updateArticle(articleData) {
             return new Promise((resolve) => {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = API_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-                
-                let iframe = document.getElementById('hiddenFrame');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.name = 'hiddenFrame';
-                    iframe.id = 'hiddenFrame';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-                
-                const postData = {
+                const params = new URLSearchParams({
                     action: 'updateArticle',
-                    article: {
-                        ID: articleData.id,
-                        Magasin: articleData.magasin,
-                        Type: articleData.type,
-                        Client: articleData.client,
-                        NumeroAR: articleData.numeroAR || '',
-                        Article: articleData.article,
-                        Reference: articleData.reference,
-                        NombreColis: articleData.nombreColis,
-                        QuantiteStock: articleData.quantiteStock,
-                        QuantiteInitiale: articleData.quantiteInitiale,
-                        Emplacement: articleData.emplacement,
-                        Kitchener: articleData.kitchener,
-                        Notes: articleData.notes || '',
-                        Statut: articleData.statut,
-                        DateReception: articleData.dateReception,
-                        DatePret: articleData.datePret || '',
-                        PrenomEmprunteur: articleData.prenomEmprunteur || '',
-                        DateRetourPrevue: articleData.dateRetourPrevue || '',
-                        DateRetourReel: articleData.dateRetourReel || '',
-                        DateSortie: articleData.dateSortie || '',
-                        RaisonSortie: articleData.raisonSortie || ''
+                    ID: articleData.id,
+                    Magasin: articleData.magasin,
+                    Type: articleData.type,
+                    Client: articleData.client,
+                    NumeroAR: articleData.numeroAR || '',
+                    Article: articleData.article,
+                    Reference: articleData.reference,
+                    NombreColis: articleData.nombreColis,
+                    QuantiteStock: articleData.quantiteStock !== null ? articleData.quantiteStock : '',
+                    QuantiteInitiale: articleData.quantiteInitiale !== null ? articleData.quantiteInitiale : '',
+                    Emplacement: articleData.emplacement,
+                    Kitchener: articleData.kitchener,
+                    Notes: articleData.notes || '',
+                    Statut: articleData.statut,
+                    DateReception: articleData.dateReception,
+                    DatePret: articleData.datePret || '',
+                    PrenomEmprunteur: articleData.prenomEmprunteur || '',
+                    DateRetourPrevue: articleData.dateRetourPrevue || '',
+                    DateRetourReel: articleData.dateRetourReel || '',
+                    DateSortie: articleData.dateSortie || '',
+                    RaisonSortie: articleData.raisonSortie || ''
+                });
+                
+                const callbackName = 'updateCallback_' + Date.now();
+                window[callbackName] = function(result) {
+                    if (result.error) {
+                        console.error('Erreur update:', result.error);
                     }
+                    setTimeout(() => loadData(), 1000);
+                    resolve(true);
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script) script.remove();
                 };
                 
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'data';
-                input.value = JSON.stringify(postData);
-                form.appendChild(input);
-                
-                document.body.appendChild(form);
-                form.submit();
-                
-                setTimeout(async () => {
-                    form.remove();
-                    await loadData();
-                    resolve(true);
-                }, 2000);
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `${API_URL}?${params.toString()}&callback=${callbackName}`;
+                document.body.appendChild(script);
             });
         }
 
         // Ajouter une entrée d'historique
         function addHistoriqueEntry(articleId, action, utilisateur, details = '') {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = API_URL;
-            form.target = 'hiddenFrame';
-            form.style.display = 'none';
-            
-            const postData = {
+            const params = new URLSearchParams({
                 action: 'addHistorique',
-                historique: {
-                    ArticleID: articleId,
-                    Action: action,
-                    Date: new Date().toISOString(),
-                    Utilisateur: utilisateur,
-                    Details: details
-                }
-            };
+                ArticleID: articleId,
+                Action: action,
+                Date: new Date().toISOString(),
+                Utilisateur: utilisateur,
+                Details: details
+            });
             
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'data';
-            input.value = JSON.stringify(postData);
-            form.appendChild(input);
-            
-            document.body.appendChild(form);
-            form.submit();
-            
-            setTimeout(() => form.remove(), 1000);
+            const script = document.createElement('script');
+            script.src = `${API_URL}?${params.toString()}&callback=dummy${Date.now()}`;
+            document.body.appendChild(script);
+            setTimeout(() => script.remove(), 2000);
         }
 
         // Afficher/masquer le champ quantité
