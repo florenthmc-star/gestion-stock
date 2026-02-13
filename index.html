@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de Stock Multi-Magasins</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .connection-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .connection-status.connected {
+            background: #28a745;
+        }
+
+        .connection-status.disconnected {
+            background: #dc3545;
+        }
+
+        .connection-status.loading {
+            background: #ffc107;
+        }
+
+        .setup-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .setup-box h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .setup-box ol {
+            margin-left: 25px;
+            line-height: 2;
+        }
+
+        .setup-box ol li {
+            margin-bottom: 10px;
+        }
+
+        .code-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .qr-code-container {
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        #qrcode {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .article-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .article-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .article-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .article-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-stock {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-prêt {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-sav {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-sorti {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .article-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            font-size: 0.95em;
+            color: #6c757d;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .scanner-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        #reader {
+            max-width: 500px;
+            margin: 20px auto;
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #212529;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 2em;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .history-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .history-date {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .history-action {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1 1 50%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="setupScreen" class="setup-box" style="display: none;">
+        <h2>⚙️ Configuration - Connexion à Google Sheets</h2>
+        
+        <div class="alert alert-info">
+            <strong>📌 Première utilisation</strong> - Vous devez configurer la connexion à Google Sheets
+        </div>
+
+        <h3>📝 Étapes à suivre :</h3>
+        <ol>
+            <li>Ouvrez <a href="https://docs.google.com/spreadsheets/d/1raBKFRUnKky5MWpnTfyRnPCLl-xYZsJbjniZIgS7iNA/edit" target="_blank">votre Google Sheets</a></li>
+            <li>Cliquez sur <strong>Extensions</strong> → <strong>Apps Script</strong></li>
+            <li>Supprimez le code par défaut</li>
+            <li>Copiez-collez le code du fichier <code>Code-Google-Apps-Script-V2.js</code></li>
+            <li>Cliquez sur <strong>Déployer</strong> → <strong>Nouveau déploiement</strong></li>
+            <li>Type : <strong>Application Web</strong></li>
+            <li>Configuration :
+                <ul>
+                    <li><strong>Exécuter en tant que</strong> : Moi</li>
+                    <li><strong>Qui a accès</strong> : Tout le monde</li>
+                </ul>
+            </li>
+            <li>Cliquez sur <strong>Déployer</strong> et autorisez l'accès</li>
+            <li>Copiez l'URL de déploiement (ressemble à : https://script.google.com/macros/s/.../exec)</li>
+        </ol>
+
+        <div class="form-group" style="margin-top: 30px;">
+            <label>URL de l'Application Web Google Apps Script *</label>
+            <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+        </div>
+
+        <button class="btn btn-primary" onclick="saveApiUrl()">💾 Enregistrer et Connecter</button>
+    </div>
+
+    <div id="mainApp" class="container" style="display: none;">
+        <div class="header">
+            <h1>📦 Gestion de Stock</h1>
+            <p>Multi-Magasins - Synchronisé avec Google Sheets</p>
+            <div class="connection-status loading" id="connectionStatus">
+                🔄 Connexion en cours...
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 14px;" onclick="showSetupScreen()">⚙️ Reconfigurer</button>
+                <button class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;" onclick="loadData()">🔄 Recharger</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('reception')">📥 Réception</button>
+            <button class="tab" onclick="switchTab('scanner')">📱 Scanner</button>
+            <button class="tab" onclick="switchTab('stock')">📊 Stock</button>
+            <button class="tab" onclick="switchTab('prets')">🔄 Prêts</button>
+            <button class="tab" onclick="switchTab('alertes')">🔔 Alertes</button>
+        </div>
+
+        <!-- Onglet Réception -->
+        <div id="reception" class="tab-content active">
+            <h2 style="margin-bottom: 20px;">Réception d'Article</h2>
+            
+            <form id="receptionForm">
+                <div class="form-group">
+                    <label>Magasin *</label>
+                    <select id="magasin" required>
+                        <option value="">Sélectionner un magasin</option>
+                        <option value="Lattes">Lattes</option>
+                        <option value="Vedène">Vedène</option>
+                        <option value="Aix">Aix</option>
+                        <option value="Nîmes">Nîmes</option>
+                        <option value="Vitrolles">Vitrolles</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Type d'Article *</label>
+                    <select id="typeArticle" required>
+                        <option value="">Sélectionner le type</option>
+                        <option value="Stock">Stock</option>
+                        <option value="SAV">SAV</option>
+                        <option value="Complément">Complément</option>
+                        <option value="Stock RAB">Stock RAB (consommables)</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Nom du Client *</label>
+                    <input type="text" id="nomClient" required>
+                </div>
+
+                <div class="form-group">
+                    <label>N° AR</label>
+                    <input type="text" id="numeroAR">
+                </div>
+
+                <div class="form-group">
+                    <label>Article *</label>
+                    <input type="text" id="article" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Référence *</label>
+                    <input type="text" id="reference" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nombre de Colis *</label>
+                    <input type="number" id="nombreColis" min="1" value="1" required>
+                </div>
+
+                <div class="form-group" id="quantiteGroup" style="display: none;">
+                    <label>Quantité en Stock (pour Stock RAB) *</label>
+                    <input type="number" id="quantiteStock" min="1" value="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Emplacement de Stockage *</label>
+                    <input type="text" id="emplacement" placeholder="Ex: Rayon A, Étagère 3" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Votre Prénom (Kitchener) *</label>
+                    <input type="text" id="prenomKitchener" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes / Observations</label>
+                    <textarea id="notes" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submitBtn">Générer le QR Code</button>
+            </form>
+
+            <div id="qrCodeResult" class="qr-code-container" style="display: none;">
+                <h3>QR Code Généré avec Succès ! ✅</h3>
+                <div id="qrcode"></div>
+                <p style="margin: 15px 0; font-weight: 600;">Collez ce QR code sur le(s) colis</p>
+                <button class="btn btn-primary" onclick="printQRCode()">🖨️ Imprimer</button>
+                <button class="btn btn-secondary" onclick="resetForm()">➕ Nouveau Colis</button>
+            </div>
+        </div>
+
+        <!-- Onglet Scanner -->
+        <div id="scanner" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Scanner un QR Code</h2>
+            
+            <div class="scanner-container">
+                <button class="btn btn-primary" onclick="startScanner()" id="startScanBtn">📱 Démarrer le Scanner</button>
+                <div id="reader" style="display: none;"></div>
+                <button class="btn btn-secondary" onclick="stopScanner()" id="stopScanBtn" style="display: none; margin-top: 15px;">⏹️ Arrêter</button>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <p style="color: #6c757d;">- OU -</p>
+            </div>
+
+            <div class="form-group">
+                <label>Entrer l'ID de l'Article Manuellement</label>
+                <input type="text" id="manualArticleId" placeholder="Ex: ART-1234567890">
+                <button class="btn btn-primary" onclick="searchArticleManually()" style="margin-top: 10px;">Rechercher</button>
+            </div>
+        </div>
+
+        <!-- Onglet Stock -->
+        <div id="stock" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Vue d'Ensemble du Stock</h2>
+            
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="filter-section">
+                <h3 style="margin-bottom: 15px;">Filtres</h3>
+                <div class="filter-group">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Magasin</label>
+                        <select id="filterMagasin" onchange="filterStock()">
+                            <option value="">Tous les magasins</option>
+                            <option value="Lattes">Lattes</option>
+                            <option value="Vedène">Vedène</option>
+                            <option value="Aix">Aix</option>
+                            <option value="Nîmes">Nîmes</option>
+                            <option value="Vitrolles">Vitrolles</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Statut</label>
+                        <select id="filterStatut" onchange="filterStock()">
+                            <option value="">Tous les statuts</option>
+                            <option value="Stock">En stock</option>
+                            <option value="Prêt">En prêt</option>
+                            <option value="SAV">SAV</option>
+                            <option value="Sorti">Sorti</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label>Type</label>
+                        <select id="filterType" onchange="filterStock()">
+                            <option value="">Tous les types</option>
+                            <option value="Stock">Stock</option>
+                            <option value="SAV">SAV</option>
+                            <option value="Complément">Complément</option>
+                            <option value="Stock RAB">Stock RAB</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stockList"></div>
+        </div>
+
+        <!-- Onglet Prêts -->
+        <div id="prets" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Gestion des Prêts</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                    <div class="stat-number" id="pretsActifsCount">0</div>
+                    <div class="stat-label">Prêts Actifs</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                    <div class="stat-number" id="pretsRetardCount">0</div>
+                    <div class="stat-label">Prêts en Retard</div>
+                </div>
+            </div>
+
+            <div id="pretsList"></div>
+        </div>
+
+        <!-- Onglet Alertes -->
+        <div id="alertes" class="tab-content">
+            <h2 style="margin-bottom: 20px;">Alertes et Notifications</h2>
+            
+            <div class="filter-section">
+                <h3 style="margin-bottom: 15px;">Filtre</h3>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Magasin</label>
+                    <select id="filterAlerteMagasin" onchange="displayAlertes()">
+                        <option value="">Tous les magasins</option>
+                        <option value="Lattes">Lattes</option>
+                        <option value="Vedène">Vedène</option>
+                        <option value="Aix">Aix</option>
+                        <option value="Nîmes">Nîmes</option>
+                        <option value="Vitrolles">Vitrolles</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="alertesList"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Détails de l'Article</h2>
+                <button class="close-modal" onclick="closeArticleModal()">&times;</button>
+            </div>
+            <div id="articleDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        let articles = [];
+        let html5QrCode = null;
+        let API_URL = '';
+
+        // Vérifier la configuration au démarrage
+        function checkSetup() {
+            API_URL = localStorage.getItem('GOOGLE_SHEETS_API_URL');
+            
+            if (!API_URL) {
+                showSetupScreen();
+            } else {
+                document.getElementById('setupScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                loadData();
+            }
+        }
+
+        function showSetupScreen() {
+            document.getElementById('setupScreen').style.display = 'block';
+            document.getElementById('mainApp').style.display = 'none';
+        }
+
+        function saveApiUrl() {
+            const url = document.getElementById('apiUrlInput').value.trim();
+            if (!url) {
+                alert('Veuillez entrer l\'URL de l\'application web');
+                return;
+            }
+            
+            if (!url.includes('script.google.com')) {
+                alert('L\'URL doit être une URL Google Apps Script (script.google.com)');
+                return;
+            }
+            
+            localStorage.setItem('GOOGLE_SHEETS_API_URL', url);
+            API_URL = url;
+            
+            checkSetup();
+        }
+
+        // Mettre à jour le statut de connexion
+        function updateConnectionStatus(status, message) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = 'connection-status ' + status;
+            statusEl.textContent = message;
+        }
+
+        // Charger les données depuis Google Sheets
+        async function loadData() {
+            updateConnectionStatus('loading', '🔄 Chargement...');
+            
+            try {
+                const url = `${API_URL}?action=getAllArticles&t=${Date.now()}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                articles = convertSheetDataToArticles(data);
+                updateConnectionStatus('connected', '✅ Connecté (' + articles.length + ' articles)');
+                updateAllViews();
+                
+            } catch (error) {
+                console.error('Erreur de chargement:', error);
+                updateConnectionStatus('disconnected', '❌ Erreur de connexion');
+                alert('Erreur de connexion à Google Sheets. Vérifiez la configuration.');
+            }
+        }
+
+        // Convertir les données
+        function convertSheetDataToArticles(data) {
+            if (!Array.isArray(data)) return [];
+            
+            return data.map(row => ({
+                id: row.ID,
+                magasin: row.Magasin,
+                type: row.Type,
+                client: row.Client,
+                numeroAR: row.NumeroAR,
+                article: row.Article,
+                reference: row.Reference,
+                nombreColis: parseInt(row.NombreColis) || 1,
+                quantiteStock: row.QuantiteStock !== null && row.QuantiteStock !== '' ? parseInt(row.QuantiteStock) : null,
+                quantiteInitiale: row.QuantiteInitiale !== null && row.QuantiteInitiale !== '' ? parseInt(row.QuantiteInitiale) : null,
+                emplacement: row.Emplacement,
+                kitchener: row.Kitchener,
+                notes: row.Notes,
+                statut: row.Statut,
+                dateReception: row.DateReception,
+                datePret: row.DatePret,
+                prenomEmprunteur: row.PrenomEmprunteur,
+                dateRetourPrevue: row.DateRetourPrevue,
+                dateRetourReel: row.DateRetourReel,
+                dateSortie: row.DateSortie,
+                raisonSortie: row.RaisonSortie
+            }));
+        }
+
+        // Sauvegarder un article
+        async function saveArticle(articleData) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enregistrement...';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'addArticle',
+                        article: {
+                            ID: articleData.id,
+                            Magasin: articleData.magasin,
+                            Type: articleData.type,
+                            Client: articleData.client,
+                            NumeroAR: articleData.numeroAR,
+                            Article: articleData.article,
+                            Reference: articleData.reference,
+                            NombreColis: articleData.nombreColis,
+                            QuantiteStock: articleData.quantiteStock,
+                            QuantiteInitiale: articleData.quantiteInitiale,
+                            Emplacement: articleData.emplacement,
+                            Kitchener: articleData.kitchener,
+                            Notes: articleData.notes,
+                            Statut: articleData.statut,
+                            DateReception: articleData.dateReception,
+                            Historique: true
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                await loadData();
+                return true;
+                
+            } catch (error) {
+                console.error('Erreur de sauvegarde:', error);
+                alert('Erreur lors de la sauvegarde: ' + error.message);
+                return false;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Générer le QR Code';
+            }
+        }
+
+        // Mettre à jour un article
+        async function updateArticle(articleData) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'updateArticle',
+                        article: {
+                            ID: articleData.id,
+                            Magasin: articleData.magasin,
+                            Type: articleData.type,
+                            Client: articleData.client,
+                            NumeroAR: articleData.numeroAR || '',
+                            Article: articleData.article,
+                            Reference: articleData.reference,
+                            NombreColis: articleData.nombreColis,
+                            QuantiteStock: articleData.quantiteStock,
+                            QuantiteInitiale: articleData.quantiteInitiale,
+                            Emplacement: articleData.emplacement,
+                            Kitchener: articleData.kitchener,
+                            Notes: articleData.notes || '',
+                            Statut: articleData.statut,
+                            DateReception: articleData.dateReception,
+                            DatePret: articleData.datePret || '',
+                            PrenomEmprunteur: articleData.prenomEmprunteur || '',
+                            DateRetourPrevue: articleData.dateRetourPrevue || '',
+                            DateRetourReel: articleData.dateRetourReel || '',
+                            DateSortie: articleData.dateSortie || '',
+                            RaisonSortie: articleData.raisonSortie || ''
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                await loadData();
+                return true;
+                
+            } catch (error) {
+                console.error('Erreur de mise à jour:', error);
+                alert('Erreur lors de la mise à jour: ' + error.message);
+                return false;
+            }
+        }
+
+        // Ajouter une entrée d'historique
+        async function addHistoriqueEntry(articleId, action, utilisateur, details = '') {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'addHistorique',
+                        historique: {
+                            ArticleID: articleId,
+                            Action: action,
+                            Date: new Date().toISOString(),
+                            Utilisateur: utilisateur,
+                            Details: details
+                        }
+                    })
+                });
+            } catch (error) {
+                console.error('Erreur ajout historique:', error);
+            }
+        }
+
+        // Afficher/masquer le champ quantité
+        document.getElementById('typeArticle').addEventListener('change', function() {
+            const quantiteGroup = document.getElementById('quantiteGroup');
+            if (this.value === 'Stock RAB') {
+                quantiteGroup.style.display = 'block';
+                document.getElementById('quantiteStock').required = true;
+            } else {
+                quantiteGroup.style.display = 'none';
+                document.getElementById('quantiteStock').required = false;
+            }
+        });
+
+        // Gestion des onglets
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'stock') {
+                displayStock();
+            } else if (tabName === 'prets') {
+                displayPrets();
+            } else if (tabName === 'alertes') {
+                displayAlertes();
+            }
+        }
+
+        // Formulaire de réception
+        document.getElementById('receptionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const articleData = {
+                id: 'ART-' + Date.now(),
+                magasin: document.getElementById('magasin').value,
+                type: document.getElementById('typeArticle').value,
+                client: document.getElementById('nomClient').value,
+                numeroAR: document.getElementById('numeroAR').value,
+                article: document.getElementById('article').value,
+                reference: document.getElementById('reference').value,
+                nombreColis: parseInt(document.getElementById('nombreColis').value),
+                quantiteStock: document.getElementById('typeArticle').value === 'Stock RAB' ? 
+                    parseInt(document.getElementById('quantiteStock').value) : null,
+                quantiteInitiale: document.getElementById('typeArticle').value === 'Stock RAB' ? 
+                    parseInt(document.getElementById('quantiteStock').value) : null,
+                emplacement: document.getElementById('emplacement').value,
+                kitchener: document.getElementById('prenomKitchener').value,
+                notes: document.getElementById('notes').value,
+                statut: 'Stock',
+                dateReception: new Date().toISOString()
+            };
+
+            const success = await saveArticle(articleData);
+            
+            if (success) {
+                document.getElementById('qrcode').innerHTML = '';
+                new QRCode(document.getElementById('qrcode'), {
+                    text: articleData.id,
+                    width: 256,
+                    height: 256
+                });
+
+                document.getElementById('receptionForm').style.display = 'none';
+                document.getElementById('qrCodeResult').style.display = 'block';
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('receptionForm').reset();
+            document.getElementById('receptionForm').style.display = 'block';
+            document.getElementById('qrCodeResult').style.display = 'none';
+            document.getElementById('quantiteGroup').style.display = 'none';
+        }
+
+        function printQRCode() {
+            const qrContent = document.getElementById('qrCodeResult').innerHTML;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>QR Code</title>');
+            printWindow.document.write('<style>body{text-align:center;padding:50px;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(qrContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Scanner QR
+        function startScanner() {
+            document.getElementById('reader').style.display = 'block';
+            document.getElementById('startScanBtn').style.display = 'none';
+            document.getElementById('stopScanBtn').style.display = 'block';
+
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                (decodedText) => {
+                    stopScanner();
+                    openArticleDetails(decodedText);
+                }
+            ).catch(err => {
+                alert('Impossible d\'accéder à la caméra. Utilisez la saisie manuelle.');
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('reader').style.display = 'none';
+                    document.getElementById('startScanBtn').style.display = 'block';
+                    document.getElementById('stopScanBtn').style.display = 'none';
+                });
+            }
+        }
+
+        function searchArticleManually() {
+            const articleId = document.getElementById('manualArticleId').value.trim();
+            if (articleId) {
+                openArticleDetails(articleId);
+            }
+        }
+
+        function openArticleDetails(articleId) {
+            const article = articles.find(a => a.id === articleId);
+            
+            if (!article) {
+                alert('Article non trouvé : ' + articleId);
+                return;
+            }
+
+            let detailsHTML = `
+                <div class="article-card">
+                    <div class="article-header">
+                        <div class="article-title">${article.article}</div>
+                        <div class="status-badge status-${article.statut.toLowerCase()}">${article.statut}</div>
+                    </div>
+                    <div class="article-info">
+                        <div class="info-item"><span class="info-label">Magasin:</span> ${article.magasin}</div>
+                        <div class="info-item"><span class="info-label">Client:</span> ${article.client}</div>
+                        <div class="info-item"><span class="info-label">Référence:</span> ${article.reference}</div>
+                        <div class="info-item"><span class="info-label">Emplacement:</span> ${article.emplacement}</div>
+                        <div class="info-item"><span class="info-label">Type:</span> ${article.type}</div>
+                        ${article.numeroAR ? `<div class="info-item"><span class="info-label">N° AR:</span> ${article.numeroAR}</div>` : ''}
+                        ${article.quantiteStock !== null ? `<div class="info-item"><span class="info-label">Quantité:</span> ${article.quantiteStock} / ${article.quantiteInitiale}</div>` : ''}
+                    </div>
+                </div>
+
+                <h3 style="margin: 25px 0 15px 0;">Actions</h3>
+                <div class="form-group">
+                    <label>Votre Prénom *</label>
+                    <input type="text" id="actionPrenom" required>
+                </div>
+            `;
+
+            if (article.statut === 'Stock') {
+                detailsHTML += `
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="sortirArticle('${article.id}')">📤 Sortir</button>
+                        <button class="btn btn-warning" onclick="preterArticle('${article.id}')">🔄 Prêter</button>
+                        ${article.type === 'Stock RAB' && article.quantiteStock > 0 ? 
+                            `<button class="btn btn-primary" onclick="sortirUnite('${article.id}')">📦 Sortir 1</button>` : ''}
+                    </div>
+                `;
+            } else if (article.statut === 'Prêt') {
+                detailsHTML += `
+                    <div class="alert alert-info">
+                        <div>
+                            <strong>En prêt depuis le ${new Date(article.datePret).toLocaleDateString()}</strong><br>
+                            Prêté à: ${article.prenomEmprunteur}<br>
+                            Retour prévu: ${new Date(article.dateRetourPrevue).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="retournerPret('${article.id}')">↩️ Retourner</button>
+                `;
+            }
+
+            document.getElementById('articleDetails').innerHTML = detailsHTML;
+            document.getElementById('articleModal').classList.add('active');
+        }
+
+        function closeArticleModal() {
+            document.getElementById('articleModal').classList.remove('active');
+        }
+
+        async function sortirArticle(articleId) {
+            const prenom = document.getElementById('actionPrenom').value.trim();
+            if (!prenom) {
+                alert('Entrez votre prénom');
+                return;
+            }
+
+            const raison = prompt('Raison de la sortie:');
+            if (!raison) return;
+
+            const article = articles.find(a => a.id === articleId);
+            article.statut = 'Sorti';
+            article.dateSortie = new Date().toISOString();
+            article.raisonSortie = raison;
+
+            await updateArticle(article);
+            await addHistoriqueEntry(article.id, 'Sortie', prenom, `Raison: ${raison}`);
+            
+            closeArticleModal();
+            alert('✅ Article sorti');
+        }
+
+        async function sortirUnite(articleId) {
+            const prenom = document.getElementById('actionPrenom').value.trim();
+            if (!prenom) {
+                alert('Entrez votre prénom');
+                return;
+            }
+
+            const article = articles.find(a => a.id === articleId);
+            
+            if (article.quantiteStock <= 0) {
+                alert('Stock épuisé');
+                return;
+            }
+
+            article.quantiteStock--;
+            if (article.quantiteStock === 0) {
+                article.statut = 'Sorti';
+            }
+
+            await updateArticle(article);
+            await addHistoriqueEntry(article.id, 'Sortie unitaire', prenom, `Stock: ${article.quantiteStock}`);
+            
+            closeArticleModal();
+            alert(`✅ Stock restant: ${article.quantiteStock}`);
+        }
+
+        async function preterArticle(articleId) {
+            const prenom = document.getElementById('actionPrenom').value.trim();
+            if (!prenom) {
+                alert('Entrez votre prénom');
+                return;
+            }
+
+            const prenomEmprunteur = prompt('Prénom emprunteur:');
+            if (!prenomEmprunteur) return;
+
+            const dateRetour = prompt('Date retour (JJ/MM/AAAA):');
+            if (!dateRetour) return;
+
+            const article = articles.find(a => a.id === articleId);
+            article.statut = 'Prêt';
+            article.datePret = new Date().toISOString();
+            article.prenomEmprunteur = prenomEmprunteur;
+            
+            const [jour, mois, annee] = dateRetour.split('/');
+            article.dateRetourPrevue = new Date(annee, mois - 1, jour).toISOString();
+
+            await updateArticle(article);
+            await addHistoriqueEntry(article.id, 'Prêt', prenom, `À ${prenomEmprunteur} - Retour: ${dateRetour}`);
+            
+            closeArticleModal();
+            alert('✅ Prêt enregistré');
+        }
+
+        async function retournerPret(articleId) {
+            const prenom = document.getElementById('actionPrenom').value.trim();
+            if (!prenom) {
+                alert('Entrez votre prénom');
+                return;
+            }
+
+            const article = articles.find(a => a.id === articleId);
+            article.statut = 'Stock';
+            article.dateRetourReel = new Date().toISOString();
+
+            await updateArticle(article);
+            await addHistoriqueEntry(article.id, 'Retour', prenom, `De ${article.prenomEmprunteur}`);
+            
+            closeArticleModal();
+            alert('✅ Prêt retourné');
+        }
+
+        function displayStock() {
+            updateStats();
+            filterStock();
+        }
+
+        function updateStats() {
+            const stats = {
+                total: articles.length,
+                enStock: articles.filter(a => a.statut === 'Stock').length,
+                enPret: articles.filter(a => a.statut === 'Prêt').length,
+                sav: articles.filter(a => a.statut === 'SAV' || a.type === 'SAV').length
+            };
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <div class="stat-number">${stats.enStock}</div>
+                    <div class="stat-label">En Stock</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                    <div class="stat-number">${stats.enPret}</div>
+                    <div class="stat-label">En Prêt</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                    <div class="stat-number">${stats.sav}</div>
+                    <div class="stat-label">SAV</div>
+                </div>
+            `;
+        }
+
+        function filterStock() {
+            const magasinFilter = document.getElementById('filterMagasin').value;
+            const statutFilter = document.getElementById('filterStatut').value;
+            const typeFilter = document.getElementById('filterType').value;
+
+            let filtered = articles.filter(a => {
+                if (magasinFilter && a.magasin !== magasinFilter) return false;
+                if (statutFilter && a.statut !== statutFilter) return false;
+                if (typeFilter && a.type !== typeFilter) return false;
+                return true;
+            });
+
+            displayArticlesList(filtered, 'stockList');
+        }
+
+        function displayArticlesList(articlesList, containerId) {
+            if (articlesList.length === 0) {
+                document.getElementById(containerId).innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">Aucun article</p>';
+                return;
+            }
+
+            const html = articlesList.map(article => `
+                <div class="article-card" onclick="openArticleDetails('${article.id}')" style="cursor: pointer;">
+                    <div class="article-header">
+                        <div class="article-title">${article.article}</div>
+                        <div class="status-badge status-${article.statut.toLowerCase()}">${article.statut}</div>
+                    </div>
+                    <div class="article-info">
+                        <div class="info-item"><span class="info-label">Magasin:</span> ${article.magasin}</div>
+                        <div class="info-item"><span class="info-label">Client:</span> ${article.client}</div>
+                        <div class="info-item"><span class="info-label">Référence:</span> ${article.reference}</div>
+                        ${article.quantiteStock !== null ? `<div class="info-item"><span class="info-label">Stock:</span> ${article.quantiteStock}/${article.quantiteInitiale}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById(containerId).innerHTML = html;
+        }
+
+        function displayPrets() {
+            const prets = articles.filter(a => a.statut === 'Prêt');
+            const pretsEnRetard = prets.filter(a => new Date(a.dateRetourPrevue) < new Date());
+
+            document.getElementById('pretsActifsCount').textContent = prets.length;
+            document.getElementById('pretsRetardCount').textContent = pretsEnRetard.length;
+
+            if (prets.length === 0) {
+                document.getElementById('pretsList').innerHTML = '<p style="text-align: center; color: #6c757d; padding: 40px;">Aucun prêt</p>';
+                return;
+            }
+
+            const html = prets.map(article => {
+                const isRetard = new Date(article.dateRetourPrevue) < new Date();
+                return `
+                    <div class="article-card" onclick="openArticleDetails('${article.id}')" style="cursor: pointer; ${isRetard ? 'border-color: #dc3545;' : ''}">
+                        <div class="article-header">
+                            <div class="article-title">${article.article}</div>
+                            <div class="status-badge ${isRetard ? 'status-sav' : 'status-prêt'}">
+                                ${isRetard ? '⚠️ RETARD' : 'En prêt'}
+                            </div>
+                        </div>
+                        <div class="article-info">
+                            <div class="info-item"><span class="info-label">Magasin:</span> ${article.magasin}</div>
+                            <div class="info-item"><span class="info-label">Emprunté par:</span> ${article.prenomEmprunteur}</div>
+                            <div class="info-item"><span class="info-label">Depuis:</span> ${new Date(article.datePret).toLocaleDateString()}</div>
+                            <div class="info-item"><span class="info-label">Retour:</span> ${new Date(article.dateRetourPrevue).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('pretsList').innerHTML = html;
+        }
+
+        function displayAlertes() {
+            const magasinFilter = document.getElementById('filterAlerteMagasin').value;
+            let alertes = [];
+
+            const articlesFiltered = magasinFilter ? 
+                articles.filter(a => a.magasin === magasinFilter) : 
+                articles;
+
+            // Prêts en retard
+            articlesFiltered.filter(a => a.statut === 'Prêt' && new Date(a.dateRetourPrevue) < new Date())
+                .forEach(article => {
+                    const jours = Math.floor((new Date() - new Date(article.dateRetourPrevue)) / 86400000);
+                    alertes.push({
+                        type: 'danger',
+                        titre: `Prêt en retard - ${article.article}`,
+                        message: `${article.magasin} - ${article.prenomEmprunteur} - ${jours}j de retard`,
+                        articleId: article.id
+                    });
+                });
+
+            // Prêts bientôt
+            articlesFiltered.filter(a => {
+                if (a.statut !== 'Prêt') return false;
+                const diff = (new Date(a.dateRetourPrevue) - new Date()) / 86400000;
+                return diff > 0 && diff <= 3;
+            }).forEach(article => {
+                const jours = Math.ceil((new Date(article.dateRetourPrevue) - new Date()) / 86400000);
+                alertes.push({
+                    type: 'warning',
+                    titre: `Retour bientôt - ${article.article}`,
+                    message: `${article.magasin} - ${article.prenomEmprunteur} - dans ${jours}j`,
+                    articleId: article.id
+                });
+            });
+
+            // Stocks faibles
+            articlesFiltered.filter(a => a.type === 'Stock RAB' && a.quantiteStock > 0 && a.quantiteStock < 5)
+                .forEach(article => {
+                    alertes.push({
+                        type: 'warning',
+                        titre: `Stock faible - ${article.article}`,
+                        message: `${article.magasin} - ${article.quantiteStock} restant(s)`,
+                        articleId: article.id
+                    });
+                });
+
+            // Stocks épuisés
+            articlesFiltered.filter(a => a.type === 'Stock RAB' && a.quantiteStock === 0)
+                .forEach(article => {
+                    alertes.push({
+                        type: 'danger',
+                        titre: `Stock épuisé - ${article.article}`,
+                        message: `${article.magasin} - À réapprovisionner`,
+                        articleId: article.id
+                    });
+                });
+
+            if (alertes.length === 0) {
+                document.getElementById('alertesList').innerHTML = `
+                    <div class="alert alert-success">
+                        ✅ ${magasinFilter ? `Aucune alerte pour ${magasinFilter}` : 'Aucune alerte'}
+                    </div>
+                `;
+                return;
+            }
+
+            const html = alertes.map(alerte => `
+                <div class="alert alert-${alerte.type}" onclick="openArticleDetails('${alerte.articleId}')" style="cursor: pointer;">
+                    <div>
+                        <strong>${alerte.titre}</strong><br>
+                        ${alerte.message}
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('alertesList').innerHTML = html;
+        }
+
+        function updateAllViews() {
+            displayStock();
+            displayPrets();
+            displayAlertes();
+        }
+
+        // Démarrer
+        checkSetup();
+
+        // Recharger auto toutes les 60 secondes
+        setInterval(() => {
+            if (API_URL && document.getElementById('mainApp').style.display !== 'none') {
+                loadData();
+            }
+        }, 60000);
+    </script>
+</body>
+</html>
