@@ -66,37 +66,6 @@
             background: #ffc107;
         }
 
-        .setup-box {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .setup-box h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-        }
-
-        .setup-box ol {
-            margin-left: 25px;
-            line-height: 2;
-        }
-
-        .setup-box ol li {
-            margin-bottom: 10px;
-        }
-
-        .code-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            margin: 10px 0;
-            border-left: 4px solid #667eea;
-        }
-
         .tabs {
             display: flex;
             background: #f8f9fa;
@@ -459,21 +428,6 @@
             color: #212529;
         }
 
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         @media (max-width: 768px) {
             .tabs {
                 flex-wrap: wrap;
@@ -494,48 +448,14 @@
     </style>
 </head>
 <body>
-    <div id="setupScreen" class="setup-box" style="display: none;">
-        <h2>⚙️ Configuration - Connexion à Google Sheets</h2>
-        
-        <div class="alert alert-info">
-            <strong>📌 Première utilisation</strong> - Vous devez configurer la connexion à Google Sheets
-        </div>
-
-        <h3>📝 Étapes à suivre :</h3>
-        <ol>
-            <li>Ouvrez <a href="https://docs.google.com/spreadsheets/d/1raBKFRUnKky5MWpnTfyRnPCLl-xYZsJbjniZIgS7iNA/edit" target="_blank">votre Google Sheets</a></li>
-            <li>Cliquez sur <strong>Extensions</strong> → <strong>Apps Script</strong></li>
-            <li>Supprimez le code par défaut</li>
-            <li>Copiez-collez le code du fichier <code>Code-Google-Apps-Script-V2.js</code></li>
-            <li>Cliquez sur <strong>Déployer</strong> → <strong>Nouveau déploiement</strong></li>
-            <li>Type : <strong>Application Web</strong></li>
-            <li>Configuration :
-                <ul>
-                    <li><strong>Exécuter en tant que</strong> : Moi</li>
-                    <li><strong>Qui a accès</strong> : Tout le monde</li>
-                </ul>
-            </li>
-            <li>Cliquez sur <strong>Déployer</strong> et autorisez l'accès</li>
-            <li>Copiez l'URL de déploiement (ressemble à : https://script.google.com/macros/s/.../exec)</li>
-        </ol>
-
-        <div class="form-group" style="margin-top: 30px;">
-            <label>URL de l'Application Web Google Apps Script *</label>
-            <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-        </div>
-
-        <button class="btn btn-primary" onclick="saveApiUrl()">💾 Enregistrer et Connecter</button>
-    </div>
-
-    <div id="mainApp" class="container" style="display: none;">
+    <div class="container">
         <div class="header">
             <h1>📦 Gestion de Stock</h1>
             <p>Multi-Magasins - Synchronisé avec Google Sheets</p>
             <div class="connection-status loading" id="connectionStatus">
-                🔄 Connexion en cours...
+                🔄 Connexion...
             </div>
             <div style="margin-top: 10px;">
-                <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 14px;" onclick="showSetupScreen()">⚙️ Reconfigurer</button>
                 <button class="btn btn-primary" style="padding: 8px 16px; font-size: 14px;" onclick="loadData()">🔄 Recharger</button>
             </div>
         </div>
@@ -628,7 +548,7 @@
             <div id="qrCodeResult" class="qr-code-container" style="display: none;">
                 <h3>QR Code Généré avec Succès ! ✅</h3>
                 <div id="qrcode"></div>
-                <p style="margin: 15px 0; font-weight: 600;">Collez ce QR code sur le(s) colis</p>
+                <p style="margin: 15px 0; font-weight: 600;">Scannez ce QR code avec l'appareil photo pour accéder directement à l'article</p>
                 <button class="btn btn-primary" onclick="printQRCode()">🖨️ Imprimer</button>
                 <button class="btn btn-secondary" onclick="resetForm()">➕ Nouveau Colis</button>
             </div>
@@ -756,44 +676,34 @@
 
     <script>
         let articles = [];
+        let historiques = {};
         let html5QrCode = null;
-        let API_URL = '';
+        
+        // ⚠️ IMPORTANT : REMPLACEZ CETTE URL PAR VOTRE URL DE DÉPLOIEMENT
+        const API_URL = '';
+        
+        // URL de base de l'application (pour les QR codes)
+        const APP_URL = window.location.origin + window.location.pathname;
 
-        // Vérifier la configuration au démarrage
-        function checkSetup() {
-            API_URL = localStorage.getItem('GOOGLE_SHEETS_API_URL');
+        // Vérifier si l'API est configurée
+        if (API_URL === 'https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec') {
+            alert('⚠️ CONFIGURATION REQUISE\n\nVeuillez remplacer "https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec" dans le code par votre URL de déploiement Google Apps Script.');
+        }
+
+        // Charger les données au démarrage et vérifier les paramètres URL
+        window.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const articleId = urlParams.get('article');
             
-            if (!API_URL) {
-                showSetupScreen();
+            if (articleId) {
+                // Si un ID d'article est dans l'URL, charger et afficher directement
+                loadData().then(() => {
+                    openArticleDetails(articleId);
+                });
             } else {
-                document.getElementById('setupScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
                 loadData();
             }
-        }
-
-        function showSetupScreen() {
-            document.getElementById('setupScreen').style.display = 'block';
-            document.getElementById('mainApp').style.display = 'none';
-        }
-
-        function saveApiUrl() {
-            const url = document.getElementById('apiUrlInput').value.trim();
-            if (!url) {
-                alert('Veuillez entrer l\'URL de l\'application web');
-                return;
-            }
-            
-            if (!url.includes('script.google.com')) {
-                alert('L\'URL doit être une URL Google Apps Script (script.google.com)');
-                return;
-            }
-            
-            localStorage.setItem('GOOGLE_SHEETS_API_URL', url);
-            API_URL = url;
-            
-            checkSetup();
-        }
+        });
 
         // Mettre à jour le statut de connexion
         function updateConnectionStatus(status, message) {
@@ -806,39 +716,41 @@
         function loadData() {
             updateConnectionStatus('loading', '🔄 Chargement...');
             
-            const callbackName = 'jsonpCallback_' + Date.now();
-            
-            window[callbackName] = function(data) {
-                try {
-                    if (data.error) {
-                        throw new Error(data.error);
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonpCallback_' + Date.now();
+                
+                window[callbackName] = function(data) {
+                    try {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        articles = convertSheetDataToArticles(data);
+                        updateConnectionStatus('connected', '✅ Connecté (' + articles.length + ' articles)');
+                        updateAllViews();
+                        resolve();
+                    } catch (error) {
+                        console.error('Erreur de chargement:', error);
+                        updateConnectionStatus('disconnected', '❌ Erreur de connexion');
+                        reject(error);
+                    } finally {
+                        delete window[callbackName];
+                        const script = document.getElementById(callbackName);
+                        if (script) script.remove();
                     }
-                    
-                    articles = convertSheetDataToArticles(data);
-                    updateConnectionStatus('connected', '✅ Connecté (' + articles.length + ' articles)');
-                    updateAllViews();
-                } catch (error) {
-                    console.error('Erreur de chargement:', error);
+                };
+                
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `${API_URL}?action=getAllArticles&callback=${callbackName}&t=${Date.now()}`;
+                script.onerror = function() {
                     updateConnectionStatus('disconnected', '❌ Erreur de connexion');
-                    alert('Erreur de connexion à Google Sheets: ' + error.message);
-                } finally {
-                    // Nettoyer
+                    reject(new Error('Impossible de se connecter'));
                     delete window[callbackName];
-                    const script = document.getElementById(callbackName);
-                    if (script) script.remove();
-                }
-            };
-            
-            const script = document.createElement('script');
-            script.id = callbackName;
-            script.src = `${API_URL}?action=getAllArticles&callback=${callbackName}&t=${Date.now()}`;
-            script.onerror = function() {
-                updateConnectionStatus('disconnected', '❌ Erreur de connexion');
-                alert('Impossible de se connecter à Google Sheets. Vérifiez l\'URL de l\'API.');
-                delete window[callbackName];
-            };
-            
-            document.body.appendChild(script);
+                };
+                
+                document.body.appendChild(script);
+            });
         }
 
         // Convertir les données
@@ -870,14 +782,37 @@
             }));
         }
 
-        // Sauvegarder un article en utilisant GET (le plus fiable)
+        // Charger l'historique d'un article
+        async function loadHistorique(articleId) {
+            if (historiques[articleId]) {
+                return historiques[articleId];
+            }
+            
+            return new Promise((resolve) => {
+                const callbackName = 'histoCallback_' + Date.now();
+                
+                window[callbackName] = function(data) {
+                    historiques[articleId] = data || [];
+                    resolve(historiques[articleId]);
+                    delete window[callbackName];
+                    const script = document.getElementById(callbackName);
+                    if (script) script.remove();
+                };
+                
+                const script = document.createElement('script');
+                script.id = callbackName;
+                script.src = `${API_URL}?action=getHistorique&articleId=${encodeURIComponent(articleId)}&callback=${callbackName}`;
+                document.body.appendChild(script);
+            });
+        }
+
+        // Sauvegarder un article en utilisant GET
         async function saveArticle(articleData) {
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.textContent = 'Enregistrement...';
             
             return new Promise((resolve) => {
-                // Créer l'URL avec tous les paramètres
                 const params = new URLSearchParams({
                     action: 'addArticle',
                     ID: articleData.id,
@@ -898,7 +833,6 @@
                     Historique: 'true'
                 });
                 
-                // Créer un script tag pour faire la requête
                 const callbackName = 'saveCallback_' + Date.now();
                 window[callbackName] = function(result) {
                     submitBtn.disabled = false;
@@ -908,12 +842,10 @@
                         alert('Erreur: ' + result.error);
                         resolve(false);
                     } else {
-                        // Recharger les données
                         setTimeout(() => loadData(), 1000);
                         resolve(true);
                     }
                     
-                    // Nettoyer
                     delete window[callbackName];
                     const script = document.getElementById(callbackName);
                     if (script) script.remove();
@@ -996,6 +928,9 @@
             script.src = `${API_URL}?${params.toString()}&callback=dummy${Date.now()}`;
             document.body.appendChild(script);
             setTimeout(() => script.remove(), 2000);
+            
+            // Invalider le cache de l'historique
+            delete historiques[articleId];
         }
 
         // Afficher/masquer le champ quantité
@@ -1054,9 +989,12 @@
             const success = await saveArticle(articleData);
             
             if (success) {
+                // Générer QR code avec URL directe vers l'article
+                const articleUrl = `${APP_URL}?article=${articleData.id}`;
+                
                 document.getElementById('qrcode').innerHTML = '';
                 new QRCode(document.getElementById('qrcode'), {
-                    text: articleData.id,
+                    text: articleUrl,
                     width: 256,
                     height: 256
                 });
@@ -1097,7 +1035,13 @@
                 { fps: 10, qrbox: 250 },
                 (decodedText) => {
                     stopScanner();
-                    openArticleDetails(decodedText);
+                    // Vérifier si c'est une URL ou un ID
+                    if (decodedText.includes('?article=')) {
+                        const articleId = decodedText.split('?article=')[1];
+                        openArticleDetails(articleId);
+                    } else {
+                        openArticleDetails(decodedText);
+                    }
                 }
             ).catch(err => {
                 alert('Impossible d\'accéder à la caméra. Utilisez la saisie manuelle.');
@@ -1121,13 +1065,16 @@
             }
         }
 
-        function openArticleDetails(articleId) {
+        async function openArticleDetails(articleId) {
             const article = articles.find(a => a.id === articleId);
             
             if (!article) {
                 alert('Article non trouvé : ' + articleId);
                 return;
             }
+
+            // Charger l'historique
+            const historique = await loadHistorique(articleId);
 
             let detailsHTML = `
                 <div class="article-card">
@@ -1136,6 +1083,7 @@
                         <div class="status-badge status-${article.statut.toLowerCase()}">${article.statut}</div>
                     </div>
                     <div class="article-info">
+                        <div class="info-item"><span class="info-label">ID:</span> ${article.id}</div>
                         <div class="info-item"><span class="info-label">Magasin:</span> ${article.magasin}</div>
                         <div class="info-item"><span class="info-label">Client:</span> ${article.client}</div>
                         <div class="info-item"><span class="info-label">Référence:</span> ${article.reference}</div>
@@ -1143,6 +1091,7 @@
                         <div class="info-item"><span class="info-label">Type:</span> ${article.type}</div>
                         ${article.numeroAR ? `<div class="info-item"><span class="info-label">N° AR:</span> ${article.numeroAR}</div>` : ''}
                         ${article.quantiteStock !== null ? `<div class="info-item"><span class="info-label">Quantité:</span> ${article.quantiteStock} / ${article.quantiteInitiale}</div>` : ''}
+                        ${article.notes ? `<div class="info-item" style="grid-column: 1/-1;"><span class="info-label">Notes:</span> ${article.notes}</div>` : ''}
                     </div>
                 </div>
 
@@ -1158,6 +1107,7 @@
                     <div class="action-buttons">
                         <button class="btn btn-success" onclick="sortirArticle('${article.id}')">📤 Sortir</button>
                         <button class="btn btn-warning" onclick="preterArticle('${article.id}')">🔄 Prêter</button>
+                        <button class="btn btn-secondary" onclick="changerEmplacement('${article.id}')">📍 Changer Emplacement</button>
                         ${article.type === 'Stock RAB' && article.quantiteStock > 0 ? 
                             `<button class="btn btn-primary" onclick="sortirUnite('${article.id}')">📦 Sortir 1</button>` : ''}
                     </div>
@@ -1171,9 +1121,24 @@
                             Retour prévu: ${new Date(article.dateRetourPrevue).toLocaleDateString()}
                         </div>
                     </div>
-                    <button class="btn btn-success" onclick="retournerPret('${article.id}')">↩️ Retourner</button>
+                    <div class="action-buttons">
+                        <button class="btn btn-success" onclick="retournerPret('${article.id}')">↩️ Retourner</button>
+                    </div>
                 `;
             }
+
+            detailsHTML += `
+                <h3 style="margin: 25px 0 15px 0;">📜 Historique</h3>
+                <div>
+                    ${historique.length > 0 ? historique.map(h => `
+                        <div class="history-item">
+                            <div class="history-date">${new Date(h.date).toLocaleString('fr-FR')}</div>
+                            <div class="history-action">${h.action} - ${h.utilisateur}</div>
+                            ${h.details ? `<div style="color: #6c757d; font-size: 0.9em; margin-top: 5px;">${h.details}</div>` : ''}
+                        </div>
+                    `).join('') : '<p style="text-align: center; color: #6c757d; padding: 20px;">Aucun historique</p>'}
+                </div>
+            `;
 
             document.getElementById('articleDetails').innerHTML = detailsHTML;
             document.getElementById('articleModal').classList.add('active');
@@ -1199,7 +1164,7 @@
             article.raisonSortie = raison;
 
             await updateArticle(article);
-            await addHistoriqueEntry(article.id, 'Sortie', prenom, `Raison: ${raison}`);
+            addHistoriqueEntry(article.id, 'Sortie', prenom, `Raison: ${raison}`);
             
             closeArticleModal();
             alert('✅ Article sorti');
@@ -1225,7 +1190,7 @@
             }
 
             await updateArticle(article);
-            await addHistoriqueEntry(article.id, 'Sortie unitaire', prenom, `Stock: ${article.quantiteStock}`);
+            addHistoriqueEntry(article.id, 'Sortie unitaire', prenom, `Stock: ${article.quantiteStock}`);
             
             closeArticleModal();
             alert(`✅ Stock restant: ${article.quantiteStock}`);
@@ -1253,7 +1218,7 @@
             article.dateRetourPrevue = new Date(annee, mois - 1, jour).toISOString();
 
             await updateArticle(article);
-            await addHistoriqueEntry(article.id, 'Prêt', prenom, `À ${prenomEmprunteur} - Retour: ${dateRetour}`);
+            addHistoriqueEntry(article.id, 'Prêt', prenom, `À ${prenomEmprunteur} - Retour: ${dateRetour}`);
             
             closeArticleModal();
             alert('✅ Prêt enregistré');
@@ -1271,10 +1236,31 @@
             article.dateRetourReel = new Date().toISOString();
 
             await updateArticle(article);
-            await addHistoriqueEntry(article.id, 'Retour', prenom, `De ${article.prenomEmprunteur}`);
+            addHistoriqueEntry(article.id, 'Retour', prenom, `De ${article.prenomEmprunteur}`);
             
             closeArticleModal();
             alert('✅ Prêt retourné');
+        }
+
+        async function changerEmplacement(articleId) {
+            const prenom = document.getElementById('actionPrenom').value.trim();
+            if (!prenom) {
+                alert('Entrez votre prénom');
+                return;
+            }
+
+            const nouvelEmplacement = prompt('Nouvel emplacement:');
+            if (!nouvelEmplacement) return;
+
+            const article = articles.find(a => a.id === articleId);
+            const ancienEmplacement = article.emplacement;
+            article.emplacement = nouvelEmplacement;
+
+            await updateArticle(article);
+            addHistoriqueEntry(article.id, 'Changement emplacement', prenom, `De ${ancienEmplacement} vers ${nouvelEmplacement}`);
+            
+            closeArticleModal();
+            alert('✅ Emplacement modifié');
         }
 
         function displayStock() {
@@ -1341,6 +1327,7 @@
                         <div class="info-item"><span class="info-label">Magasin:</span> ${article.magasin}</div>
                         <div class="info-item"><span class="info-label">Client:</span> ${article.client}</div>
                         <div class="info-item"><span class="info-label">Référence:</span> ${article.reference}</div>
+                        <div class="info-item"><span class="info-label">Emplacement:</span> ${article.emplacement}</div>
                         ${article.quantiteStock !== null ? `<div class="info-item"><span class="info-label">Stock:</span> ${article.quantiteStock}/${article.quantiteInitiale}</div>` : ''}
                     </div>
                 </div>
@@ -1392,7 +1379,6 @@
                 articles.filter(a => a.magasin === magasinFilter) : 
                 articles;
 
-            // Prêts en retard
             articlesFiltered.filter(a => a.statut === 'Prêt' && new Date(a.dateRetourPrevue) < new Date())
                 .forEach(article => {
                     const jours = Math.floor((new Date() - new Date(article.dateRetourPrevue)) / 86400000);
@@ -1404,7 +1390,6 @@
                     });
                 });
 
-            // Prêts bientôt
             articlesFiltered.filter(a => {
                 if (a.statut !== 'Prêt') return false;
                 const diff = (new Date(a.dateRetourPrevue) - new Date()) / 86400000;
@@ -1419,7 +1404,6 @@
                 });
             });
 
-            // Stocks faibles
             articlesFiltered.filter(a => a.type === 'Stock RAB' && a.quantiteStock > 0 && a.quantiteStock < 5)
                 .forEach(article => {
                     alertes.push({
@@ -1430,7 +1414,6 @@
                     });
                 });
 
-            // Stocks épuisés
             articlesFiltered.filter(a => a.type === 'Stock RAB' && a.quantiteStock === 0)
                 .forEach(article => {
                     alertes.push({
@@ -1468,15 +1451,8 @@
             displayAlertes();
         }
 
-        // Démarrer
-        checkSetup();
-
         // Recharger auto toutes les 60 secondes
-        setInterval(() => {
-            if (API_URL && document.getElementById('mainApp').style.display !== 'none') {
-                loadData();
-            }
-        }, 60000);
+        setInterval(() => loadData(), 60000);
     </script>
 </body>
 </html>
