@@ -7,214 +7,209 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root {
+        :root{
             --bg:#f5f7fa;--white:#fff;--border:#e2e7ef;--border2:#d0d7e3;
             --blue:#3b6ef8;--blue-dark:#2952d9;--blue-soft:#eff3fe;
             --green:#16a34a;--green-soft:#f0fdf4;--green-border:#bbf7d0;
             --orange:#d97706;--orange-soft:#fffbeb;--orange-border:#fde68a;
             --red:#dc2626;--red-soft:#fef2f2;--red-border:#fecaca;
-            --purple:#7c3aed;--purple-soft:#f5f3ff;
+            --purple:#7c3aed;--purple-soft:#f5f3ff;--purple-border:#ddd6fe;
             --teal:#0891b2;--teal-soft:#ecfeff;--teal-border:#a5f3fc;
             --text:#111827;--text2:#374151;--text3:#6b7280;
             --r:12px;--r2:8px;
-            --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
-            --shadow-md:0 4px 12px rgba(0,0,0,.10);
-            --shadow-lg:0 10px 30px rgba(0,0,0,.13);
+            --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+            --shadow-md:0 4px 16px rgba(0,0,0,.09);
+            --shadow-lg:0 12px 32px rgba(0,0,0,.12);
         }
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
         main{flex:1;}
 
-        /* HEADER */
-        .header{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
-        .brand{display:flex;align-items:center;gap:12px;}
-        .brand-icon{width:36px;height:36px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-        .brand-name{font-size:17px;font-weight:800;}
-        .brand-sub{font-size:12px;color:var(--text3);}
-        .pill{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;}
+        .header{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+        .brand{display:flex;align-items:center;gap:10px;}
+        .brand-icon{width:34px;height:34px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+        .brand-name{font-size:16px;font-weight:800;}
+        .brand-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+        .pill{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
         .pill.ok{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);}
         .pill.loading{background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange-border);}
         .pill.err{background:var(--red-soft);color:var(--red);border:1px solid var(--red-border);}
-        .btn-sm{padding:7px 14px;border-radius:var(--r2);font-size:13px;font-weight:600;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;}
+        .btn-sm{padding:6px 13px;border-radius:var(--r2);font-size:12px;font-weight:600;border:1px solid var(--border2);background:var(--white);color:var(--text2);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;}
         .btn-sm:hover{background:var(--bg);border-color:var(--blue);color:var(--blue);}
 
-        /* TABS */
-        .tabs{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto;}
-        .tab{padding:0 18px;height:48px;font-size:14px;font-weight:600;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:7px;}
-        .tab:hover{color:var(--text2);background:var(--bg);}
+        .tabs{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;}
+        .tabs::-webkit-scrollbar{display:none;}
+        .tab{padding:0 16px;height:46px;font-size:13px;font-weight:600;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:6px;}
+        .tab:hover{color:var(--text2);}
         .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
-        .tab-badge{background:var(--red);color:white;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;}
+        .tab-badge{background:var(--red);color:white;padding:1px 5px;border-radius:10px;font-size:10px;font-weight:700;line-height:1.4;}
 
-        /* PAGE */
-        .page{max-width:1100px;margin:0 auto;padding:28px 24px;}
-        .pane{display:none;}
+        .page{max-width:1060px;margin:0 auto;padding:24px 20px;}
+        .pane{display:none;animation:fadeIn .15s ease;}
         .pane.active{display:block;}
-        .page-title{font-size:22px;font-weight:800;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+        .page-title{font-size:20px;font-weight:800;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
 
-        /* STATS */
-        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px;}
-        .stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:20px 18px;box-shadow:var(--shadow);}
-        .stat-card .num{font-size:2em;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;margin-bottom:6px;}
-        .stat-card .lbl{font-size:12px;font-weight:600;color:var(--text3);}
+        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+        .stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px 15px;box-shadow:var(--shadow);transition:box-shadow .15s;}
+        .stat-card:hover{box-shadow:var(--shadow-md);}
+        .stat-card .num{font-size:1.8em;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;margin-bottom:5px;}
+        .stat-card .lbl{font-size:11px;font-weight:600;color:var(--text3);}
         .stat-card.blue .num{color:var(--blue);}
         .stat-card.green .num{color:var(--green);}
         .stat-card.orange .num{color:var(--orange);}
         .stat-card.red .num{color:var(--red);}
         .stat-card.purple .num{color:var(--purple);}
-        .stat-card.teal .num{color:var(--teal);}
 
-        /* CARD */
-        .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);margin-bottom:16px;}
+        .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--shadow);margin-bottom:14px;}
 
-        /* FORM */
-        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
-        .fg{display:flex;flex-direction:column;gap:6px;}
+        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+        .fg{display:flex;flex-direction:column;gap:5px;}
         .fg.full{grid-column:1/-1;}
-        .fg label{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
-        .fg input,.fg select,.fg textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:11px 14px;color:var(--text);font-size:14px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .2s,box-shadow .2s;}
-        .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,110,248,.12);background:var(--white);}
+        .fg label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
+        .fg input,.fg select,.fg textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:10px 13px;color:var(--text);font-size:14px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .15s,box-shadow .15s;}
+        .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,110,248,.1);background:var(--white);}
+        .fg .hint{font-size:11px;color:var(--text3);margin-top:2px;}
 
-        /* BUTTONS */
-        .btn{padding:11px 20px;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:7px;}
-        .btn:disabled{opacity:.5;cursor:not-allowed;}
-        .btn-primary{background:var(--blue);color:white;box-shadow:0 2px 8px rgba(59,110,248,.3);}
-        .btn-primary:hover:not(:disabled){background:var(--blue-dark);transform:translateY(-1px);}
+        .btn{padding:10px 18px;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:'Plus Jakarta Sans',sans-serif;transition:all .18s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+        .btn:disabled{opacity:.45;cursor:not-allowed;}
+        .btn-primary{background:var(--blue);color:white;box-shadow:0 2px 8px rgba(59,110,248,.25);}
+        .btn-primary:hover:not(:disabled){background:var(--blue-dark);box-shadow:0 4px 12px rgba(59,110,248,.35);}
         .btn-success{background:var(--green);color:white;}
-        .btn-success:hover{opacity:.9;}
+        .btn-success:hover:not(:disabled){filter:brightness(1.08);}
         .btn-warning{background:var(--orange);color:white;}
-        .btn-warning:hover{opacity:.9;}
+        .btn-warning:hover:not(:disabled){filter:brightness(1.08);}
         .btn-danger{background:var(--red);color:white;}
-        .btn-danger:hover{opacity:.9;}
+        .btn-danger:hover:not(:disabled){filter:brightness(1.08);}
         .btn-purple{background:var(--purple);color:white;}
-        .btn-purple:hover{opacity:.9;}
+        .btn-purple:hover:not(:disabled){filter:brightness(1.08);}
         .btn-teal{background:var(--teal);color:white;}
-        .btn-teal:hover{opacity:.9;}
+        .btn-teal:hover:not(:disabled){filter:brightness(1.08);}
         .btn-outline{background:white;color:var(--text2);border:1.5px solid var(--border2);}
         .btn-outline:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-soft);}
-        .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+        .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
 
-        /* FILTER */
-        .filter-bar{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;box-shadow:var(--shadow);}
-        .filter-bar select,.filter-bar input{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:9px 14px;color:var(--text);font-size:13px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;min-width:150px;}
+        .filter-bar{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;box-shadow:var(--shadow);}
+        .filter-bar select,.filter-bar input{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:8px 12px;color:var(--text);font-size:13px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;}
+        .filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:var(--blue);}
 
-        /* ITEMS */
-        .article-item{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:10px;cursor:pointer;transition:all .18s;box-shadow:var(--shadow);}
+        .article-item{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:9px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;box-shadow:var(--shadow);}
         .article-item:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-1px);}
-        .item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;}
-        .item-title{font-size:15px;font-weight:700;}
-        .item-ref{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:2px;}
-        .item-meta{display:flex;flex-wrap:wrap;gap:14px;}
-        .meta{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:4px;}
+        .item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
+        .item-title{font-size:14px;font-weight:700;}
+        .item-client{font-size:15px;font-weight:800;color:var(--text);margin-top:3px;}
+        .item-ref{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+        .item-meta{display:flex;flex-wrap:wrap;gap:12px;}
+        .meta{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:3px;}
         .meta strong{color:var(--text2);font-weight:600;}
 
-        /* BADGES */
-        .badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+        .badge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
         .b-stock{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);}
         .b-mad{background:var(--blue-soft);color:var(--blue);border:1px solid #c7d7fd;}
         .b-pret{background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange-border);}
         .b-sorti{background:#f3f4f6;color:var(--text3);border:1px solid var(--border2);}
         .b-sav{background:var(--red-soft);color:var(--red);border:1px solid var(--red-border);}
         .b-retard{background:var(--red);color:white;}
-        .b-purple{background:var(--purple-soft);color:var(--purple);border:1px solid #ddd6fe;}
-        .b-teal{background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal-border);}
+        .b-purple{background:var(--purple-soft);color:var(--purple);border:1px solid var(--purple-border);}
+        .b-dispo{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);}
 
-        /* MODAL */
-        .overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+        /* Prêt individuel */
+        .loan-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:13px 15px;margin-bottom:8px;}
+        .loan-item.retard{background:var(--red-soft);border-color:var(--red-border);}
+        .loan-item.bientot{background:var(--orange-soft);border-color:var(--orange-border);}
+        .loan-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
+        .loan-client{font-size:14px;font-weight:800;color:var(--text);}
+        .loan-meta{display:flex;flex-wrap:wrap;gap:10px;}
+        .loan-meta span{font-size:12px;color:var(--text3);}
+        .loan-meta strong{color:var(--text2);}
+
+        .overlay{display:none;position:fixed;inset:0;background:rgba(17,24,39,.35);z-index:200;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px);}
         .overlay.active{display:flex;}
-        .modal{background:var(--white);border-radius:16px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);}
-        .modal-top{padding:22px 28px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:white;z-index:2;}
-        .modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text3);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+        .modal{background:var(--white);border-radius:14px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;}
+        .modal-top{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:white;z-index:2;flex-shrink:0;}
+        .modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text3);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
         .modal-close:hover{background:var(--red-soft);color:var(--red);border-color:var(--red-border);}
-        .modal-body{padding:24px 28px;}
+        .modal-body{padding:20px 24px;overflow-y:auto;}
 
-        /* DETAIL GRID */
-        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
-        .detail-field{background:var(--bg);border-radius:var(--r2);padding:12px 14px;border:1px solid var(--border);}
-        .detail-field .k{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-        .detail-field .v{font-size:14px;font-weight:600;}
+        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
+        .detail-field{background:var(--bg);border-radius:var(--r2);padding:11px 13px;border:1px solid var(--border);}
+        .detail-field .k{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+        .detail-field .v{font-size:13px;font-weight:600;}
         .detail-field.full{grid-column:1/-1;}
 
-        /* HISTO */
-        .histo{padding:13px 15px;border-left:3px solid var(--blue);background:var(--bg);border-radius:0 var(--r2) var(--r2) 0;margin-bottom:8px;}
-        .histo-date{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
-        .histo-action{font-size:13px;font-weight:700;margin:3px 0;}
-        .histo-detail{font-size:12px;color:var(--text3);}
+        .histo{padding:10px 13px;border-left:3px solid var(--blue);background:var(--bg);border-radius:0 var(--r2) var(--r2) 0;margin-bottom:7px;}
+        .histo-date{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+        .histo-action{font-size:12px;font-weight:700;margin:2px 0;}
+        .histo-detail{font-size:11px;color:var(--text3);}
 
-        /* ALERTS */
-        .alert-item{padding:14px 18px;border-radius:var(--r2);margin-bottom:10px;cursor:pointer;transition:all .15s;display:flex;gap:12px;align-items:flex-start;}
+        .alert-item{padding:12px 16px;border-radius:var(--r2);margin-bottom:9px;cursor:pointer;transition:transform .15s;display:flex;gap:10px;align-items:flex-start;}
         .alert-item:hover{transform:translateX(3px);}
         .alert-item.danger{background:var(--red-soft);border:1.5px solid var(--red-border);}
         .alert-item.warning{background:var(--orange-soft);border:1.5px solid var(--orange-border);}
 
-        /* PRENOM BAR */
-        .prenom-bar{background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px;}
-        .prenom-bar label{font-size:13px;font-weight:700;color:var(--blue);white-space:nowrap;}
-        .prenom-bar input{flex:1;background:white;border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:9px 14px;color:var(--text);font-size:14px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;}
+        .prenom-bar{background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+        .prenom-bar label{font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap;}
+        .prenom-bar input{flex:1;background:white;border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:8px 12px;color:var(--text);font-size:13px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif;}
         .prenom-bar input:focus{outline:none;border-color:var(--blue);}
 
-        .divider{height:1px;background:var(--border);margin:20px 0;}
+        .divider{height:1px;background:var(--border);margin:16px 0;}
+        .section-lbl{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;}
 
-        .empty{text-align:center;padding:48px 20px;color:var(--text3);}
-        .empty .ico{font-size:40px;margin-bottom:12px;}
+        .sub-tabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
+        .sub-tab{padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text3);font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;}
+        .sub-tab:hover{border-color:var(--blue);color:var(--blue);}
+        .sub-tab.active{background:var(--blue);color:white;border-color:var(--blue);}
+        .sub-tab.s-warn.active{background:var(--orange);border-color:var(--orange);}
+        .sub-tab.s-danger.active{background:var(--red);border-color:var(--red);}
+        .sub-tab.s-purple.active{background:var(--purple);border-color:var(--purple);}
 
-        /* QTY */
-        .qty-big{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+        .empty{text-align:center;padding:44px 20px;color:var(--text3);}
+        .empty .ico{font-size:36px;margin-bottom:10px;}
+
+        .qty-big{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;}
         .qty-big.ok{color:var(--green);}
         .qty-big.low{color:var(--orange);}
         .qty-big.empty{color:var(--red);}
 
-        /* SUB TABS */
-        .sub-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
-        .sub-tab{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text3);font-family:'Plus Jakarta Sans',sans-serif;transition:all .15s;}
-        .sub-tab:hover{border-color:var(--blue);color:var(--blue);}
-        .sub-tab.active{background:var(--blue);color:white;border-color:var(--blue);}
-        .sub-tab.warn.active{background:var(--orange);border-color:var(--orange);}
-        .sub-tab.danger.active{background:var(--red);border-color:var(--red);}
-        .sub-tab.purple.active{background:var(--purple);border-color:var(--purple);}
+        /* Compteur disponible/prêté */
+        .dispo-counter{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--purple-soft);border:1px solid var(--purple-border);border-radius:var(--r2);margin-bottom:14px;}
+        .dispo-num{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+        .dispo-num.ok{color:var(--green);}
+        .dispo-num.low{color:var(--orange);}
+        .dispo-num.empty{color:var(--red);}
+        .dispo-label{font-size:12px;color:var(--text3);line-height:1.4;}
+        .dispo-label strong{color:var(--text2);display:block;}
 
-        /* FOOTER */
-        footer{background:var(--white);border-top:1px solid var(--border);text-align:center;padding:14px;font-size:12px;color:var(--text3);}
-
-        /* ALERT SETTINGS */
-        .settings-section{margin-bottom:24px;}
-        .settings-section h3{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
-        .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--white);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:8px;gap:16px;flex-wrap:wrap;}
+        .settings-section{margin-bottom:20px;}
+        .settings-section h3{font-size:13px;font-weight:700;color:var(--text2);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+        .setting-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:7px;gap:14px;flex-wrap:wrap;}
         .setting-row label{font-size:13px;font-weight:600;color:var(--text2);}
-        .setting-row .setting-input{display:flex;align-items:center;gap:8px;}
-        .setting-row input[type=number]{width:70px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r2);font-size:14px;font-weight:600;text-align:center;background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;}
+        .setting-row .si{display:flex;align-items:center;gap:7px;}
+        .setting-row input[type=number]{width:65px;padding:7px 9px;border:1.5px solid var(--border);border-radius:var(--r2);font-size:14px;font-weight:600;text-align:center;background:var(--bg);font-family:'Plus Jakarta Sans',sans-serif;}
         .setting-row input[type=number]:focus{outline:none;border-color:var(--blue);}
         .setting-row span{font-size:12px;color:var(--text3);}
 
-        /* EDIT MODE TOGGLE */
-        .edit-toggle{background:var(--orange-soft);border:1.5px solid var(--orange-border);border-radius:var(--r2);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-        .edit-toggle span{font-size:13px;font-weight:600;color:var(--orange);}
+        .edit-form{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:14px;}
+        .edit-form .form-grid{gap:10px;}
+        .edit-form input,.edit-form select,.edit-form textarea{background:white;border:1.5px solid var(--border);border-radius:var(--r2);padding:8px 11px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;width:100%;}
+        .edit-form input:focus,.edit-form select:focus,.edit-form textarea:focus{outline:none;border-color:var(--blue);}
 
-        /* ARTICLE EDIT FORM */
-        .edit-form{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:16px;}
-        .edit-form .form-grid{gap:12px;}
-        .edit-form input,.edit-form select{background:white;border:1.5px solid var(--border);border-radius:var(--r2);padding:9px 12px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;width:100%;}
-        .edit-form input:focus,.edit-form select:focus{outline:none;border-color:var(--blue);}
+        footer{background:var(--white);border-top:1px solid var(--border);text-align:center;padding:12px;font-size:12px;color:var(--text3);}
 
         @media(max-width:640px){
-            .page{padding:16px;}
-            .header{padding:0 16px;}
-            .tabs{padding:0 16px;}
+            .page{padding:14px;}
+            .header{padding:0 14px;}
+            .tabs{padding:0 14px;}
             .detail-grid{grid-template-columns:1fr;}
             .brand-sub{display:none;}
             .stats-row{grid-template-columns:repeat(2,1fr);}
-            .modal-body{padding:16px 18px;}
-        }
-
-        /* QR PRINT STYLES — uniquement dans fenêtre impression */
-        @media print {
-            .no-print{display:none!important;}
+            .modal-body{padding:14px 16px;}
         }
     </style>
 </head>
 <body>
 <main>
 
-<!-- HEADER -->
 <div class="header">
     <div class="brand">
         <div class="brand-icon">📦</div>
@@ -223,251 +218,220 @@
             <div class="brand-sub">Gestion multi-magasins</div>
         </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
         <div class="pill loading" id="statusPill">🔄 Connexion...</div>
         <button class="btn-sm" onclick="loadData()">↻ Actualiser</button>
     </div>
 </div>
 
-<!-- TABS -->
 <div class="tabs">
     <button class="tab active" onclick="switchTab('reception',this)">📥 Réception</button>
-    <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
-    <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">0</span></button>
-    <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
 </div>
 
 <div class="page">
 
-    <!-- ═══ RÉCEPTION ═══ -->
-    <div id="reception" class="pane active">
-        <div class="page-title">📥 Réception d'Article</div>
-        <div class="card">
-            <form id="receptionForm">
-                <div class="form-grid">
-                    <div class="fg">
-                        <label>Magasin *</label>
-                        <select id="f_magasin" required onchange="onMagasinChange()">
-                            <option value="">Sélectionner...</option>
-                            <option>Lattes</option><option>Vedène</option>
-                            <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
-                        </select>
-                    </div>
-                    <div class="fg">
-                        <label>Type *</label>
-                        <select id="f_type" required onchange="toggleFormFields()">
-                            <option value="">Sélectionner...</option>
-                            <option value="Mise à disposition">🚚 Mise à disposition (client/SAV)</option>
-                            <option value="Stock">📦 Stock</option>
-                            <option value="Article de prêt">🔄 Article de prêt</option>
-                        </select>
-                    </div>
-
-                    <!-- Client : masqué pour Stock -->
-                    <div class="fg" id="clientGroup">
-                        <label id="clientLabel">Nom du Client *</label>
-                        <input id="f_client" type="text" placeholder="Nom du client">
-                    </div>
-
-                    <!-- N° AR : masqué pour Stock -->
-                    <div class="fg" id="arGroup">
-                        <label>N° AR</label>
-                        <input id="f_ar" type="text" placeholder="Numéro AR">
-                    </div>
-
-                    <div class="fg">
-                        <label>Article *</label>
-                        <input id="f_article" type="text" required placeholder="Nom de l'article">
-                    </div>
-                    <div class="fg">
-                        <label>Référence *</label>
-                        <input id="f_ref" type="text" required placeholder="Référence">
-                    </div>
-
-                    <!-- Colis : masqué pour Stock -->
-                    <div class="fg" id="colisGroup">
-                        <label>Nombre de Colis *</label>
-                        <input id="f_colis" type="number" min="1" value="1">
-                    </div>
-
-                    <!-- Quantité : visible pour Stock uniquement -->
-                    <div class="fg" id="qtyGroup" style="display:none">
-                        <label>Quantité en Stock *</label>
-                        <input id="f_qty" type="number" min="1" value="1">
-                    </div>
-
-                    <!-- Seuil alerte : visible pour Stock uniquement -->
-                    <div class="fg" id="seuilGroup" style="display:none">
-                        <label>Seuil d'alerte stock faible</label>
-                        <input id="f_seuil" type="number" min="0" value="5" placeholder="Ex: 5">
-                        <span style="font-size:11px;color:var(--text3);">Alerte si quantité ≤ ce nombre</span>
-                    </div>
-
-                    <!-- Emplacement : texte libre sauf Lattes -->
-                    <div class="fg" id="emplacementGroup">
-                        <label>Emplacement *</label>
-                        <input id="f_emplacement_text" type="text" placeholder="Ex: Rayon A, Étagère 3">
-                        <select id="f_emplacement_select" style="display:none">
-                            <option value="">Sélectionner...</option>
-                            <option>Réserve</option>
-                            <option>Bureau en haut</option>
-                            <option>Accueil</option>
-                        </select>
-                    </div>
-
-                    <div class="fg">
-                        <label>Votre Prénom *</label>
-                        <input id="f_prenom" type="text" required placeholder="Votre prénom">
-                    </div>
-                    <div class="fg full">
-                        <label>Notes</label>
-                        <textarea id="f_notes" rows="2" placeholder="Observations..."></textarea>
-                    </div>
+<!-- ═══ RÉCEPTION ═══ -->
+<div id="reception" class="pane active">
+    <div class="page-title">📥 Réception d'Article</div>
+    <div class="card">
+        <form id="receptionForm">
+            <div class="form-grid">
+                <div class="fg">
+                    <label>Magasin *</label>
+                    <select id="f_magasin" required onchange="onMagasinChange()">
+                        <option value="">Sélectionner...</option>
+                        <option>Lattes</option><option>Vedène</option>
+                        <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+                    </select>
                 </div>
-                <div class="btn-row">
-                    <button type="submit" class="btn btn-primary" id="submitBtn">✅ Générer le QR Code</button>
+                <div class="fg">
+                    <label>Type *</label>
+                    <select id="f_type" required onchange="toggleFormFields()">
+                        <option value="">Sélectionner...</option>
+                        <option value="Mise à disposition">🚚 Mise à disposition</option>
+                        <option value="Stock">📦 Stock</option>
+                        <option value="Article de prêt">🔄 Article de prêt</option>
+                    </select>
                 </div>
-            </form>
-        </div>
-
-        <!-- QR RÉSULTAT -->
-        <div id="qrResult" style="display:none">
-            <div class="card" style="text-align:center;padding:32px 24px;border:1.5px solid #c7d7fd;background:var(--blue-soft);">
-                <div style="font-size:16px;font-weight:800;margin-bottom:4px;">✅ Article enregistré</div>
-                <p style="font-size:13px;color:var(--text3);margin-bottom:20px;">Le QR code est prêt à imprimer et coller sur le colis</p>
-                <div id="qrcode" style="display:inline-block;background:white;padding:16px;border-radius:var(--r2);box-shadow:var(--shadow-md);margin-bottom:20px;"></div>
-                <div id="qrInfos" style="margin-bottom:20px;font-size:14px;color:var(--text2);line-height:1.8;"></div>
-                <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                    <button class="btn btn-primary" onclick="printQR()">🖨️ Imprimer l'étiquette</button>
-                    <button class="btn btn-outline" onclick="resetForm()">➕ Nouvel article</button>
+                <!-- Client : masqué pour Stock et Article de prêt -->
+                <div class="fg" id="clientGroup">
+                    <label>Nom du Client *</label>
+                    <input id="f_client" type="text" placeholder="Nom du client">
+                </div>
+                <div class="fg" id="arGroup">
+                    <label>N° AR</label>
+                    <input id="f_ar" type="text" placeholder="Numéro AR">
+                </div>
+                <div class="fg">
+                    <label>Article *</label>
+                    <input id="f_article" type="text" required placeholder="Nom de l'article">
+                </div>
+                <div class="fg">
+                    <label>Référence *</label>
+                    <input id="f_ref" type="text" required placeholder="Référence">
+                </div>
+                <div class="fg" id="colisGroup">
+                    <label>Nombre de Colis *</label>
+                    <input id="f_colis" type="number" min="1" value="1">
+                </div>
+                <!-- Quantité : visible pour Stock et Article de prêt -->
+                <div class="fg" id="qtyGroup" style="display:none">
+                    <label id="qtyLabel">Quantité *</label>
+                    <input id="f_qty" type="number" min="1" value="1">
+                    <span class="hint" id="qtyHint"></span>
+                </div>
+                <!-- Seuil alerte : visible pour Stock uniquement -->
+                <div class="fg" id="seuilGroup" style="display:none">
+                    <label>Seuil d'alerte (stock faible)</label>
+                    <input id="f_seuil" type="number" min="0" value="5">
+                    <span class="hint">Alerte si quantité ≤ ce nombre</span>
+                </div>
+                <div class="fg" id="emplacementGroup">
+                    <label>Emplacement *</label>
+                    <input id="f_emplacement_text" type="text" placeholder="Ex: Rayon A, Étagère 3">
+                    <select id="f_emplacement_select" style="display:none">
+                        <option value="">Sélectionner...</option>
+                        <option>Réserve</option>
+                        <option>Bureau en haut</option>
+                        <option>Accueil</option>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label>Votre Prénom *</label>
+                    <input id="f_prenom" type="text" required placeholder="Votre prénom">
+                </div>
+                <div class="fg full">
+                    <label>Notes</label>
+                    <textarea id="f_notes" rows="2" placeholder="Observations..."></textarea>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ═══ MISES À DISPO ═══ -->
-    <div id="mad" class="pane">
-        <div class="page-title">🚚 Mises à Disposition</div>
-        <div class="stats-row" id="madStats"></div>
-        <div class="filter-bar">
-            <select id="m_mag" onchange="renderMAD()">
-                <option value="">Tous les magasins</option>
-                <option>Lattes</option><option>Vedène</option>
-                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
-            </select>
-            <select id="m_stat" onchange="renderMAD()">
-                <option value="">Tous les statuts</option>
-                <option value="Stock">En stock</option>
-                <option value="Sorti">Sorti</option>
-                <option value="SAV">SAV</option>
-            </select>
-            <input id="m_search" placeholder="🔍 Rechercher..." oninput="renderMAD()" style="flex:1;min-width:200px;">
-        </div>
-        <div id="madList"></div>
-    </div>
-
-    <!-- ═══ STOCK ═══ -->
-    <div id="stock" class="pane">
-        <div class="page-title">📦 Gestion du Stock</div>
-        <div class="stats-row" id="stockStats"></div>
-        <div class="filter-bar">
-            <select id="s_mag" onchange="renderStock()">
-                <option value="">Tous les magasins</option>
-                <option>Lattes</option><option>Vedène</option>
-                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
-            </select>
-            <input id="s_search" placeholder="🔍 Rechercher..." oninput="renderStock()" style="flex:1;min-width:200px;">
-        </div>
-        <div id="stockList"></div>
-    </div>
-
-    <!-- ═══ PRÊTS ═══ -->
-    <div id="prets" class="pane">
-        <div class="page-title">🔄 Gestion des Prêts</div>
-        <div class="stats-row" id="pretsStats"></div>
-        <div class="filter-bar">
-            <select id="p_mag" onchange="renderPrets()">
-                <option value="">Tous les magasins</option>
-                <option>Lattes</option><option>Vedène</option>
-                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
-            </select>
-        </div>
-        <div class="sub-tabs">
-            <button class="sub-tab purple active" id="stab_dispo" onclick="setPretTab('dispo')">🟣 Disponibles</button>
-            <button class="sub-tab active" id="stab_encours" onclick="setPretTab('encours')">🔵 En cours</button>
-            <button class="sub-tab warn" id="stab_bientot" onclick="setPretTab('bientot')">🟡 Bientôt</button>
-            <button class="sub-tab danger" id="stab_retard" onclick="setPretTab('retard')">🔴 En retard</button>
-        </div>
-        <div id="pretsList"></div>
-    </div>
-
-    <!-- ═══ ALERTES ═══ -->
-    <div id="alertes" class="pane">
-        <div class="page-title">🔔 Alertes</div>
-        <div class="filter-bar">
-            <select id="a_mag" onchange="renderAlertes()">
-                <option value="">Tous les magasins</option>
-                <option>Lattes</option><option>Vedène</option>
-                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
-            </select>
-        </div>
-        <div id="alertList"></div>
-    </div>
-
-    <!-- ═══ PARAMÈTRES ALERTES ═══ -->
-    <div id="parametres" class="pane">
-        <div class="page-title">⚙️ Paramètres des Alertes</div>
-
-        <div class="card">
-            <div class="settings-section">
-                <h3>📅 Alertes prêts — Délai avant retour</h3>
-                <div class="setting-row">
-                    <label>Alerte "Retour bientôt" à partir de</label>
-                    <div class="setting-input">
-                        <input type="number" id="param_alerte_bientot" min="1" max="30" value="3">
-                        <span>jours avant la date de retour</span>
-                    </div>
-                </div>
-                <div class="setting-row">
-                    <label>Alerte "Urgence" à partir de</label>
-                    <div class="setting-input">
-                        <input type="number" id="param_alerte_urgent" min="0" max="10" value="1">
-                        <span>jours avant (0 = le jour même)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <h3>📦 Alertes stock — Seuil par défaut</h3>
-                <div class="setting-row">
-                    <label>Alerte stock faible si quantité ≤</label>
-                    <div class="setting-input">
-                        <input type="number" id="param_stock_faible" min="1" max="100" value="5">
-                        <span>unités (défaut pour tous les articles)</span>
-                    </div>
-                </div>
-                <p style="font-size:12px;color:var(--text3);margin-top:8px;">💡 Vous pouvez définir un seuil personnalisé par article en ouvrant sa fiche et en cliquant sur "⚙️ Seuil d'alerte"</p>
-            </div>
-
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer les paramètres</button>
-                <button class="btn btn-outline" onclick="resetParams()">↺ Réinitialiser</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">✅ Générer le QR Code</button>
             </div>
-        </div>
-
-        <div class="card">
-            <div class="settings-section">
-                <h3>📋 Seuils personnalisés par article Stock</h3>
-                <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">Ouvrez la fiche d'un article Stock pour définir son seuil d'alerte individuel.</p>
-                <div id="seuilsListe"></div>
+        </form>
+    </div>
+    <div id="qrResult" style="display:none">
+        <div class="card" style="text-align:center;padding:28px 20px;border:1.5px solid #c7d7fd;background:var(--blue-soft);">
+            <div style="font-size:15px;font-weight:800;margin-bottom:4px;">✅ Article enregistré</div>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">QR code prêt à imprimer et coller sur le colis</p>
+            <div id="qrcode" style="display:inline-block;background:white;padding:14px;border-radius:var(--r2);box-shadow:var(--shadow-md);margin-bottom:16px;"></div>
+            <div id="qrInfos" style="margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.9;"></div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="printQR()">🖨️ Imprimer l'étiquette</button>
+                <button class="btn btn-outline" onclick="resetForm()">➕ Nouvel article</button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- ═══ MISES À DISPO ═══ -->
+<div id="mad" class="pane">
+    <div class="page-title">🚚 Mises à Disposition</div>
+    <div class="stats-row" id="madStats"></div>
+    <div class="filter-bar">
+        <select id="m_mag" onchange="renderMAD()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <select id="m_stat" onchange="renderMAD()">
+            <option value="">Tous les statuts</option>
+            <option value="Stock">En stock</option>
+            <option value="Sorti">Sorti</option>
+            <option value="SAV">SAV</option>
+        </select>
+        <input id="m_search" placeholder="🔍 Client, article, réf, AR..." oninput="renderMAD()" style="flex:1;min-width:180px;">
+    </div>
+    <div id="madList"></div>
+</div>
+
+<!-- ═══ STOCK ═══ -->
+<div id="stock" class="pane">
+    <div class="page-title">📦 Gestion du Stock</div>
+    <div class="stats-row" id="stockStats"></div>
+    <div class="filter-bar">
+        <select id="s_mag" onchange="renderStock()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <input id="s_search" placeholder="🔍 Article, référence, emplacement..." oninput="renderStock()" style="flex:1;min-width:180px;">
+    </div>
+    <div id="stockList"></div>
+</div>
+
+<!-- ═══ PRÊTS ═══ -->
+<div id="prets" class="pane">
+    <div class="page-title">🔄 Gestion des Prêts</div>
+    <div class="stats-row" id="pretsStats"></div>
+    <div class="filter-bar">
+        <select id="p_mag" onchange="renderPrets()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <input id="p_search" placeholder="🔍 Article, client emprunteur..." oninput="renderPrets()" style="flex:1;min-width:180px;">
+    </div>
+    <div class="sub-tabs">
+        <button class="sub-tab s-purple active" id="stab_dispo" onclick="setPretTab('dispo')">🟣 Disponibles</button>
+        <button class="sub-tab active" id="stab_encours" onclick="setPretTab('encours')">🔵 En cours</button>
+        <button class="sub-tab s-warn" id="stab_bientot" onclick="setPretTab('bientot')">🟡 Bientôt</button>
+        <button class="sub-tab s-danger" id="stab_retard" onclick="setPretTab('retard')">🔴 En retard</button>
+    </div>
+    <div id="pretsList"></div>
+</div>
+
+<!-- ═══ ALERTES ═══ -->
+<div id="alertes" class="pane">
+    <div class="page-title">🔔 Alertes</div>
+    <div class="filter-bar">
+        <select id="a_mag" onchange="renderAlertes()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+    </div>
+    <div id="alertList"></div>
+</div>
+
+<!-- ═══ PARAMÈTRES ═══ -->
+<div id="parametres" class="pane">
+    <div class="page-title">⚙️ Paramètres des Alertes</div>
+    <div class="card">
+        <div class="settings-section">
+            <h3>📅 Alertes prêts — Délais</h3>
+            <div class="setting-row">
+                <label>Alerte "Retour bientôt" à partir de</label>
+                <div class="si"><input type="number" id="param_bientot" min="1" max="30" value="3"><span>jours avant</span></div>
+            </div>
+            <div class="setting-row">
+                <label>Alerte "Urgence" à partir de</label>
+                <div class="si"><input type="number" id="param_urgent" min="0" max="10" value="1"><span>jours avant (0 = le jour même)</span></div>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3>📦 Alertes stock — Seuil par défaut</h3>
+            <div class="setting-row">
+                <label>Alerte stock faible si quantité ≤</label>
+                <div class="si"><input type="number" id="param_seuil" min="1" max="100" value="5"><span>unités (défaut global)</span></div>
+            </div>
+            <p style="font-size:12px;color:var(--text3);margin-top:6px;">💡 Seuil personnalisable par article dans sa fiche ou lors de la création.</p>
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer — synchronisé sur tous les appareils</button>
+            <button class="btn btn-outline" onclick="resetParams()">↺ Réinitialiser</button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="settings-section">
+            <h3>📋 Seuils personnalisés par article Stock</h3>
+            <div id="seuilsListe"></div>
+        </div>
+    </div>
+</div>
 
 </div><!-- /page -->
-
 </main>
 
 <!-- MODAL -->
@@ -475,8 +439,8 @@
     <div class="modal">
         <div class="modal-top">
             <div>
-                <div style="font-size:18px;font-weight:800;" id="mTitle">Article</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:3px;" id="mSub"></div>
+                <div style="font-size:17px;font-weight:800;" id="mTitle">Article</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="mSub"></div>
             </div>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
@@ -484,177 +448,147 @@
     </div>
 </div>
 
-<!-- FOOTER -->
-<footer>
-    © 2026 Florent Amendola — HMC Stock · Tous droits réservés
-</footer>
+<footer>© 2026 Florent Amendola — HMC Stock · Tous droits réservés</footer>
 
 <script>
-// ══════════════════════════════════════
+// ══════════════════════════════════
 // ⚠️  REMPLACEZ VOTRE_URL_ICI  ⚠️
-// ══════════════════════════════════════
+// ══════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec';
 const APP_URL = window.location.origin + window.location.pathname;
 
-let articles = [];
+// ─── État global ──────────────────
+let articles = [];        // tous les articles (type=Mise à dispo|Stock|Article de prêt)
+let pretsActifs = [];     // prêts individuels (sous-articles générés par actPreter)
 let histoCache = {};
 let currentPretTab = 'dispo';
-let lastQRData = null; // pour impression
+let lastQRData = null;
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5 };
+let seuilsPerso = {};
+let _renderTimer = null;  // debounce
 
-// Paramètres alertes (localStorage)
-let params = { alerteBientot: 3, alerteUrgent: 1, stockFaible: 5 };
-let seuilsPerso = {}; // { articleId: nombre }
+// ─── INIT ─────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    loadParamsLocal();
+    if (API_URL === 'VOTRE_URL_ICI') { alert('⚠️ Configurez votre URL Google Apps Script.'); return; }
+    const artId = new URLSearchParams(window.location.search).get('article');
+    loadData().then(() => { if (artId) openModal(artId); });
+});
 
-function loadParams() {
-    // Charger depuis localStorage en attendant (sera surchargé par l'API)
+// ─── PARAMS (local + API) ─────────
+function loadParamsLocal() {
     try {
-        const p = localStorage.getItem('hmc_params');
-        if (p) params = { ...params, ...JSON.parse(p) };
-        const s = localStorage.getItem('hmc_seuils');
-        if (s) seuilsPerso = JSON.parse(s);
-    } catch(e) {}
-    document.getElementById('param_alerte_bientot').value = params.alerteBientot;
-    document.getElementById('param_alerte_urgent').value = params.alerteUrgent;
-    document.getElementById('param_stock_faible').value = params.stockFaible;
-    // Tenter de charger depuis Google Sheets
-    loadParamsFromAPI();
+        const p = localStorage.getItem('hmc_params'); if(p) params={...params,...JSON.parse(p)};
+        const s = localStorage.getItem('hmc_seuils'); if(s) seuilsPerso=JSON.parse(s);
+    } catch(e){}
+    applyParamsToForm();
+}
+
+function applyParamsToForm() {
+    document.getElementById('param_bientot').value = params.alerteBientot;
+    document.getElementById('param_urgent').value = params.alerteUrgent;
+    document.getElementById('param_seuil').value = params.stockFaible;
 }
 
 async function loadParamsFromAPI() {
-    const data = await apiCall({ action: 'getParams' });
-    if (data && !data.error && data.params) {
-        try {
-            const p = typeof data.params === 'string' ? JSON.parse(data.params) : data.params;
-            params = { ...params, ...p };
-            document.getElementById('param_alerte_bientot').value = params.alerteBientot;
-            document.getElementById('param_alerte_urgent').value = params.alerteUrgent;
-            document.getElementById('param_stock_faible').value = params.stockFaible;
-        } catch(e) {}
-    }
-    if (data && !data.error && data.seuils) {
-        try {
-            const s = typeof data.seuils === 'string' ? JSON.parse(data.seuils) : data.seuils;
-            seuilsPerso = { ...seuilsPerso, ...s };
-        } catch(e) {}
-    }
+    const data = await apiCall({ action:'getParams' });
+    if (data?.params) { try{ params={...params,...JSON.parse(data.params)}; }catch(e){} }
+    if (data?.seuils) { try{ seuilsPerso={...seuilsPerso,...JSON.parse(data.seuils)}; }catch(e){} }
+    applyParamsToForm();
 }
 
 async function saveParamsToAPI() {
-    await apiCall({
-        action: 'saveParams',
-        params: JSON.stringify(params),
-        seuils: JSON.stringify(seuilsPerso)
-    });
-    // Aussi en local comme backup
     localStorage.setItem('hmc_params', JSON.stringify(params));
     localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
-}
-
-async function saveSeuilsToAPI() {
-    localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
-    await apiCall({ action: 'saveParams', params: JSON.stringify(params), seuils: JSON.stringify(seuilsPerso) });
+    return apiCall({ action:'saveParams', params:JSON.stringify(params), seuils:JSON.stringify(seuilsPerso) });
 }
 
 function saveParams() {
-    params.alerteBientot = parseInt(document.getElementById('param_alerte_bientot').value) || 3;
-    params.alerteUrgent = parseInt(document.getElementById('param_alerte_urgent').value) || 1;
-    params.stockFaible = parseInt(document.getElementById('param_stock_faible').value) || 5;
-    saveParamsToAPI().then(() => {
-        alert('✅ Paramètres enregistrés et synchronisés sur tous les appareils !');
-        renderAlertes();
-    });
+    params.alerteBientot = parseInt(document.getElementById('param_bientot').value)||3;
+    params.alerteUrgent  = parseInt(document.getElementById('param_urgent').value)||1;
+    params.stockFaible   = parseInt(document.getElementById('param_seuil').value)||5;
+    saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
 function resetParams() {
-    params = { alerteBientot: 3, alerteUrgent: 1, stockFaible: 5 };
-    saveParamsToAPI().then(() => {
-        loadParams();
-        alert('✅ Paramètres réinitialisés');
-    });
+    params={alerteBientot:3,alerteUrgent:1,stockFaible:5};
+    saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
 
 function renderSeuilsListe() {
-    const stocks = articles.filter(a => a.type === 'Stock');
-    if (!stocks.length) { document.getElementById('seuilsListe').innerHTML = '<p style="color:var(--text3);font-size:13px;">Aucun article en stock.</p>'; return; }
-    document.getElementById('seuilsListe').innerHTML = stocks.map(a => {
-        const seuil = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : params.stockFaible;
+    const stocks = articles.filter(a=>a.type==='Stock');
+    if (!stocks.length) { document.getElementById('seuilsListe').innerHTML='<p style="color:var(--text3);font-size:13px;">Aucun article en stock.</p>'; return; }
+    document.getElementById('seuilsListe').innerHTML = stocks.map(a=>{
+        const s = seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
         return `<div class="setting-row">
             <div><div style="font-size:13px;font-weight:600;">${a.article}</div><div style="font-size:11px;color:var(--text3);">${a.reference} · ${a.magasin}</div></div>
-            <div class="setting-input">
-                <input type="number" min="0" value="${seuil}" style="width:60px;padding:7px;border:1.5px solid var(--border);border-radius:var(--r2);text-align:center;font-family:'Plus Jakarta Sans',sans-serif;" onchange="setSeuil('${a.id}', this.value)">
-                <span>unités</span>
-            </div>
+            <div class="si"><input type="number" min="0" value="${s}" style="width:58px;" onchange="setSeuil('${a.id}',this.value)"><span>unités</span></div>
         </div>`;
     }).join('');
 }
 
-function setSeuil(id, val) {
-    seuilsPerso[id] = parseInt(val) || 0;
-    saveSeuilsToAPI();
+function setSeuil(id,val) {
+    seuilsPerso[id]=parseInt(val)||0;
+    saveParamsToAPI();
 }
 
-// ─── INIT ─────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-    loadParams();
-    if (API_URL === 'VOTRE_URL_ICI') {
-        alert('⚠️ Configurez votre URL Google Apps Script dans le code.');
-        return;
-    }
-    const p = new URLSearchParams(window.location.search).get('article');
-    if (p) loadData().then(() => openModal(p));
-    else loadData();
-});
-
-// ─── API ──────────────────────────────
-function apiCall(params_) {
-    return new Promise(resolve => {
-        const cb = 'cb' + Date.now() + Math.random().toString(36).slice(2,7);
-        let done = false;
-        const cleanup = () => { done=true; delete window[cb]; const s=document.getElementById(cb); if(s) s.remove(); };
-        window[cb] = data => { cleanup(); resolve(data || {}); };
-        const qs = new URLSearchParams({ ...params_, callback: cb }).toString();
-        const s = document.createElement('script');
-        s.id = cb; s.src = `${API_URL}?${qs}`;
-        s.onerror = () => { cleanup(); resolve({ error: 'Network error' }); };
-        setTimeout(() => { if (!done) { cleanup(); resolve({ error: 'Timeout' }); } }, 20000);
+// ─── API ──────────────────────────
+function apiCall(p) {
+    return new Promise(resolve=>{
+        const cb='cb'+Date.now()+Math.random().toString(36).slice(2,6);
+        let done=false;
+        const clean=()=>{ done=true; delete window[cb]; document.getElementById(cb)?.remove(); };
+        window[cb]=data=>{ clean(); resolve(data||{}); };
+        const s=document.createElement('script');
+        s.id=cb; s.src=`${API_URL}?${new URLSearchParams({...p,callback:cb})}`;
+        s.onerror=()=>{ clean(); resolve({error:'Network error'}); };
+        setTimeout(()=>{ if(!done){clean();resolve({error:'Timeout'});} },20000);
         document.body.appendChild(s);
     });
 }
 
-function loadData() {
+async function loadData() {
     setStatus('loading','🔄 Chargement...');
-    return new Promise(async (resolve,reject) => {
-        const data = await apiCall({ action:'getAllArticles', t: Date.now() });
-        if (data.error) { setStatus('err','❌ Déconnecté'); reject(); return; }
-        articles = parseArticles(Array.isArray(data) ? data : []);
-        setStatus('ok', `✅ ${articles.length} articles`);
-        refreshBadges();
-        refreshCurrentPane();
-        resolve();
-    });
+    const [dataArticles, dataParams] = await Promise.all([
+        apiCall({action:'getAllArticles',t:Date.now()}),
+        apiCall({action:'getParams'})
+    ]);
+    if (dataArticles.error) { setStatus('err','❌ Déconnecté'); return; }
+    articles = parseArticles(Array.isArray(dataArticles)?dataArticles:[]);
+    // Prêts actifs = articles dont statut = 'Prêt' (créés par actPreter)
+    // OU articles dont type = 'Article de prêt' avec des sous-prêts
+    // Modèle : un "Article de prêt" parent a quantiteStock = disponible
+    // Les prêts individuels sont des articles type='Prêt individuel'
+    pretsActifs = articles.filter(a=>a.type==='Prêt individuel');
+    // Appliquer params depuis l'API
+    if (dataParams?.params) try{params={...params,...JSON.parse(dataParams.params)};}catch(e){}
+    if (dataParams?.seuils) try{seuilsPerso={...seuilsPerso,...JSON.parse(dataParams.seuils)};}catch(e){}
+    applyParamsToForm();
+    setStatus('ok',`✅ ${articles.length} articles`);
+    refreshBadges();
+    refreshCurrentPane();
 }
 
 function parseArticles(data) {
-    return data.map(r => ({
-        id: r.ID||'', magasin: r.Magasin||'', type: r.Type||'',
-        client: r.Client||'', numeroAR: r.NumeroAR||'',
-        article: r.Article||'', reference: r.Reference||'',
-        nombreColis: parseInt(r.NombreColis)||1,
-        quantiteStock: (r.QuantiteStock!==null&&r.QuantiteStock!=='') ? parseInt(r.QuantiteStock) : null,
-        quantiteInitiale: (r.QuantiteInitiale!==null&&r.QuantiteInitiale!=='') ? parseInt(r.QuantiteInitiale) : null,
-        emplacement: r.Emplacement||'', kitchener: r.Kitchener||'',
-        notes: r.Notes||'', statut: r.Statut||'Stock',
-        dateReception: r.DateReception||'', datePret: r.DatePret||'',
-        prenomEmprunteur: r.PrenomEmprunteur||'',
-        dateRetourPrevue: r.DateRetourPrevue||'',
-        dateRetourReel: r.DateRetourReel||'',
-        dateSortie: r.DateSortie||'', raisonSortie: r.RaisonSortie||''
+    return data.map(r=>({
+        id:r.ID||'', magasin:r.Magasin||'', type:r.Type||'',
+        client:r.Client||'', numeroAR:r.NumeroAR||'',
+        article:r.Article||'', reference:r.Reference||'',
+        nombreColis:parseInt(r.NombreColis)||1,
+        quantiteStock:(r.QuantiteStock!==''&&r.QuantiteStock!=null)?parseInt(r.QuantiteStock):null,
+        quantiteInitiale:(r.QuantiteInitiale!==''&&r.QuantiteInitiale!=null)?parseInt(r.QuantiteInitiale):null,
+        emplacement:r.Emplacement||'', kitchener:r.Kitchener||'',
+        notes:r.Notes||'', statut:r.Statut||'Stock',
+        dateReception:r.DateReception||'', datePret:r.DatePret||'',
+        prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
+        dateRetourPrevue:r.DateRetourPrevue||'', dateRetourReel:r.DateRetourReel||'',
+        dateSortie:r.DateSortie||'', raisonSortie:r.RaisonSortie||''
     }));
 }
 
-function setStatus(cls,msg) { const e=document.getElementById('statusPill'); e.className='pill '+cls; e.textContent=msg; }
+function setStatus(cls,msg){ const e=document.getElementById('statusPill'); e.className='pill '+cls; e.textContent=msg; }
 
-// ─── NAVIGATION ───────────────────────
+// ─── NAVIGATION ───────────────────
 function switchTab(name,el) {
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
@@ -664,260 +598,189 @@ function switchTab(name,el) {
 }
 
 function refreshCurrentPane() {
-    const a = document.querySelector('.pane.active');
-    if (!a) return;
-    const id = a.id;
+    const id = document.querySelector('.pane.active')?.id;
     if (id==='mad') renderMAD();
-    if (id==='stock') renderStock();
-    if (id==='prets') renderPrets();
-    if (id==='alertes') renderAlertes();
-    if (id==='parametres') renderSeuilsListe();
+    else if (id==='stock') renderStock();
+    else if (id==='prets') renderPrets();
+    else if (id==='alertes') renderAlertes();
+    else if (id==='parametres') renderSeuilsListe();
 }
 
 function refreshBadges() {
-    const retards = articles.filter(a=>a.statut==='Prêt'&&a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date()).length;
+    const retards = pretsActifs.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date()).length;
     const rb=document.getElementById('retardBadge'); rb.textContent=retards; rb.style.display=retards>0?'inline':'none';
-    const madSAV = articles.filter(a=>a.type==='Mise à disposition'&&a.statut==='SAV').length;
+    const madSAV=articles.filter(a=>a.type==='Mise à disposition'&&a.statut==='SAV').length;
     const mb=document.getElementById('madBadge'); mb.textContent=madSAV; mb.style.display=madSAV>0?'inline':'none';
-    const alertCnt = retards + articles.filter(a=>{
+    const stockAlerts=articles.filter(a=>{
+        if(a.type!=='Stock'||a.quantiteStock===null) return false;
         const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
-        return a.type==='Stock'&&a.quantiteStock!==null&&a.quantiteStock<=s;
+        return a.quantiteStock<=s;
     }).length;
-    const ab=document.getElementById('alertBadge'); ab.textContent=alertCnt; ab.style.display=alertCnt>0?'inline':'none';
+    const ab=document.getElementById('alertBadge'); ab.textContent=retards+stockAlerts; ab.style.display=(retards+stockAlerts)>0?'inline':'none';
 }
 
-// ─── FORM ─────────────────────────────
+// ─── FORMULAIRE RÉCEPTION ─────────
 function onMagasinChange() {
-    const mag = document.getElementById('f_magasin').value;
-    const txt = document.getElementById('f_emplacement_text');
-    const sel = document.getElementById('f_emplacement_select');
-    if (mag === 'Lattes') {
-        txt.style.display = 'none'; txt.required = false;
-        sel.style.display = 'block'; sel.required = true;
-    } else {
-        txt.style.display = 'block'; txt.required = true;
-        sel.style.display = 'none'; sel.required = false;
-    }
+    const mag=document.getElementById('f_magasin').value;
+    const txt=document.getElementById('f_emplacement_text');
+    const sel=document.getElementById('f_emplacement_select');
+    if(mag==='Lattes'){txt.style.display='none';txt.required=false;sel.style.display='block';sel.required=true;}
+    else{txt.style.display='block';txt.required=true;sel.style.display='none';sel.required=false;}
 }
 
-function getEmplacement() {
-    const mag = document.getElementById('f_magasin').value;
-    return mag === 'Lattes'
-        ? document.getElementById('f_emplacement_select').value
-        : document.getElementById('f_emplacement_text').value;
+function getEmplacement(){
+    return document.getElementById('f_magasin').value==='Lattes'
+        ?document.getElementById('f_emplacement_select').value
+        :document.getElementById('f_emplacement_text').value;
 }
 
 function toggleFormFields() {
-    const t = document.getElementById('f_type').value;
-    const isStock = t === 'Stock';
-    document.getElementById('qtyGroup').style.display = isStock ? 'flex' : 'none';
-    document.getElementById('f_qty').required = isStock;
-    document.getElementById('seuilGroup').style.display = isStock ? 'flex' : 'none';
-    document.getElementById('clientGroup').style.display = isStock ? 'none' : 'flex';
-    document.getElementById('f_client').required = !isStock;
-    document.getElementById('arGroup').style.display = isStock ? 'none' : 'flex';
-    document.getElementById('colisGroup').style.display = isStock ? 'none' : 'flex';
-    document.getElementById('f_colis').required = !isStock;
-    if (isStock) document.getElementById('f_colis').value = '1';
+    const t=document.getElementById('f_type').value;
+    const isStock=t==='Stock', isPret=t==='Article de prêt', isMAD=t==='Mise à disposition';
+    // Client + AR : seulement pour MAD
+    document.getElementById('clientGroup').style.display=isMAD?'flex':'none';
+    document.getElementById('f_client').required=isMAD;
+    document.getElementById('arGroup').style.display=isMAD?'flex':'none';
+    // Colis : seulement pour MAD
+    document.getElementById('colisGroup').style.display=isMAD?'flex':'none';
+    document.getElementById('f_colis').required=isMAD;
+    // Quantité : pour Stock et Article de prêt
+    document.getElementById('qtyGroup').style.display=(isStock||isPret)?'flex':'none';
+    document.getElementById('f_qty').required=isStock||isPret;
+    document.getElementById('qtyLabel').textContent=isPret?'Quantité disponible à prêter *':'Quantité en Stock *';
+    document.getElementById('qtyHint').textContent=isPret?'Nombre d\'articles disponibles (ex: 6 mitigeurs)':'';
+    // Seuil : seulement pour Stock
+    document.getElementById('seuilGroup').style.display=isStock?'flex':'none';
+    if(isMAD) document.getElementById('f_colis').value='1';
 }
 
 function resetForm() {
     document.getElementById('receptionForm').reset();
-    document.getElementById('receptionForm').style.display = 'block';
-    document.getElementById('qrResult').style.display = 'none';
-    document.getElementById('qtyGroup').style.display = 'none';
-    document.getElementById('seuilGroup').style.display = 'none';
-    document.getElementById('clientGroup').style.display = 'flex';
-    document.getElementById('arGroup').style.display = 'flex';
-    document.getElementById('colisGroup').style.display = 'flex';
-    document.getElementById('f_client').required = true;
-    document.getElementById('f_colis').required = true;
-    document.getElementById('f_emplacement_text').style.display = 'block';
-    document.getElementById('f_emplacement_select').style.display = 'none';
+    document.getElementById('receptionForm').style.display='block';
+    document.getElementById('qrResult').style.display='none';
+    ['qtyGroup','seuilGroup'].forEach(id=>document.getElementById(id).style.display='none');
+    ['clientGroup','arGroup','colisGroup'].forEach(id=>document.getElementById(id).style.display='flex');
+    document.getElementById('f_client').required=true;
+    document.getElementById('f_colis').required=true;
+    document.getElementById('f_emplacement_text').style.display='block';
+    document.getElementById('f_emplacement_select').style.display='none';
 }
 
-document.getElementById('receptionForm').addEventListener('submit', async e => {
+document.getElementById('receptionForm').addEventListener('submit', async e=>{
     e.preventDefault();
-    const btn = document.getElementById('submitBtn');
+    const btn=document.getElementById('submitBtn');
     btn.disabled=true; btn.textContent='⏳ Enregistrement...';
+    const type=document.getElementById('f_type').value;
+    const isStock=type==='Stock', isPret=type==='Article de prêt', isMAD=type==='Mise à disposition';
+    const id='ART-'+Date.now();
+    const now=new Date().toISOString();
+    const emplacement=getEmplacement();
+    const article=document.getElementById('f_article').value;
+    const reference=document.getElementById('f_ref').value;
+    const qty=isStock||isPret?parseInt(document.getElementById('f_qty').value)||1:null;
 
-    const type = document.getElementById('f_type').value;
-    const isStock = type === 'Stock';
-    const id = 'ART-' + Date.now();
-    const now = new Date().toISOString();
-    const emplacement = getEmplacement();
-    const client = isStock ? 'Stock interne' : document.getElementById('f_client').value;
-    const article = document.getElementById('f_article').value;
-    const reference = document.getElementById('f_ref').value;
-    const colis = isStock ? '1' : document.getElementById('f_colis').value;
-    const magasin = document.getElementById('f_magasin').value;
-
-    const r = await apiCall({
-        action:'addArticle', ID:id, Magasin:magasin, Type:type, Client:client,
-        NumeroAR: isStock ? '' : (document.getElementById('f_ar').value||''),
-        Article:article, Reference:reference, NombreColis:colis,
-        QuantiteStock: isStock ? document.getElementById('f_qty').value : '',
-        QuantiteInitiale: isStock ? document.getElementById('f_qty').value : '',
-        Emplacement:emplacement, Kitchener:document.getElementById('f_prenom').value,
+    const r=await apiCall({
+        action:'addArticle', ID:id,
+        Magasin:document.getElementById('f_magasin').value,
+        Type:type,
+        Client:isMAD?document.getElementById('f_client').value:'',
+        NumeroAR:isMAD?document.getElementById('f_ar').value:'',
+        Article:article, Reference:reference,
+        NombreColis:isMAD?document.getElementById('f_colis').value:'1',
+        QuantiteStock:qty!==null?qty:'',
+        QuantiteInitiale:qty!==null?qty:'',
+        Emplacement:emplacement,
+        Kitchener:document.getElementById('f_prenom').value,
         Notes:document.getElementById('f_notes').value||'',
         Statut:'Stock', DateReception:now, Historique:'true'
     });
 
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
+    if(r.error){ alert('❌ Erreur : '+r.error); return; }
 
-    if (r.error) { alert('❌ Erreur : '+r.error); return; }
-
-    // Sauvegarder le seuil d'alerte personnalisé si Stock
-    if (isStock) {
-        const seuilVal = parseInt(document.getElementById('f_seuil').value) || params.stockFaible;
-        seuilsPerso[id] = seuilVal;
-        saveSeuilsToAPI();
+    if(isStock){
+        const seuilVal=parseInt(document.getElementById('f_seuil').value)||params.stockFaible;
+        seuilsPerso[id]=seuilVal;
+        saveParamsToAPI();
     }
 
-    // Données pour l'impression
-    lastQRData = { id, article, reference, client, magasin, type, colis, emplacement };
+    lastQRData={id,article,reference,client:isMAD?document.getElementById('f_client').value:'',magasin:document.getElementById('f_magasin').value,type,colis:isMAD?document.getElementById('f_colis').value:1};
 
-    // Afficher QR
-    const url = `${APP_URL}?article=${id}`;
-    document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), { text:url, width:200, height:200 });
-
-    // Infos sous le QR
-    document.getElementById('qrInfos').innerHTML = `
+    const url=`${APP_URL}?article=${id}`;
+    document.getElementById('qrcode').innerHTML='';
+    new QRCode(document.getElementById('qrcode'),{text:url,width:190,height:190});
+    document.getElementById('qrInfos').innerHTML=`
         <strong>${article}</strong><br>
-        ${type !== 'Stock' ? `Client : <strong>${client}</strong><br>` : ''}
-        ${type === 'Mise à disposition' && colis > 1 ? `Colis : <strong>${colis}</strong><br>` : ''}
-        Réf : ${reference} &nbsp;·&nbsp; ${magasin}
+        ${isMAD?`Client : <strong>${lastQRData.client}</strong><br>`:''}
+        ${isPret?`<span style="color:var(--purple);font-weight:600;">🔄 ${qty} disponible(s) à prêter</span><br>`:''}
+        Réf : ${reference} &nbsp;·&nbsp; ${lastQRData.magasin}
     `;
-
-    document.getElementById('receptionForm').style.display = 'none';
-    document.getElementById('qrResult').style.display = 'block';
-    setTimeout(() => loadData(), 2000);
+    document.getElementById('receptionForm').style.display='none';
+    document.getElementById('qrResult').style.display='block';
+    setTimeout(()=>loadData(),1500);
 });
 
-// ─── IMPRESSION QR ────────────────────
-function printQR() {
-    if (!lastQRData) return;
-    const { id, article, reference, client, magasin, type, colis } = lastQRData;
-    const url = `${APP_URL}?article=${id}`;
-    const w = window.open('', '_blank', 'width=380,height=520');
-    w.document.write(`<!DOCTYPE html><html><head>
-        <meta charset="UTF-8">
-        <title>Étiquette — ${article}</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-        <style>
-            @page { size: 10cm 14cm; margin: 0; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; background: white; margin: 0; padding: 20px; box-sizing: border-box; width: 10cm; }
-            .top { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 12px; }
-            .brand { font-size: 11px; font-weight: 700; color: #1e40af; letter-spacing: 1px; text-transform: uppercase; }
-            .type-badge { display: inline-block; background: #1e40af; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 4px; }
-            .article-name { font-size: 17px; font-weight: 800; color: #111827; margin: 12px 0 4px; line-height: 1.2; }
-            .info-line { font-size: 12px; color: #374151; margin: 3px 0; }
-            .info-line strong { color: #111827; }
-            #qr { text-align: center; margin: 14px 0; }
-            .id-line { font-size: 9px; color: #9ca3af; font-family: monospace; text-align: center; margin-top: 4px; }
-            .footer { border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 10px; font-size: 10px; color: #6b7280; text-align: center; }
-        </style>
-        </head><body>
-        <div class="top">
-            <div class="brand">HMC — Gestion de Stock</div>
-            <span class="type-badge">${type}</span>
-        </div>
-        <div class="article-name">${article}</div>
-        ${type !== 'Stock' && client && client !== 'Stock interne' ? `<div class="info-line">👤 Client : <strong>${client}</strong></div>` : ''}
-        ${type === 'Mise à disposition' && parseInt(colis) > 1 ? `<div class="info-line">📦 Nombre de colis : <strong>${colis}</strong></div>` : ''}
-        <div class="info-line">🏷️ Réf : <strong>${reference}</strong></div>
-        <div class="info-line">🏪 Magasin : <strong>${magasin}</strong></div>
-        <div id="qr"></div>
-        <div class="id-line">${id}</div>
-        <div class="footer">Scannez avec l'appareil photo · © 2026 Florent Amendola</div>
-        <script>
-            new QRCode(document.getElementById('qr'), { text: '${url}', width: 180, height: 180 });
-            setTimeout(() => { window.print(); }, 800);
-        <\/script>
-        </body></html>`);
-    w.document.close();
+// ─── IMPRESSION QR ─────────────────
+function buildLabel(data) {
+    const url=`${APP_URL}?article=${data.id}`;
+    return`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Étiquette</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    <style>
+        @page{size:10cm 14cm;margin:0;}
+        body{font-family:'Segoe UI',Arial,sans-serif;background:white;margin:0;padding:18px;width:10cm;box-sizing:border-box;}
+        .top{border-bottom:2px solid #1e40af;padding-bottom:8px;margin-bottom:10px;}
+        .brand{font-size:10px;font-weight:700;color:#1e40af;letter-spacing:1px;text-transform:uppercase;}
+        .type{display:inline-block;background:#1e40af;color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;margin-top:3px;}
+        .name{font-size:16px;font-weight:800;color:#111827;margin:10px 0 4px;line-height:1.2;}
+        .info{font-size:11px;color:#374151;margin:3px 0;}
+        .info strong{color:#111827;}
+        #qr{text-align:center;margin:12px 0;}
+        .id{font-size:8px;color:#9ca3af;font-family:monospace;text-align:center;}
+        .footer{border-top:1px solid #e5e7eb;padding-top:7px;margin-top:8px;font-size:9px;color:#6b7280;text-align:center;}
+    </style></head><body>
+    <div class="top"><div class="brand">HMC — Gestion de Stock</div><span class="type">${data.type}</span></div>
+    <div class="name">${data.article}</div>
+    ${data.client?`<div class="info">👤 Client : <strong>${data.client}</strong></div>`:''}
+    ${data.type==='Mise à disposition'&&parseInt(data.colis)>1?`<div class="info">📦 Colis : <strong>${data.colis}</strong></div>`:''}
+    <div class="info">🏷️ Réf : <strong>${data.reference}</strong></div>
+    <div class="info">🏪 Magasin : <strong>${data.magasin}</strong></div>
+    <div id="qr"></div>
+    <div class="id">${data.id}</div>
+    <div class="footer">Scannez avec l'appareil photo · © 2026 Florent Amendola</div>
+    <script>new QRCode(document.getElementById('qr'),{text:'${url}',width:170,height:170});setTimeout(()=>window.print(),700);<\/script>
+    </body></html>`;
 }
 
-// ─── IMPRESSION QR depuis fiche ───────
+function printQR() { if(!lastQRData)return; const w=window.open('','_blank','width=380,height=520'); w.document.write(buildLabel(lastQRData)); w.document.close(); }
+
 function printArticleQR(id) {
-    const a = articles.find(x=>x.id===id);
-    if (!a) return;
-    const url = `${APP_URL}?article=${id}`;
-    const w = window.open('', '_blank', 'width=380,height=520');
-    w.document.write(`<!DOCTYPE html><html><head>
-        <meta charset="UTF-8"><title>Étiquette — ${a.article}</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-        <style>
-            @page { size: 10cm 14cm; margin: 0; }
-            body { font-family: 'Segoe UI', Arial, sans-serif; background: white; margin: 0; padding: 20px; box-sizing: border-box; width: 10cm; }
-            .top { border-bottom: 2px solid #1e40af; padding-bottom: 10px; margin-bottom: 12px; }
-            .brand { font-size: 11px; font-weight: 700; color: #1e40af; letter-spacing: 1px; text-transform: uppercase; }
-            .type-badge { display: inline-block; background: #1e40af; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 4px; }
-            .article-name { font-size: 17px; font-weight: 800; color: #111827; margin: 12px 0 4px; line-height: 1.2; }
-            .info-line { font-size: 12px; color: #374151; margin: 3px 0; }
-            .info-line strong { color: #111827; }
-            #qr { text-align: center; margin: 14px 0; }
-            .id-line { font-size: 9px; color: #9ca3af; font-family: monospace; text-align: center; margin-top: 4px; }
-            .footer { border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 10px; font-size: 10px; color: #6b7280; text-align: center; }
-        </style></head><body>
-        <div class="top">
-            <div class="brand">HMC — Gestion de Stock</div>
-            <span class="type-badge">${a.type}</span>
-        </div>
-        <div class="article-name">${a.article}</div>
-        ${a.type !== 'Stock' && a.client && a.client !== 'Stock interne' ? `<div class="info-line">👤 Client : <strong>${a.client}</strong></div>` : ''}
-        ${a.type === 'Mise à disposition' && a.nombreColis > 1 ? `<div class="info-line">📦 Colis : <strong>${a.nombreColis}</strong></div>` : ''}
-        <div class="info-line">🏷️ Réf : <strong>${a.reference}</strong></div>
-        <div class="info-line">🏪 Magasin : <strong>${a.magasin}</strong></div>
-        <div id="qr"></div>
-        <div class="id-line">${id}</div>
-        <div class="footer">Scannez avec l'appareil photo · © 2026 Florent Amendola</div>
-        <script>
-            new QRCode(document.getElementById('qr'), { text: '${url}', width: 180, height: 180 });
-            setTimeout(() => window.print(), 800);
-        <\/script>
-        </body></html>`);
-    w.document.close();
+    const a=articles.find(x=>x.id===id); if(!a)return;
+    const data={id,article:a.article,reference:a.reference,client:a.client&&a.client!=='Stock interne'?a.client:'',magasin:a.magasin,type:a.type,colis:a.nombreColis};
+    const w=window.open('','_blank','width=380,height=520'); w.document.write(buildLabel(data)); w.document.close();
 }
 
-// ─── MISES À DISPO ────────────────────
+// ─── MISES À DISPO ─────────────────
 function renderMAD() {
-    const mag = document.getElementById('m_mag').value;
-    const stat = document.getElementById('m_stat').value;
-    const q = document.getElementById('m_search').value.toLowerCase();
-
-    // Stats filtrées par magasin sélectionné
-    const allFiltered = mag ? articles.filter(a=>a.type==='Mise à disposition'&&a.magasin===mag) : articles.filter(a=>a.type==='Mise à disposition');
-
-    document.getElementById('madStats').innerHTML = `
-        <div class="stat-card blue"><div class="num">${allFiltered.length}</div><div class="lbl">Total${mag?' — '+mag:''}</div></div>
-        <div class="stat-card green"><div class="num">${allFiltered.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
-        <div class="stat-card orange"><div class="num">${allFiltered.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
-        <div class="stat-card red"><div class="num">${allFiltered.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>
-    `;
-
-    let list = allFiltered.slice();
-    if (stat) list = list.filter(a => a.statut === stat);
-    if (q) list = list.filter(a =>
-        (a.article||'').toLowerCase().includes(q) ||
-        (a.client||'').toLowerCase().includes(q) ||
-        (a.reference||'').toLowerCase().includes(q) ||
-        (a.numeroAR||'').toLowerCase().includes(q) ||
-        (a.emplacement||'').toLowerCase().includes(q) ||
-        (a.kitchener||'').toLowerCase().includes(q)
-    );
-
-    if (!list.length) { document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>'; return; }
-
+    const mag=document.getElementById('m_mag').value, stat=document.getElementById('m_stat').value;
+    const q=document.getElementById('m_search').value.toLowerCase();
+    const allF=articles.filter(a=>a.type==='Mise à disposition'&&(!mag||a.magasin===mag));
+    document.getElementById('madStats').innerHTML=`
+        <div class="stat-card blue"><div class="num">${allF.length}</div><div class="lbl">Total${mag?' '+mag:''}</div></div>
+        <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
+        <div class="stat-card orange"><div class="num">${allF.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
+        <div class="stat-card red"><div class="num">${allF.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>`;
+    let list=allF.slice();
+    if(stat) list=list.filter(a=>a.statut===stat);
+    if(q) list=list.filter(a=>['article','client','reference','numeroAR','emplacement','kitchener'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(!list.length){document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';return;}
     const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
-    document.getElementById('madList').innerHTML = list.map(a=>`
+    document.getElementById('madList').innerHTML=list.map(a=>`
         <div class="article-item" onclick="openModal('${a.id}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${a.article}</div>
+                    ${a.client&&a.client!=='Stock interne'?`<div class="item-client">👤 ${a.client}</div>`:''}
                     <div class="item-ref">${a.reference}</div>
-                    ${a.client&&a.client!=='Stock interne'?`<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:4px;">👤 ${a.client}</div>`:''}
                 </div>
                 <span class="badge ${bMap[a.statut]||'b-stock'}">${a.statut}</span>
             </div>
@@ -930,276 +793,288 @@ function renderMAD() {
         </div>`).join('');
 }
 
-// ─── STOCK ────────────────────────────
+// ─── STOCK ─────────────────────────
 function renderStock() {
-    const mag = document.getElementById('s_mag').value;
-    const q = document.getElementById('s_search').value.toLowerCase();
-
-    const allFiltered = mag ? articles.filter(a=>a.type==='Stock'&&a.magasin===mag) : articles.filter(a=>a.type==='Stock');
-
-    document.getElementById('stockStats').innerHTML = `
-        <div class="stat-card green"><div class="num">${allFiltered.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références${mag?' — '+mag:''}</div></div>
-        <div class="stat-card blue"><div class="num">${allFiltered.reduce((s,a)=>s+(a.quantiteStock||0),0)}</div><div class="lbl">Quantité totale</div></div>
-        <div class="stat-card orange"><div class="num">${allFiltered.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
-        <div class="stat-card red"><div class="num">${allFiltered.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>
-    `;
-
-    let list = allFiltered.slice();
-    if (q) list = list.filter(a =>
-        (a.article||'').toLowerCase().includes(q) ||
-        (a.reference||'').toLowerCase().includes(q) ||
-        (a.emplacement||'').toLowerCase().includes(q) ||
-        (a.notes||'').toLowerCase().includes(q)
-    );
-
-    if (!list.length) { document.getElementById('stockList').innerHTML='<div class="empty"><div class="ico">📦</div><p>Aucun article en stock</p></div>'; return; }
-
-    document.getElementById('stockList').innerHTML = list.map(a => {
-        const qty = a.quantiteStock;
-        const seuil = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : params.stockFaible;
-        const qCls = qty===null?'':(qty===0?'empty':qty<=seuil?'low':'ok');
-        return `<div class="article-item" onclick="openModal('${a.id}')">
+    const mag=document.getElementById('s_mag').value;
+    const q=document.getElementById('s_search').value.toLowerCase();
+    const allF=articles.filter(a=>a.type==='Stock'&&(!mag||a.magasin===mag));
+    const totalQty=allF.reduce((s,a)=>s+(a.quantiteStock||0),0);
+    document.getElementById('stockStats').innerHTML=`
+        <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références${mag?' '+mag:''}</div></div>
+        <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Quantité totale</div></div>
+        <div class="stat-card orange"><div class="num">${allF.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
+        <div class="stat-card red"><div class="num">${allF.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>`;
+    let list=allF.slice();
+    if(q) list=list.filter(a=>['article','reference','emplacement','notes'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(!list.length){document.getElementById('stockList').innerHTML='<div class="empty"><div class="ico">📦</div><p>Aucun article</p></div>';return;}
+    document.getElementById('stockList').innerHTML=list.map(a=>{
+        const qty=a.quantiteStock, seuil=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
+        const qCls=qty===null?'':(qty===0?'empty':qty<=seuil?'low':'ok');
+        return`<div class="article-item" onclick="openModal('${a.id}')">
             <div class="item-head">
                 <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
-                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
-                    ${qty!==null?`<span class="qty-big ${qCls}">${qty}<span style="font-size:13px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>`:''}
+                    ${qty!==null?`<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>`:''}
                 </div>
             </div>
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-                ${seuil>0?`<span class="meta">⚙️ Seuil: <strong>${seuil}</strong></span>`:''}
             </div>
         </div>`;
     }).join('');
 }
 
-// ─── PRÊTS ────────────────────────────
-function setPretTab(tab) {
-    currentPretTab = tab;
+// ─── PRÊTS ─────────────────────────
+// Modèle de données :
+// - articles type='Article de prêt' : catalogue (quantiteStock = dispo, quantiteInitiale = total)
+// - articles type='Prêt individuel' : chaque prêt en cours, avec parentId = l'article parent
+//   statut: 'En cours' ou 'Retourné'
+
+function setPretTab(tab){
+    currentPretTab=tab;
     document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
     document.getElementById('stab_'+tab).classList.add('active');
     renderPrets();
 }
 
 function renderPrets() {
-    const mag = document.getElementById('p_mag').value;
+    const mag=document.getElementById('p_mag').value;
+    const q=(document.getElementById('p_search')?.value||'').toLowerCase();
+    const now=new Date();
 
-    // Stats filtrées par magasin
-    const base = mag ? articles.filter(a=>a.magasin===mag) : articles;
-    const dispo = base.filter(a => a.type==='Article de prêt'&&a.statut==='Stock');
-    const encours = base.filter(a => a.statut==='Prêt');
-    const retards = encours.filter(a => a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date());
-    const bientot = encours.filter(a => {
-        if (!a.dateRetourPrevue) return false;
-        const d=(new Date(a.dateRetourPrevue)-new Date())/86400000;
-        return d>=0&&d<=params.alerteBientot;
-    });
+    // Articles de prêt (catalogue)
+    const catalogue=articles.filter(a=>a.type==='Article de prêt'&&(!mag||a.magasin===mag));
+    // Prêts individuels actifs (statut = 'En cours')
+    const encours=pretsActifs.filter(p=>p.statut==='En cours'&&(!mag||p.magasin===mag));
+    const retards=encours.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now);
+    const bientot=encours.filter(p=>{if(!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;});
+    const dispoArticles=catalogue.filter(a=>a.quantiteStock>0);
 
-    document.getElementById('pretsStats').innerHTML = `
-        <div class="stat-card purple"><div class="num">${dispo.length}</div><div class="lbl">Disponibles${mag?' — '+mag:''}</div></div>
-        <div class="stat-card blue"><div class="num">${encours.length}</div><div class="lbl">En cours</div></div>
+    document.getElementById('pretsStats').innerHTML=`
+        <div class="stat-card purple"><div class="num">${dispoArticles.length}</div><div class="lbl">Articles disponibles${mag?' '+mag:''}</div></div>
+        <div class="stat-card blue"><div class="num">${encours.length}</div><div class="lbl">Prêts en cours</div></div>
         <div class="stat-card orange"><div class="num">${bientot.length}</div><div class="lbl">Retour bientôt</div></div>
-        <div class="stat-card red"><div class="num">${retards.length}</div><div class="lbl">En retard</div></div>
-    `;
+        <div class="stat-card red"><div class="num">${retards.length}</div><div class="lbl">En retard</div></div>`;
 
-    document.getElementById('stab_dispo').textContent = `🟣 Disponibles (${dispo.length})`;
-    document.getElementById('stab_dispo').classList.toggle('active', currentPretTab==='dispo');
-    document.getElementById('stab_encours').textContent = `🔵 En cours (${encours.length})`;
-    document.getElementById('stab_encours').classList.toggle('active', currentPretTab==='encours');
-    document.getElementById('stab_bientot').textContent = `🟡 Bientôt (${bientot.length})`;
-    document.getElementById('stab_bientot').classList.toggle('active', currentPretTab==='bientot');
-    document.getElementById('stab_retard').textContent = `🔴 Retard (${retards.length})`;
-    document.getElementById('stab_retard').classList.toggle('active', currentPretTab==='retard');
+    document.getElementById('stab_dispo').textContent=`🟣 Disponibles (${dispoArticles.length})`;
+    document.getElementById('stab_dispo').classList.toggle('active',currentPretTab==='dispo');
+    document.getElementById('stab_encours').textContent=`🔵 En cours (${encours.length})`;
+    document.getElementById('stab_encours').classList.toggle('active',currentPretTab==='encours');
+    document.getElementById('stab_bientot').textContent=`🟡 Bientôt (${bientot.length})`;
+    document.getElementById('stab_bientot').classList.toggle('active',currentPretTab==='bientot');
+    document.getElementById('stab_retard').textContent=`🔴 Retard (${retards.length})`;
+    document.getElementById('stab_retard').classList.toggle('active',currentPretTab==='retard');
 
-    let list = { dispo, encours, bientot, retard: retards }[currentPretTab] || [];
-    if (mag) list = list.filter(a=>a.magasin===mag);
+    let list=[];
+    if(currentPretTab==='dispo') list=dispoArticles;
+    else if(currentPretTab==='encours') list=encours;
+    else if(currentPretTab==='bientot') list=bientot;
+    else if(currentPretTab==='retard') list=retards;
 
-    const msgs = { dispo:'Aucun article disponible', encours:'Aucun prêt en cours', bientot:'Aucun retour imminent', retard:'✅ Aucun retard !' };
-    if (!list.length) { document.getElementById('pretsList').innerHTML=`<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${msgs[currentPretTab]}</p></div>`; return; }
+    if(q) list=list.filter(a=>['article','client','prenomEmprunteur','reference'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(!list.length){document.getElementById('pretsList').innerHTML=`<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;return;}
 
-    document.getElementById('pretsList').innerHTML = list.map(a => {
-        if (currentPretTab==='dispo') return `
-        <div class="article-item" onclick="openModal('${a.id}')">
-            <div class="item-head">
-                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
-                <span class="badge b-purple">Disponible</span>
-            </div>
-            <div class="item-meta">
-                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
-                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-            </div>
-        </div>`;
-
-        const retard = a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date();
-        const diff = a.dateRetourPrevue?Math.ceil((new Date(a.dateRetourPrevue)-new Date())/86400000):null;
-        return `<div class="article-item" onclick="openModal('${a.id}')" style="${retard?'border-color:var(--red-border);background:var(--red-soft)':''}">
-            <div class="item-head">
-                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
-                <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`⚠️ +${Math.abs(diff)}j`:diff!==null?`↩️ J-${diff}`:'En prêt'}</span>
-            </div>
-            <div class="item-meta">
-                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
-                <span class="meta">👤 Prêté à <strong>${a.prenomEmprunteur}</strong></span>
-                <span class="meta">📅 <strong>${a.datePret?new Date(a.datePret).toLocaleDateString('fr-FR'):'?'}</strong></span>
-                ${a.dateRetourPrevue?`<span class="meta">↩️ <strong>${new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
-                ${a.client&&a.client!=='Stock interne'?`<span class="meta">📦 <strong>${a.client}</strong></span>`:''}
-            </div>
-        </div>`;
-    }).join('');
+    if(currentPretTab==='dispo'){
+        // Afficher les articles de prêt avec compteur dispo/total
+        document.getElementById('pretsList').innerHTML=list.map(a=>{
+            const pretsCet=pretsActifs.filter(p=>p.parentId===a.id&&p.statut==='En cours');
+            return`<div class="article-item" onclick="openModal('${a.id}')">
+                <div class="item-head">
+                    <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
+                    <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+                        <span class="badge b-dispo">Disponible</span>
+                        <span style="font-size:13px;font-weight:800;color:var(--green);">${a.quantiteStock} <span style="font-size:11px;font-weight:500;color:var(--text3)">dispo / ${a.quantiteInitiale}</span></span>
+                    </div>
+                </div>
+                <div class="item-meta">
+                    <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                    <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                    ${pretsCet.length>0?`<span class="meta">🔄 <strong>${pretsCet.length} en prêt</strong></span>`:''}
+                </div>
+            </div>`;
+        }).join('');
+    } else {
+        // Afficher les prêts individuels
+        document.getElementById('pretsList').innerHTML=list.map(p=>{
+            const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now;
+            const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000):null;
+            return`<div class="article-item" onclick="openModal('${p.id}')" style="${retard?'border-color:var(--red-border);':''}">
+                <div class="item-head">
+                    <div>
+                        <div class="item-title">${p.article}</div>
+                        <div class="item-client">👤 ${p.prenomEmprunteur||'?'}</div>
+                        <div class="item-ref">${p.reference}</div>
+                    </div>
+                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`⚠️ +${Math.abs(diff)}j`:diff!==null?`↩️ J-${diff}`:'En prêt'}</span>
+                </div>
+                <div class="item-meta">
+                    <span class="meta">🏪 <strong>${p.magasin}</strong></span>
+                    <span class="meta">📅 Prêté le <strong>${p.datePret?new Date(p.datePret).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                    ${p.dateRetourPrevue?`<span class="meta">↩️ Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
+                </div>
+            </div>`;
+        }).join('');
+    }
 }
 
-// ─── ALERTES ──────────────────────────
+// ─── ALERTES ───────────────────────
 function renderAlertes() {
-    const mag = document.getElementById('a_mag').value;
-    const list = mag ? articles.filter(a=>a.magasin===mag) : articles;
-    let alertes = [];
+    const mag=document.getElementById('a_mag').value;
+    const arts=mag?articles.filter(a=>a.magasin===mag):articles;
+    const prets=mag?pretsActifs.filter(p=>p.magasin===mag):pretsActifs;
+    let alertes=[];
+    const now=new Date();
 
-    list.filter(a=>a.statut==='Prêt'&&a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date())
-        .forEach(a => {
-            const j=Math.floor((new Date()-new Date(a.dateRetourPrevue))/86400000);
-            alertes.push({type:'danger',t:`Prêt en retard — ${a.article}`,m:`${a.magasin} · ${a.prenomEmprunteur} · ${j}j de retard`,id:a.id});
-        });
+    prets.filter(p=>p.statut==='En cours'&&p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now)
+        .forEach(p=>{const j=Math.floor((now-new Date(p.dateRetourPrevue))/86400000);alertes.push({type:'danger',t:`Prêt en retard — ${p.article}`,m:`${p.magasin} · ${p.prenomEmprunteur} · ${j}j de retard`,id:p.id});});
 
-    list.filter(a => {
-        if (a.statut!=='Prêt'||!a.dateRetourPrevue) return false;
-        const d=(new Date(a.dateRetourPrevue)-new Date())/86400000;
-        return d>=0&&d<=params.alerteBientot;
-    }).forEach(a => {
-        const j=Math.ceil((new Date(a.dateRetourPrevue)-new Date())/86400000);
-        alertes.push({type:'warning',t:`Retour bientôt — ${a.article}`,m:`${a.magasin} · ${a.prenomEmprunteur} · dans ${j}j`,id:a.id});
-    });
+    prets.filter(p=>{if(p.statut!=='En cours'||!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;})
+        .forEach(p=>{const j=Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000);alertes.push({type:'warning',t:`Retour bientôt — ${p.article}`,m:`${p.magasin} · ${p.prenomEmprunteur} · dans ${j}j`,id:p.id});});
 
-    list.filter(a => {
-        if (a.type!=='Stock'||a.quantiteStock===null) return false;
-        const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
-        return a.quantiteStock>0&&a.quantiteStock<=s;
-    }).forEach(a => {
-        const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
-        alertes.push({type:'warning',t:`Stock faible — ${a.article}`,m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`,id:a.id});
-    });
+    arts.filter(a=>{if(a.type!=='Stock'||a.quantiteStock===null)return false;const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock>0&&a.quantiteStock<=s;})
+        .forEach(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;alertes.push({type:'warning',t:`Stock faible — ${a.article}`,m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`,id:a.id});});
 
-    list.filter(a=>a.type==='Stock'&&a.quantiteStock===0)
+    arts.filter(a=>a.type==='Stock'&&a.quantiteStock===0)
         .forEach(a=>alertes.push({type:'danger',t:`Stock épuisé — ${a.article}`,m:`${a.magasin} · À réapprovisionner`,id:a.id}));
 
-    if (!alertes.length) { document.getElementById('alertList').innerHTML='<div class="empty"><div class="ico">✅</div><p>Aucune alerte — tout est en ordre !</p></div>'; return; }
-
-    document.getElementById('alertList').innerHTML = alertes.map(al=>`
+    if(!alertes.length){document.getElementById('alertList').innerHTML='<div class="empty"><div class="ico">✅</div><p>Aucune alerte !</p></div>';return;}
+    document.getElementById('alertList').innerHTML=alertes.map(al=>`
         <div class="alert-item ${al.type}" onclick="openModal('${al.id}')">
-            <span style="font-size:20px">${al.type==='danger'?'🔴':'🟡'}</span>
-            <div>
-                <div style="font-size:14px;font-weight:700;">${al.t}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:3px;">${al.m}</div>
-            </div>
+            <span style="font-size:18px;">${al.type==='danger'?'🔴':'🟡'}</span>
+            <div><div style="font-size:13px;font-weight:700;">${al.t}</div><div style="font-size:12px;color:var(--text3);margin-top:2px;">${al.m}</div></div>
         </div>`).join('');
 }
 
-// ─── LISTE GÉNÉRIQUE ─────────────────
-function renderList(list, containerId, showClient=true) {
-    if (!list.length) { document.getElementById(containerId).innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>'; return; }
-    const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
-    document.getElementById(containerId).innerHTML = list.map(a=>`
-        <div class="article-item" onclick="openModal('${a.id}')">
-            <div class="item-head">
-                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
-                <span class="badge ${bMap[a.statut]||'b-stock'}">${a.statut}</span>
-            </div>
-            <div class="item-meta">
-                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
-                ${showClient&&a.client&&a.client!=='Stock interne'?`<span class="meta">👤 <strong>${a.client}</strong></span>`:''}
-                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-                ${a.numeroAR?`<span class="meta">AR: <strong>${a.numeroAR}</strong></span>`:''}
-                ${a.nombreColis>1?`<span class="meta">📦 <strong>${a.nombreColis} colis</strong></span>`:''}
-            </div>
-        </div>`).join('');
-}
-
-// ─── MODAL ────────────────────────────
+// ─── MODAL ─────────────────────────
 async function openModal(id) {
-    const a = articles.find(x=>x.id===id);
-    if (!a) { alert('Article non trouvé'); return; }
-    document.getElementById('mTitle').textContent = a.article;
-    document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
-    document.getElementById('mBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)">⏳ Chargement...</div>';
+    const a=articles.find(x=>x.id===id)||pretsActifs.find(x=>x.id===id);
+    if(!a){alert('Article non trouvé');return;}
+    document.getElementById('mTitle').textContent=a.article;
+    document.getElementById('mSub').textContent=`${a.reference} · ${a.magasin} · ${a.type}`;
+    document.getElementById('mBody').innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">⏳ Chargement...</div>';
     document.getElementById('overlay').classList.add('active');
-
-    const histo = await loadHisto(id);
-    renderModal(a, histo);
+    const histo=await loadHisto(id);
+    renderModalContent(a,histo);
 }
 
-function renderModal(a, histo) {
-    const bClass = {Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'}[a.statut]||'b-stock';
-    const typeClass = {'Mise à disposition':'b-mad','Stock':'b-stock','Article de prêt':'b-purple'}[a.type]||'b-mad';
+function renderModalContent(a, histo) {
+    const isPretIndividuel=a.type==='Prêt individuel';
+    const isArticlePret=a.type==='Article de prêt';
+    const isStock=a.type==='Stock';
+    const isMAD=a.type==='Mise à disposition';
 
-    let html = `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+    const typeClass={'Mise à disposition':'b-mad','Stock':'b-stock','Article de prêt':'b-purple','Prêt individuel':'b-pret'}[a.type]||'b-mad';
+    const bClass={Stock:'b-stock',Prêt:'b-pret','En cours':'b-pret',Retourné:'b-sorti',Sorti:'b-sorti',SAV:'b-sav'}[a.statut]||'b-stock';
+
+    let html=`
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;">
         <span class="badge ${typeClass}">${a.type}</span>
         <span class="badge ${bClass}">${a.statut}</span>
-    </div>
-    <div class="detail-grid">
-        <div class="detail-field"><div class="k">Magasin</div><div class="v">${a.magasin}</div></div>
-        ${a.client&&a.client!=='Stock interne'?`<div class="detail-field"><div class="k">Client</div><div class="v">${a.client}</div>`:'<div class="detail-field"><div class="k">Type</div><div class="v">Stock interne</div>'}
-        </div>
-        <div class="detail-field"><div class="k">Référence</div><div class="v">${a.reference}</div></div>
-        <div class="detail-field"><div class="k">Emplacement</div><div class="v">${a.emplacement}</div></div>
-        ${a.numeroAR?`<div class="detail-field"><div class="k">N° AR</div><div class="v">${a.numeroAR}</div></div>`:''}
-        ${a.quantiteStock!==null?`<div class="detail-field"><div class="k">Quantité</div><div class="v" style="font-size:18px;font-weight:800;color:${a.quantiteStock===0?'var(--red)':a.quantiteStock<=(seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible)?'var(--orange)':'var(--green)'}">${a.quantiteStock} <span style="font-size:13px;font-weight:400;color:var(--text3)">/ ${a.quantiteInitiale}</span></div></div>`:''}
-        ${a.nombreColis>1?`<div class="detail-field"><div class="k">Colis</div><div class="v">${a.nombreColis}</div></div>`:''}
-        <div class="detail-field"><div class="k">Réceptionné par</div><div class="v">${a.kitchener}</div></div>
-        <div class="detail-field"><div class="k">Date réception</div><div class="v">${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</div></div>
-        ${a.notes?`<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>`:''}
     </div>`;
 
-    if (a.statut==='Prêt') {
-        const retard = a.dateRetourPrevue && new Date(a.dateRetourPrevue)<new Date();
-        html += `
-        <div style="background:${retard?'var(--red-soft)':'var(--orange-soft)'};border:1.5px solid ${retard?'var(--red-border)':'var(--orange-border)'};border-radius:var(--r2);padding:14px;margin-bottom:16px;">
-            <div style="font-weight:700;color:${retard?'var(--red)':'var(--orange)'}">🔄 En prêt${retard?' — ⚠️ EN RETARD':''}</div>
-            <div style="font-size:13px;color:var(--text2);margin-top:6px;">
-                Prêté à <strong>${a.prenomEmprunteur}</strong> depuis le <strong>${a.datePret?new Date(a.datePret).toLocaleDateString('fr-FR'):'?'}</strong><br>
+    // Compteur disponible pour Article de prêt
+    if(isArticlePret){
+        const pretsCet=pretsActifs.filter(p=>p.parentId===a.id&&p.statut==='En cours');
+        const dispo=a.quantiteStock||0, total=a.quantiteInitiale||0;
+        const cls=dispo===0?'empty':dispo<=2?'low':'ok';
+        html+=`<div class="dispo-counter">
+            <div><div class="dispo-num ${cls}">${dispo}</div></div>
+            <div class="dispo-label"><strong>disponible(s) sur ${total}</strong>${pretsCet.length>0?`<br>${pretsCet.length} en cours de prêt`:''}</div>
+        </div>`;
+    }
+
+    // Infos prêt individuel en cours
+    if(isPretIndividuel){
+        const retard=a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date();
+        html+=`<div style="background:${retard?'var(--red-soft)':'var(--orange-soft)'};border:1.5px solid ${retard?'var(--red-border)':'var(--orange-border)'};border-radius:var(--r2);padding:13px;margin-bottom:14px;">
+            <div style="font-weight:800;color:${retard?'var(--red)':'var(--orange)'}">🔄 En prêt${retard?' — ⚠️ EN RETARD':''}</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:5px;">
+                Prêté à <strong>${a.prenomEmprunteur}</strong> le <strong>${a.datePret?new Date(a.datePret).toLocaleDateString('fr-FR'):'?'}</strong><br>
                 Retour prévu le <strong>${a.dateRetourPrevue?new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR'):'?'}</strong>
             </div>
         </div>`;
     }
 
-    // QR Print
-    html += `
-    <div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="font-size:13px;font-weight:600;color:var(--blue)">🔳 Imprimer l'étiquette QR</div>
-        <button class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="printArticleQR('${a.id}')">🖨️ Imprimer</button>
+    // Détails
+    html+=`<div class="detail-grid">
+        <div class="detail-field"><div class="k">Magasin</div><div class="v">${a.magasin}</div></div>
+        ${isMAD&&a.client?`<div class="detail-field"><div class="k">Client</div><div class="v" style="font-size:15px;font-weight:800;">${a.client}</div></div>`:''}
+        <div class="detail-field"><div class="k">Référence</div><div class="v">${a.reference}</div></div>
+        <div class="detail-field"><div class="k">Emplacement</div><div class="v">${a.emplacement}</div></div>
+        ${a.numeroAR?`<div class="detail-field"><div class="k">N° AR</div><div class="v">${a.numeroAR}</div></div>`:''}
+        ${a.quantiteStock!==null&&!isPretIndividuel?`<div class="detail-field"><div class="k">Quantité</div><div class="v" style="font-size:17px;font-weight:800;color:${a.quantiteStock===0?'var(--red)':a.quantiteStock<=(seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible)?'var(--orange)':'var(--green)'}">${a.quantiteStock} <span style="font-size:12px;font-weight:400;color:var(--text3)">/ ${a.quantiteInitiale}</span></div></div>`:''}
+        ${a.nombreColis>1&&isMAD?`<div class="detail-field"><div class="k">Colis</div><div class="v">${a.nombreColis}</div></div>`:''}
+        ${!isPretIndividuel?`<div class="detail-field"><div class="k">Réceptionné par</div><div class="v">${a.kitchener}</div></div>`:''}
+        ${!isPretIndividuel?`<div class="detail-field"><div class="k">Date réception</div><div class="v">${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</div></div>`:''}
+        ${a.notes?`<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>`:''}
     </div>`;
 
-    // Prénom + actions
-    html += `
-    <div class="prenom-bar">
-        <label>👤 Votre prénom</label>
-        <input type="text" id="actPrenom" placeholder="Obligatoire pour toute action">
-    </div>
+    // Bouton QR
+    if(!isPretIndividuel){
+        html+=`<div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:12px;font-weight:600;color:var(--blue);">🔳 Étiquette QR</span>
+            <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;" onclick="printArticleQR('${a.id}')">🖨️ Imprimer</button>
+        </div>`;
+    }
+
+    // Actions
+    html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
     <div class="btn-row">`;
 
-    if (a.statut==='Stock') {
-        html += `<button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>`;
-        html += `<button class="btn btn-warning" onclick="actPreter('${a.id}')">🔄 Prêter</button>`;
-        html += `<button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
-        if (a.type==='Stock') {
-            html += `<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>`;
-            html += `<button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter stock</button>`;
-            html += `<button class="btn btn-outline" onclick="actSetSeuil('${a.id}')">⚙️ Seuil alerte</button>`;
-        }
+    if(isMAD&&a.statut==='Stock'){
+        html+=`<button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
     }
-    if (a.statut==='Prêt') {
-        html += `<button class="btn btn-success" onclick="actRetour('${a.id}')">↩️ Retour de prêt</button>`;
-        html += `<button class="btn btn-warning" onclick="actModifierDateRetour('${a.id}')">📅 Modifier retour</button>`;
+    if(isStock&&a.statut==='Stock'){
+        html+=`<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
+               <button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter stock</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>
+               <button class="btn btn-outline" onclick="actSetSeuil('${a.id}')">⚙️ Seuil alerte</button>`;
     }
-    html += `</div>`;
+    if(isArticlePret&&a.statut==='Stock'){
+        const dispo=a.quantiteStock||0;
+        if(dispo>0) html+=`<button class="btn btn-warning" onclick="actPreter('${a.id}')">🔄 Prêter</button>`;
+        html+=`<button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter au stock prêt</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
+    }
+    if(isPretIndividuel&&a.statut==='En cours'){
+        html+=`<button class="btn btn-success" onclick="actRetourPret('${a.id}')">↩️ Retour de prêt</button>
+               <button class="btn btn-warning" onclick="actModifierDateRetour('${a.id}')">📅 Modifier retour</button>`;
+    }
+    html+=`</div>`;
 
-    // Modifier l'article (section édition)
-    html += `
-    <div class="divider"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;">✏️ Modifier cet article</div>
-        <button class="btn btn-outline" style="padding:7px 14px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
+    // Prêts individuels en cours pour Article de prêt
+    if(isArticlePret){
+        const pretsCet=pretsActifs.filter(p=>p.parentId===a.id&&p.statut==='En cours');
+        html+=`<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
+        if(!pretsCet.length) html+=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
+        else html+=pretsCet.map(p=>{
+            const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date();
+            const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-new Date())/86400000):null;
+            return`<div class="loan-item ${retard?'retard':diff!==null&&diff<=params.alerteBientot?'bientot':''}">
+                <div class="loan-head">
+                    <span class="loan-client">👤 ${p.prenomEmprunteur}</span>
+                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`+${Math.abs(diff)}j retard`:diff!==null?`J-${diff}`:'En prêt'}</span>
+                </div>
+                <div class="loan-meta">
+                    <span>📅 Prêté le <strong>${p.datePret?new Date(p.datePret).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                    ${p.dateRetourPrevue?`<span>↩️ Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
+                </div>
+                <div class="btn-row" style="margin-top:8px;">
+                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretDirect('${p.id}','${a.id}')">↩️ Retour</button>
+                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetour('${p.id}')">📅 Modifier date</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // Modifier
+    html+=`<div class="divider"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-lbl">✏️ Modifier l'article</div>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
     </div>
     <div id="editSection_${a.id}" style="display:none;">
         <div class="edit-form">
@@ -1215,221 +1090,233 @@ function renderModal(a, histo) {
                         <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
                     </select>
                 </div>
-                ${a.client&&a.client!=='Stock interne'?`<div class="fg"><label>Client</label><input id="e_client" value="${a.client}"></div>`:''}
+                ${isMAD?`<div class="fg"><label>Client</label><input id="e_client" value="${a.client||''}"></div>`:''}
                 ${a.numeroAR?`<div class="fg"><label>N° AR</label><input id="e_ar" value="${a.numeroAR}"></div>`:''}
                 ${a.quantiteStock!==null?`<div class="fg"><label>Quantité</label><input id="e_qty" type="number" value="${a.quantiteStock}"></div>`:''}
-                ${a.nombreColis>0?`<div class="fg"><label>Nb Colis</label><input id="e_colis" type="number" value="${a.nombreColis}"></div>`:''}
+                ${isMAD&&a.nombreColis>0?`<div class="fg"><label>Nb Colis</label><input id="e_colis" type="number" value="${a.nombreColis}"></div>`:''}
                 <div class="fg full"><label>Notes</label><textarea id="e_notes" rows="2">${a.notes||''}</textarea></div>
             </div>
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="actSaveEdit('${a.id}')">💾 Enregistrer les modifications</button>
+                <button class="btn btn-primary" onclick="actSaveEdit('${a.id}')">💾 Enregistrer</button>
                 <button class="btn btn-outline" onclick="toggleEdit('${a.id}')">Annuler</button>
             </div>
         </div>
     </div>`;
 
     // Historique
-    html += `
-    <div class="divider"></div>
-    <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;">📜 Historique</div>`;
-    if (!histo.length) {
-        html += '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Aucun historique</div>';
-    } else {
-        html += histo.map(h=>`
-        <div class="histo">
-            <div class="histo-date">${h.date?new Date(h.date).toLocaleString('fr-FR'):'?'}</div>
-            <div class="histo-action">${h.action} — ${h.utilisateur}</div>
-            ${h.details?`<div class="histo-detail">${h.details}</div>`:''}
-        </div>`).join('');
-    }
+    html+=`<div class="divider"></div><div class="section-lbl">📜 Historique</div>`;
+    if(!histo.length) html+=`<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Aucun historique</div>`;
+    else html+=histo.map(h=>`<div class="histo">
+        <div class="histo-date">${h.date?new Date(h.date).toLocaleString('fr-FR'):'?'}</div>
+        <div class="histo-action">${h.action} — ${h.utilisateur}</div>
+        ${h.details?`<div class="histo-detail">${h.details}</div>`:''}
+    </div>`).join('');
 
-    document.getElementById('mBody').innerHTML = html;
+    document.getElementById('mBody').innerHTML=html;
 }
 
-function toggleEdit(id) {
-    const el = document.getElementById('editSection_'+id);
-    el.style.display = el.style.display==='none' ? 'block' : 'none';
-}
+function toggleEdit(id){const el=document.getElementById('editSection_'+id);el.style.display=el.style.display==='none'?'block':'none';}
+function closeModal(){document.getElementById('overlay').classList.remove('active');}
 
-function closeModal() { document.getElementById('overlay').classList.remove('active'); }
+// ─── ACTIONS ───────────────────────
+function getPrenom(){const v=(document.getElementById('actPrenom')?.value||'').trim();if(!v){alert('⚠️ Entrez votre prénom');return null;}return v;}
 
-// ─── ACTIONS ──────────────────────────
-function getPrenom() {
-    const v=(document.getElementById('actPrenom')?.value||'').trim();
-    if (!v) { alert('⚠️ Entrez votre prénom'); return null; }
-    return v;
-}
-
-async function actSortir(id) {
-    const prenom=getPrenom(); if(!prenom)return;
-    const raison=prompt('Raison de la sortie :'); if(!raison)return;
+async function actSortir(id){
+    const p=getPrenom();if(!p)return;
+    const raison=prompt('Raison de la sortie :');if(!raison)return;
     const a=articles.find(x=>x.id===id);
-    a.statut='Sorti'; a.dateSortie=new Date().toISOString(); a.raisonSortie=raison;
-    await doUpdate(a); doHisto(id,'Sortie',prenom,`Raison: ${raison}`);
-    closeModal(); alert('✅ Article sorti'); loadData();
+    a.statut='Sorti';a.dateSortie=new Date().toISOString();a.raisonSortie=raison;
+    await doUpdate(a);doHisto(id,'Sortie',p,`Raison: ${raison}`);
+    closeModal();alert('✅ Article sorti');loadData();
 }
 
-async function actSortirQte(id) {
-    const prenom=getPrenom(); if(!prenom)return;
+async function actSortirQte(id){
+    const p=getPrenom();if(!p)return;
     const a=articles.find(x=>x.id===id);
-    const s=prompt(`Quantité à sortir (disponible: ${a.quantiteStock}) :`); if(!s)return;
+    const s=prompt(`Quantité à sortir (disponible: ${a.quantiteStock}) :`);if(!s)return;
     const qte=parseInt(s);
-    if (isNaN(qte)||qte<=0) { alert('Quantité invalide'); return; }
-    if (qte>a.quantiteStock) { alert(`Stock insuffisant — disponible: ${a.quantiteStock}`); return; }
+    if(isNaN(qte)||qte<=0){alert('Quantité invalide');return;}
+    if(qte>a.quantiteStock){alert(`Stock insuffisant — disponible: ${a.quantiteStock}`);return;}
     a.quantiteStock-=qte;
-    if (a.quantiteStock===0) a.statut='Sorti';
-    await doUpdate(a); doHisto(id,'Sortie stock',prenom,`${qte} unité(s) — Reste: ${a.quantiteStock}`);
-    closeModal(); alert(`✅ ${qte} unité(s) sortie(s) — Reste: ${a.quantiteStock}`); loadData();
+    if(a.quantiteStock===0)a.statut='Sorti';
+    await doUpdate(a);doHisto(id,'Sortie stock',p,`${qte} unité(s) — Reste: ${a.quantiteStock}`);
+    closeModal();alert(`✅ ${qte} unité(s) sortie(s) — Reste: ${a.quantiteStock}`);loadData();
 }
 
-async function actAjouterQte(id) {
-    const prenom=getPrenom(); if(!prenom)return;
+async function actAjouterQte(id){
+    const p=getPrenom();if(!p)return;
     const a=articles.find(x=>x.id===id);
-    const s=prompt(`Quantité à ajouter (actuel: ${a.quantiteStock||0}) :`); if(!s)return;
+    const libelle=a.type==='Article de prêt'?'articles prêtables':'unités en stock';
+    const s=prompt(`Quantité à ajouter (actuel: ${a.quantiteStock||0} ${libelle}) :`);if(!s)return;
     const qte=parseInt(s);
-    if (isNaN(qte)||qte<=0) { alert('Quantité invalide'); return; }
+    if(isNaN(qte)||qte<=0){alert('Quantité invalide');return;}
     a.quantiteStock=(a.quantiteStock||0)+qte;
     a.quantiteInitiale=Math.max(a.quantiteInitiale||0,a.quantiteStock);
-    if (a.statut==='Sorti') a.statut='Stock';
-    await doUpdate(a); doHisto(id,'Ajout stock',prenom,`+${qte} — Nouveau: ${a.quantiteStock}`);
-    closeModal(); alert(`✅ Stock: ${a.quantiteStock}`); loadData();
+    if(a.statut==='Sorti')a.statut='Stock';
+    await doUpdate(a);doHisto(id,'Ajout',p,`+${qte} — Total: ${a.quantiteStock}`);
+    closeModal();alert(`✅ Mis à jour : ${a.quantiteStock} ${libelle}`);loadData();
 }
 
-async function actPreter(id) {
-    const prenom=getPrenom(); if(!prenom)return;
-    const emp=prompt('Prénom emprunteur :'); if(!emp)return;
-    const dateStr=prompt('Date retour (JJ/MM/AAAA) :'); if(!dateStr)return;
+async function actPreter(id){
+    // id = l'article de prêt parent
+    const p=getPrenom();if(!p)return;
+    const parent=articles.find(x=>x.id===id);
+    if(!parent||parent.quantiteStock<=0){alert('Aucune unité disponible');return;}
+
+    let qte=1;
+    if(parent.quantiteStock>1){
+        const s=prompt(`Combien d'unités prêter ? (disponible: ${parent.quantiteStock}) :`,'1');
+        if(!s)return;
+        qte=parseInt(s);
+        if(isNaN(qte)||qte<=0){alert('Quantité invalide');return;}
+        if(qte>parent.quantiteStock){alert(`Seulement ${parent.quantiteStock} disponible(s)`);return;}
+    }
+
+    const emp=prompt('Prénom de l\'emprunteur :');if(!emp)return;
+    const dateStr=prompt('Date de retour prévue (JJ/MM/AAAA) :');if(!dateStr)return;
     const [j,m,y]=dateStr.split('/');
-    if (!j||!m||!y) { alert('Format de date invalide. Utilisez JJ/MM/AAAA'); return; }
-    const a=articles.find(x=>x.id===id);
-    // Le statut passe à "Prêt" — l'article disparaît du stock et apparaît dans les prêts
-    a.statut='Prêt'; a.datePret=new Date().toISOString();
-    a.prenomEmprunteur=emp; a.dateRetourPrevue=new Date(y,m-1,j).toISOString();
-    await doUpdate(a); doHisto(id,'Prêt',prenom,`À ${emp} — Retour: ${dateStr}`);
-    closeModal(); alert('✅ Prêt enregistré — l\'article a été retiré du stock'); loadData();
+    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+
+    // Créer un article "Prêt individuel" pour chaque unité prêtée
+    // (ou un seul avec quantité, selon besoin — ici on fait un prêt = une ligne pour traçabilité)
+    for(let i=0;i<qte;i++){
+        const pretId='PRET-'+Date.now()+'-'+i;
+        const now=new Date().toISOString();
+        await apiCall({
+            action:'addArticle', ID:pretId,
+            Magasin:parent.magasin, Type:'Prêt individuel',
+            Client:'', NumeroAR:'',
+            Article:parent.article, Reference:parent.reference,
+            NombreColis:'1', QuantiteStock:'', QuantiteInitiale:'',
+            Emplacement:parent.emplacement, Kitchener:p,
+            Notes:'', Statut:'En cours',
+            DateReception:now, DatePret:now,
+            PrenomEmprunteur:emp,
+            DateRetourPrevue:new Date(y,m-1,j).toISOString(),
+            ParentId:id, Historique:'false'
+        });
+    }
+    // Déduire du stock parent
+    parent.quantiteStock-=qte;
+    await doUpdate(parent);
+    doHisto(id,'Prêt',p,`${qte} unité(s) à ${emp} — Retour: ${dateStr} — Reste dispo: ${parent.quantiteStock}`);
+    closeModal();alert(`✅ ${qte} unité(s) prêtée(s) à ${emp}`);loadData();
 }
 
-async function actRetour(id) {
-    const prenom=getPrenom(); if(!prenom)return;
-    const a=articles.find(x=>x.id===id);
-    const emp=a.prenomEmprunteur;
-    // Retour : repasse en Stock
-    a.statut='Stock'; a.dateRetourReel=new Date().toISOString();
-    await doUpdate(a); doHisto(id,'Retour prêt',prenom,`Retourné par ${emp}`);
-    closeModal(); alert('✅ Retour enregistré — l\'article est de nouveau en stock'); loadData();
+async function actRetourPret(id){
+    // id = le prêt individuel
+    const p=getPrenom();if(!p)return;
+    const pret=pretsActifs.find(x=>x.id===id);if(!pret)return;
+    pret.statut='Retourné';pret.dateRetourReel=new Date().toISOString();
+    await doUpdate(pret);
+    // Remettre dans le stock du parent
+    const parent=articles.find(x=>x.id===pret.parentId);
+    if(parent){parent.quantiteStock=(parent.quantiteStock||0)+1;await doUpdate(parent);}
+    doHisto(pret.parentId||id,'Retour prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
+    closeModal();alert('✅ Retour enregistré — article remis disponible');loadData();
 }
 
-async function actModifierDateRetour(id) {
-    const prenom=getPrenom(); if(!prenom)return;
-    const a=articles.find(x=>x.id===id);
-    const actuelle = a.dateRetourPrevue ? new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR') : '?';
+async function actRetourPretDirect(pretId,parentId){
+    // Retour depuis la liste dans la fiche article de prêt
+    const p=(document.getElementById('actPrenom')?.value||'').trim();
+    if(!p){alert('⚠️ Entrez votre prénom');return;}
+    const pret=pretsActifs.find(x=>x.id===pretId);if(!pret)return;
+    pret.statut='Retourné';pret.dateRetourReel=new Date().toISOString();
+    await doUpdate(pret);
+    const parent=articles.find(x=>x.id===parentId);
+    if(parent){parent.quantiteStock=(parent.quantiteStock||0)+1;await doUpdate(parent);}
+    doHisto(parentId,'Retour prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
+    alert('✅ Retour enregistré');loadData().then(()=>openModal(parentId));
+}
+
+async function actModifierDateRetour(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id)||pretsActifs.find(x=>x.id===id);
+    const actuelle=a.dateRetourPrevue?new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR'):'?';
     const dateStr=prompt(`Nouvelle date de retour (actuelle: ${actuelle})\nFormat: JJ/MM/AAAA :`);
-    if (!dateStr) return;
-    const [j,m,y]=dateStr.split('/');
-    const ancienne = actuelle;
+    if(!dateStr)return;
+    const[j,m,y]=dateStr.split('/');
+    if(!j||!m||!y){alert('Format invalide');return;}
+    const ancien=actuelle;
     a.dateRetourPrevue=new Date(y,m-1,j).toISOString();
-    await doUpdate(a); doHisto(id,'Modification date retour',prenom,`${ancienne} → ${dateStr}`);
-    closeModal(); alert('✅ Date de retour modifiée'); loadData();
+    await doUpdate(a);doHisto(id,'Modification date retour',p,`${ancien} → ${dateStr}`);
+    closeModal();alert('✅ Date modifiée');loadData();
 }
 
-async function actEmplacement(id) {
-    const prenom=getPrenom(); if(!prenom)return;
+async function actEmplacement(id){
+    const p=getPrenom();if(!p)return;
     const a=articles.find(x=>x.id===id);
-    const n=prompt(`Nouvel emplacement (actuel: ${a.emplacement}) :`); if(!n)return;
-    const ancien=a.emplacement; a.emplacement=n;
-    await doUpdate(a); doHisto(id,'Changement emplacement',prenom,`${ancien} → ${n}`);
-    closeModal(); alert('✅ Emplacement mis à jour'); loadData();
+    const n=prompt(`Nouvel emplacement (actuel: ${a.emplacement}) :`);if(!n)return;
+    const ancien=a.emplacement;a.emplacement=n;
+    await doUpdate(a);doHisto(id,'Changement emplacement',p,`${ancien} → ${n}`);
+    closeModal();alert('✅ Emplacement mis à jour');loadData();
 }
 
-function actSetSeuil(id) {
+function actSetSeuil(id){
     const a=articles.find(x=>x.id===id);
     const actuel=seuilsPerso[id]!==undefined?seuilsPerso[id]:params.stockFaible;
-    const val=prompt(`Seuil d'alerte pour "${a.article}" (actuel: ${actuel} unités) :\nEntrez 0 pour désactiver.`);
-    if (val===null) return;
-    const n=parseInt(val);
-    if (isNaN(n)||n<0) { alert('Valeur invalide'); return; }
-    seuilsPerso[id]=n;
-    saveSeuilsToAPI();
-    alert(`✅ Seuil défini à ${n} unités pour "${a.article}" — synchronisé sur tous les appareils`);
-    refreshBadges();
+    const val=prompt(`Seuil d'alerte pour "${a.article}" (actuel: ${actuel}) :`);
+    if(val===null)return;
+    const n=parseInt(val);if(isNaN(n)||n<0){alert('Valeur invalide');return;}
+    seuilsPerso[id]=n;saveParamsToAPI();
+    alert(`✅ Seuil défini à ${n} unités`);refreshBadges();
 }
 
-async function actSaveEdit(id) {
-    const prenom=getPrenom(); if(!prenom)return;
+async function actSaveEdit(id){
+    const p=getPrenom();if(!p)return;
     const a=articles.find(x=>x.id===id);
     const changes=[];
-    const get=(elId,fallback)=>{ const el=document.getElementById(elId); return el?el.value.trim():fallback; };
-
-    const newArticle=get('e_article',a.article);
-    const newRef=get('e_reference',a.reference);
-    const newEmp=get('e_emplacement',a.emplacement);
-    const newClient=get('e_client',a.client)||a.client;
-    const newAR=get('e_ar',a.numeroAR)||a.numeroAR;
-    const newNotes=get('e_notes',a.notes);
-    const newTypeEl=document.getElementById('e_type');
-    const newType=newTypeEl?newTypeEl.value:a.type;
-    const newQtyEl=document.getElementById('e_qty');
-    const newQty=newQtyEl?parseInt(newQtyEl.value):a.quantiteStock;
-    const newColisEl=document.getElementById('e_colis');
-    const newColis=newColisEl?parseInt(newColisEl.value):a.nombreColis;
-
-    if (newArticle!==a.article) changes.push(`Article: "${a.article}" → "${newArticle}"`);
-    if (newRef!==a.reference) changes.push(`Réf: ${a.reference} → ${newRef}`);
-    if (newEmp!==a.emplacement) changes.push(`Emplacement: ${a.emplacement} → ${newEmp}`);
-    if (newType!==a.type) changes.push(`Catégorie: ${a.type} → ${newType}`);
-    if (newQtyEl&&newQty!==a.quantiteStock) changes.push(`Quantité: ${a.quantiteStock} → ${newQty}`);
-    if (newColisEl&&newColis!==a.nombreColis) changes.push(`Colis: ${a.nombreColis} → ${newColis}`);
-
-    // Si changement de type vers Stock interne
-    if (newType==='Stock' && a.type!=='Stock') {
-        a.client='Stock interne';
-        a.quantiteStock = a.quantiteStock || 1;
-        a.quantiteInitiale = a.quantiteInitiale || 1;
-    }
-    // Si changement depuis Stock vers autre chose, on garde les infos
-    if (newType!=='Stock' && a.type==='Stock' && (!newClient||newClient==='Stock interne')) {
-        a.client = prompt('Ce type nécessite un client. Entrez le nom du client :') || 'Client';
-    }
-
-    a.article=newArticle; a.reference=newRef; a.emplacement=newEmp;
-    a.client=newClient; a.numeroAR=newAR; a.notes=newNotes; a.type=newType;
-    if (newQtyEl) a.quantiteStock=newQty;
-    if (newColisEl) a.nombreColis=newColis;
-
+    const get=(elId,fb)=>{const el=document.getElementById(elId);return el?el.value.trim():fb;};
+    const newArt=get('e_article',a.article),newRef=get('e_reference',a.reference),newEmp=get('e_emplacement',a.emplacement);
+    const newType=document.getElementById('e_type')?.value||a.type;
+    const newClient=get('e_client',a.client),newAR=get('e_ar',a.numeroAR),newNotes=get('e_notes',a.notes);
+    const newQtyEl=document.getElementById('e_qty'),newQty=newQtyEl?parseInt(newQtyEl.value):a.quantiteStock;
+    const newColisEl=document.getElementById('e_colis'),newColis=newColisEl?parseInt(newColisEl.value):a.nombreColis;
+    if(newArt!==a.article)changes.push(`Article: "${a.article}"→"${newArt}"`);
+    if(newRef!==a.reference)changes.push(`Réf: ${a.reference}→${newRef}`);
+    if(newEmp!==a.emplacement)changes.push(`Empl: ${a.emplacement}→${newEmp}`);
+    if(newType!==a.type)changes.push(`Catégorie: ${a.type}→${newType}`);
+    if(newQtyEl&&newQty!==a.quantiteStock)changes.push(`Qté: ${a.quantiteStock}→${newQty}`);
+    a.article=newArt;a.reference=newRef;a.emplacement=newEmp;a.type=newType;
+    a.client=newClient||a.client;a.numeroAR=newAR||a.numeroAR;a.notes=newNotes;
+    if(newQtyEl)a.quantiteStock=newQty;
+    if(newColisEl)a.nombreColis=newColis;
     await doUpdate(a);
-    if (changes.length) doHisto(id,'Modification',prenom,changes.join(' · '));
-    closeModal(); alert('✅ Article modifié'); loadData();
+    if(changes.length)doHisto(id,'Modification',p,changes.join(' · '));
+    closeModal();alert('✅ Article modifié');loadData();
 }
 
-// ─── API CALLS ────────────────────────
-async function doUpdate(a) {
+// ─── API CALLS ─────────────────────
+async function doUpdate(a){
     return apiCall({
         action:'updateArticle', ID:a.id, Magasin:a.magasin, Type:a.type,
-        Client:a.client, NumeroAR:a.numeroAR||'', Article:a.article,
-        Reference:a.reference, NombreColis:a.nombreColis,
+        Client:a.client||'', NumeroAR:a.numeroAR||'', Article:a.article,
+        Reference:a.reference, NombreColis:a.nombreColis||1,
         QuantiteStock:a.quantiteStock!==null?a.quantiteStock:'',
         QuantiteInitiale:a.quantiteInitiale!==null?a.quantiteInitiale:'',
-        Emplacement:a.emplacement, Kitchener:a.kitchener, Notes:a.notes||'',
-        Statut:a.statut, DateReception:a.dateReception,
+        Emplacement:a.emplacement, Kitchener:a.kitchener||'', Notes:a.notes||'',
+        Statut:a.statut, DateReception:a.dateReception||'',
         DatePret:a.datePret||'', PrenomEmprunteur:a.prenomEmprunteur||'',
         DateRetourPrevue:a.dateRetourPrevue||'', DateRetourReel:a.dateRetourReel||'',
-        DateSortie:a.dateSortie||'', RaisonSortie:a.raisonSortie||''
+        DateSortie:a.dateSortie||'', RaisonSortie:a.raisonSortie||'',
+        ParentId:a.parentId||''
     });
 }
 
-function doHisto(id,action,user,details='') {
+function doHisto(id,action,user,details=''){
     delete histoCache[id];
     apiCall({action:'addHistorique',ArticleID:id,Action:action,Date:new Date().toISOString(),Utilisateur:user,Details:details});
 }
 
-async function loadHisto(id) {
-    if (histoCache[id]) return histoCache[id];
-    const data = await apiCall({action:'getHistorique',articleId:id});
-    histoCache[id] = Array.isArray(data)?data:[];
+async function loadHisto(id){
+    if(histoCache[id])return histoCache[id];
+    const data=await apiCall({action:'getHistorique',articleId:id});
+    histoCache[id]=Array.isArray(data)?data:[];
     return histoCache[id];
 }
 
-setInterval(()=>loadData(),60000);
+// Auto-refresh toutes les 90s
+setInterval(()=>loadData(),90000);
 </script>
 </body>
 </html>
