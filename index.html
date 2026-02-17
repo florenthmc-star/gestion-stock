@@ -3,673 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HMC - Gestion de Stock</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>HMC — Gestion de Stock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --navy: #0f1923;
-            --navy-light: #1a2a3a;
-            --navy-mid: #243447;
-            --blue: #2563eb;
-            --blue-light: #3b82f6;
-            --cyan: #06b6d4;
-            --green: #10b981;
-            --orange: #f59e0b;
-            --red: #ef4444;
-            --text: #e2e8f0;
-            --text-muted: #64748b;
-            --text-dim: #94a3b8;
-            --border: #1e3a5f;
-            --card: #131f2e;
-            --card-hover: #1a2a3a;
-            --radius: 12px;
-            --radius-sm: 8px;
+            --bg: #f5f7fa;
+            --bg2: #eef1f6;
+            --white: #ffffff;
+            --border: #e2e7ef;
+            --border2: #d0d7e3;
+            --blue: #3b6ef8;
+            --blue-dark: #2952d9;
+            --blue-soft: #eff3fe;
+            --green: #16a34a;
+            --green-soft: #f0fdf4;
+            --green-border: #bbf7d0;
+            --orange: #d97706;
+            --orange-soft: #fffbeb;
+            --orange-border: #fde68a;
+            --red: #dc2626;
+            --red-soft: #fef2f2;
+            --red-border: #fecaca;
+            --purple: #7c3aed;
+            --purple-soft: #f5f3ff;
+            --text: #111827;
+            --text2: #374151;
+            --text3: #6b7280;
+            --text4: #9ca3af;
+            --r: 12px;
+            --r2: 8px;
+            --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.06);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,.12);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--navy);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
             color: var(--text);
             min-height: 100vh;
         }
 
-        /* HEADER */
+        /* ── HEADER ── */
         .header {
-            background: var(--card);
+            background: var(--white);
             border-bottom: 1px solid var(--border);
-            padding: 16px 24px;
+            padding: 0 28px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            height: 64px;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: var(--shadow);
         }
 
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .brand { display: flex; align-items: center; gap: 12px; }
         .brand-icon {
-            width: 38px;
-            height: 38px;
-            background: var(--blue);
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
+            width: 36px; height: 36px;
+            background: var(--blue); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: white;
         }
+        .brand-name { font-size: 17px; font-weight: 800; color: var(--text); }
+        .brand-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
 
-        .brand-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.3px;
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .pill {
+            padding: 5px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 5px;
         }
+        .pill.ok { background: var(--green-soft); color: var(--green); border: 1px solid var(--green-border); }
+        .pill.loading { background: var(--orange-soft); color: var(--orange); border: 1px solid var(--orange-border); }
+        .pill.err { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border); }
 
-        .brand-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 1px;
+        .btn-sm {
+            padding: 7px 14px; border-radius: var(--r2);
+            font-size: 13px; font-weight: 600;
+            border: 1px solid var(--border2); background: var(--white);
+            color: var(--text2); cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all .15s;
         }
+        .btn-sm:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .status-pill {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-pill.connected { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
-        .status-pill.loading { background: rgba(245,158,11,.15); color: var(--orange); border: 1px solid rgba(245,158,11,.3); }
-        .status-pill.disconnected { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-
-        .btn-reload {
-            padding: 8px 14px;
-            background: var(--navy-mid);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-dim);
-            font-size: 13px;
-            font-family: 'DM Sans', sans-serif;
-            cursor: pointer;
-            transition: all .2s;
-        }
-        .btn-reload:hover { background: var(--navy-light); color: var(--text); }
-
-        /* TABS */
-        .tabs-wrapper {
-            background: var(--card);
+        /* ── TABS ── */
+        .tabs {
+            background: var(--white);
             border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            display: flex;
-            gap: 4px;
+            padding: 0 28px;
+            display: flex; gap: 2px;
             overflow-x: auto;
         }
 
         .tab {
-            padding: 16px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-muted);
-            cursor: pointer;
-            border: none;
-            background: none;
+            padding: 0 18px; height: 48px;
+            font-size: 14px; font-weight: 600; color: var(--text3);
+            border: none; background: none; cursor: pointer;
             border-bottom: 2px solid transparent;
-            transition: all .2s;
-            white-space: nowrap;
-            font-family: 'DM Sans', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            transition: all .2s; white-space: nowrap;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            display: flex; align-items: center; gap: 7px;
         }
-
-        .tab:hover { color: var(--text-dim); }
-        .tab.active { color: var(--blue-light); border-bottom-color: var(--blue-light); }
+        .tab:hover { color: var(--text2); background: var(--bg); }
+        .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
 
         .tab-badge {
-            background: var(--red);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 700;
+            background: var(--red); color: white;
+            padding: 1px 6px; border-radius: 10px;
+            font-size: 10px; font-weight: 700;
         }
 
-        /* CONTENT */
-        .content {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 28px 24px;
+        /* ── LAYOUT ── */
+        .page { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+        .pane { display: none; }
+        .pane.active { display: block; }
+
+        .page-title {
+            font-size: 22px; font-weight: 800; color: var(--text);
+            margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
         }
 
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
-
-        /* CARDS */
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 16px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        /* STATS */
+        /* ── STATS ── */
         .stats-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px; margin-bottom: 24px;
         }
 
-        .stat-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            text-align: center;
+        .stat-card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--r); padding: 20px 18px;
+            box-shadow: var(--shadow);
+        }
+        .stat-card .num {
+            font-size: 2em; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1; margin-bottom: 6px;
+        }
+        .stat-card .lbl { font-size: 12px; font-weight: 600; color: var(--text3); }
+        .stat-card.blue .num { color: var(--blue); }
+        .stat-card.green .num { color: var(--green); }
+        .stat-card.orange .num { color: var(--orange); }
+        .stat-card.red .num { color: var(--red); }
+        .stat-card.purple .num { color: var(--purple); }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--r); padding: 24px;
+            box-shadow: var(--shadow); margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 15px; font-weight: 700; color: var(--text);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
         }
 
-        .stat-box .num {
-            font-size: 2.2em;
-            font-weight: 700;
-            font-family: 'DM Mono', monospace;
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-
-        .stat-box .lbl {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .stat-box.blue .num { color: var(--blue-light); }
-        .stat-box.green .num { color: var(--green); }
-        .stat-box.orange .num { color: var(--orange); }
-        .stat-box.red .num { color: var(--red); }
-        .stat-box.cyan .num { color: var(--cyan); }
-
-        /* FORM */
+        /* ── FORM ── */
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
         }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        .fg { display: flex; flex-direction: column; gap: 6px; }
+        .fg.full { grid-column: 1 / -1; }
+        .fg label {
+            font-size: 12px; font-weight: 700; color: var(--text3);
+            text-transform: uppercase; letter-spacing: .4px;
+        }
+        .fg input, .fg select, .fg textarea {
+            background: var(--bg); border: 1.5px solid var(--border);
+            border-radius: var(--r2); padding: 11px 14px;
+            color: var(--text); font-size: 14px; font-weight: 500;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .fg input:focus, .fg select:focus, .fg textarea:focus {
+            outline: none; border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59,110,248,.12);
+            background: var(--white);
         }
 
-        .form-group.full { grid-column: 1 / -1; }
-
-        .form-group label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            background: var(--navy-mid);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
-            transition: border-color .2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--blue-light);
-        }
-
-        .form-group select option { background: var(--navy-mid); }
-
-        /* BUTTONS */
+        /* ── BUTTONS ── */
         .btn {
-            padding: 11px 20px;
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            font-family: 'DM Sans', sans-serif;
-            transition: all .2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            padding: 11px 20px; border-radius: var(--r2);
+            font-size: 14px; font-weight: 700; cursor: pointer; border: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all .2s; display: inline-flex; align-items: center; gap: 7px;
         }
-
         .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .btn-primary { background: var(--blue); color: white; }
-        .btn-primary:hover:not(:disabled) { background: var(--blue-light); }
+        .btn-primary { background: var(--blue); color: white; box-shadow: 0 2px 8px rgba(59,110,248,.3); }
+        .btn-primary:hover:not(:disabled) { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59,110,248,.4); }
         .btn-success { background: var(--green); color: white; }
         .btn-success:hover { opacity: .9; }
         .btn-warning { background: var(--orange); color: white; }
         .btn-warning:hover { opacity: .9; }
         .btn-danger { background: var(--red); color: white; }
         .btn-danger:hover { opacity: .9; }
-        .btn-ghost { background: var(--navy-mid); color: var(--text-dim); border: 1px solid var(--border); }
-        .btn-ghost:hover { background: var(--navy-light); color: var(--text); }
-        .btn-cyan { background: var(--cyan); color: var(--navy); }
-        .btn-cyan:hover { opacity: .9; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-purple:hover { opacity: .9; }
+        .btn-outline {
+            background: white; color: var(--text2);
+            border: 1.5px solid var(--border2);
+        }
+        .btn-outline:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        /* ── FILTER BAR ── */
+        .filter-bar {
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--r); padding: 16px 20px;
+            display: flex; gap: 12px; flex-wrap: wrap;
+            align-items: flex-end; margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+        .filter-bar select, .filter-bar input {
+            background: var(--bg); border: 1.5px solid var(--border);
+            border-radius: var(--r2); padding: 9px 14px;
+            color: var(--text); font-size: 13px; font-weight: 500;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-width: 150px;
+        }
+        .filter-bar select:focus, .filter-bar input:focus {
+            outline: none; border-color: var(--blue);
+        }
+
+        /* ── ARTICLE ITEMS ── */
+        .article-item {
+            background: var(--white); border: 1.5px solid var(--border);
+            border-radius: var(--r); padding: 18px 20px;
+            margin-bottom: 10px; cursor: pointer;
+            transition: all .18s; box-shadow: var(--shadow);
+        }
+        .article-item:hover { border-color: var(--blue); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+        .item-head {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; gap: 12px; margin-bottom: 10px;
+        }
+        .item-title { font-size: 15px; font-weight: 700; color: var(--text); }
+        .item-ref { font-size: 12px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+        .item-meta { display: flex; flex-wrap: wrap; gap: 14px; }
+        .meta { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+        .meta strong { color: var(--text2); font-weight: 600; }
+
+        /* ── BADGES ── */
+        .badge {
+            padding: 4px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; white-space: nowrap;
+        }
+        .b-stock { background: var(--green-soft); color: var(--green); border: 1px solid var(--green-border); }
+        .b-navette { background: var(--blue-soft); color: var(--blue); border: 1px solid #c7d7fd; }
+        .b-pret { background: var(--orange-soft); color: var(--orange); border: 1px solid var(--orange-border); }
+        .b-sorti { background: var(--bg2); color: var(--text3); border: 1px solid var(--border2); }
+        .b-sav { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-border); }
+        .b-retard { background: var(--red); color: white; }
+        .b-purple { background: var(--purple-soft); color: var(--purple); border: 1px solid #ddd6fe; }
+
+        /* ── QR ── */
+        .qr-box {
+            text-align: center; padding: 32px 24px;
+            background: linear-gradient(135deg, var(--blue-soft), #f0f4ff);
+            border: 1.5px solid #c7d7fd; border-radius: var(--r);
             margin-top: 20px;
         }
-
-        /* ARTICLE ITEMS */
-        .article-item {
-            background: var(--navy-light);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 18px 20px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all .2s;
+        #qrcode {
+            display: inline-block; background: white; padding: 16px;
+            border-radius: var(--r2); margin: 16px 0;
+            box-shadow: var(--shadow-md);
         }
 
-        .article-item:hover { border-color: var(--blue); background: var(--navy-mid); }
+        /* ── MODAL ── */
+        .overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(17,24,39,.4); z-index: 200;
+            align-items: center; justify-content: center;
+            padding: 20px; backdrop-filter: blur(4px);
+        }
+        .overlay.active { display: flex; }
 
-        .article-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 12px;
+        .modal {
+            background: var(--white); border-radius: 16px;
+            padding: 0; max-width: 620px; width: 100%;
+            max-height: 92vh; overflow-y: auto;
+            box-shadow: var(--shadow-lg);
         }
 
-        .article-item-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .article-item-ref {
-            font-size: 12px;
-            color: var(--text-muted);
-            font-family: 'DM Mono', monospace;
-            margin-top: 2px;
-        }
-
-        .article-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .meta-chip {
-            font-size: 12px;
-            color: var(--text-dim);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .meta-chip strong { color: var(--text); }
-
-        /* BADGES */
-        .badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .badge-navette { background: rgba(6,182,212,.15); color: var(--cyan); border: 1px solid rgba(6,182,212,.3); }
-        .badge-stock { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
-        .badge-pret { background: rgba(245,158,11,.15); color: var(--orange); border: 1px solid rgba(245,158,11,.3); }
-        .badge-sorti { background: rgba(100,116,139,.15); color: var(--text-muted); border: 1px solid rgba(100,116,139,.3); }
-        .badge-sav { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-        .badge-retard { background: var(--red); color: white; }
-
-        /* FILTER BAR */
-        .filter-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            padding: 16px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-        }
-
-        .filter-bar select, .filter-bar input {
-            background: var(--navy-mid);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 9px 14px;
-            color: var(--text);
-            font-size: 13px;
-            font-family: 'DM Sans', sans-serif;
-            min-width: 160px;
-        }
-
-        /* MODAL */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.7);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-overlay.active { display: flex; }
-
-        .modal-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 28px;
-            max-width: 580px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
+        .modal-top {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: flex-start;
+            position: sticky; top: 0; background: white; z-index: 2;
         }
 
         .modal-close {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: var(--navy-mid);
-            color: var(--text-dim);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 30px; height: 30px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--bg);
+            color: var(--text3); font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s;
         }
+        .modal-close:hover { background: var(--red-soft); color: var(--red); border-color: var(--red-border); }
 
-        .modal-close:hover { background: var(--navy-light); color: var(--text); }
+        .modal-body { padding: 24px 28px; }
 
-        /* ARTICLE DETAIL IN MODAL */
+        /* ── DETAIL GRID ── */
         .detail-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; margin-bottom: 20px;
         }
-
         .detail-field {
-            background: var(--navy-mid);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
+            background: var(--bg); border-radius: var(--r2);
+            padding: 12px 14px; border: 1px solid var(--border);
         }
-
-        .detail-field .key {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            margin-bottom: 4px;
-        }
-
-        .detail-field .val {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-        }
-
+        .detail-field .k { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; }
+        .detail-field .v { font-size: 14px; font-weight: 600; color: var(--text); }
         .detail-field.full { grid-column: 1 / -1; }
 
-        /* HISTORIQUE */
-        .histo-item {
-            padding: 12px 14px;
+        /* ── HISTORIQUE ── */
+        .histo {
+            padding: 13px 15px;
             border-left: 3px solid var(--blue);
-            background: var(--navy-mid);
-            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            background: var(--bg);
+            border-radius: 0 var(--r2) var(--r2) 0;
             margin-bottom: 8px;
         }
+        .histo-date { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+        .histo-action { font-size: 13px; font-weight: 700; color: var(--text); margin: 3px 0; }
+        .histo-detail { font-size: 12px; color: var(--text3); }
 
-        .histo-date { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
-        .histo-action { font-size: 13px; font-weight: 600; color: var(--text); margin: 3px 0; }
-        .histo-detail { font-size: 12px; color: var(--text-dim); }
-
-        /* QR CODE */
-        .qr-box {
-            text-align: center;
-            padding: 28px;
-            background: var(--navy-light);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin-top: 20px;
+        /* ── ALERTS ── */
+        .alert-item {
+            padding: 14px 18px; border-radius: var(--r2);
+            margin-bottom: 10px; cursor: pointer;
+            transition: all .15s; display: flex; gap: 12px; align-items: flex-start;
         }
+        .alert-item:hover { transform: translateX(3px); }
+        .alert-item.danger { background: var(--red-soft); border: 1.5px solid var(--red-border); }
+        .alert-item.warning { background: var(--orange-soft); border: 1.5px solid var(--orange-border); }
 
-        #qrcode {
-            display: inline-block;
-            background: white;
-            padding: 16px;
-            border-radius: var(--radius-sm);
-            margin: 16px 0;
-        }
-
-        /* ALERT */
-        .alert-box {
-            padding: 14px 18px;
-            border-radius: var(--radius-sm);
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: opacity .2s;
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
-
-        .alert-box:hover { opacity: .85; }
-        .alert-box.danger { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
-        .alert-box.warning { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #fde68a; }
-
-        .section-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: var(--text);
-        }
-
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 20px 0;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-
+        /* ── PRENOM BAR ── */
         .prenom-bar {
-            background: var(--navy-light);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            background: var(--blue-soft); border: 1.5px solid #c7d7fd;
+            border-radius: var(--r2); padding: 14px 16px;
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
         }
-
-        .prenom-bar label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+        .prenom-bar label { font-size: 13px; font-weight: 700; color: var(--blue); white-space: nowrap; }
         .prenom-bar input {
-            flex: 1;
-            background: var(--navy-mid);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 9px 14px;
-            color: var(--text);
-            font-size: 14px;
-            font-family: 'DM Sans', sans-serif;
+            flex: 1; background: white; border: 1.5px solid #c7d7fd;
+            border-radius: var(--r2); padding: 9px 14px;
+            color: var(--text); font-size: 14px; font-weight: 500;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
+        .prenom-bar input:focus { outline: none; border-color: var(--blue); }
 
-        .stock-qty {
-            font-size: 22px;
-            font-weight: 700;
-            font-family: 'DM Mono', monospace;
-            color: var(--green);
+        /* ── DIVIDER ── */
+        .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 12px;
         }
+        .section-header h3 { font-size: 14px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; }
 
-        .stock-qty.low { color: var(--orange); }
-        .stock-qty.empty { color: var(--red); }
+        /* ── EMPTY ── */
+        .empty { text-align: center; padding: 48px 20px; color: var(--text3); }
+        .empty .ico { font-size: 40px; margin-bottom: 12px; }
+        .empty p { font-size: 14px; }
+
+        /* ── QTY ── */
+        .qty-display {
+            display: inline-flex; align-items: baseline; gap: 4px;
+        }
+        .qty-big { font-size: 22px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .qty-big.ok { color: var(--green); }
+        .qty-big.low { color: var(--orange); }
+        .qty-big.empty { color: var(--red); }
+        .qty-of { font-size: 12px; color: var(--text3); }
+
+        /* ── SUB TABS (Prêts) ── */
+        .sub-tabs {
+            display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .sub-tab {
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            border: 1.5px solid var(--border); background: var(--white);
+            color: var(--text3); font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: all .15s;
+        }
+        .sub-tab:hover { border-color: var(--blue); color: var(--blue); }
+        .sub-tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+        .sub-tab.warn.active { background: var(--orange); border-color: var(--orange); }
+        .sub-tab.danger.active { background: var(--red); border-color: var(--red); }
+        .sub-tab.purple.active { background: var(--purple); border-color: var(--purple); }
 
         @media (max-width: 640px) {
-            .content { padding: 16px; }
+            .page { padding: 16px; }
+            .header { padding: 0 16px; }
+            .tabs { padding: 0 16px; }
             .detail-grid { grid-template-columns: 1fr; }
-            .header { padding: 12px 16px; }
-            .tabs-wrapper { padding: 0 16px; }
             .brand-sub { display: none; }
-            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .stats-row { grid-template-columns: repeat(2,1fr); }
         }
     </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-    <div class="header-brand">
+    <div class="brand">
         <div class="brand-icon">📦</div>
         <div>
             <div class="brand-name">HMC Stock</div>
-            <div class="brand-sub">Multi-Magasins</div>
+            <div class="brand-sub">Gestion multi-magasins</div>
         </div>
     </div>
     <div class="header-right">
-        <div class="status-pill loading" id="connectionStatus">🔄 Connexion...</div>
-        <button class="btn-reload" onclick="loadData()">↻ Recharger</button>
+        <div class="pill loading" id="statusPill">🔄 Connexion...</div>
+        <button class="btn-sm" onclick="loadData()">↻ Actualiser</button>
     </div>
 </div>
 
-<div class="tabs-wrapper">
-    <button class="tab active" onclick="switchTab('reception')">📥 Réception</button>
-    <button class="tab" onclick="switchTab('navettes')">🚚 Navettes</button>
-    <button class="tab" onclick="switchTab('stock')">📦 Stock</button>
-    <button class="tab" onclick="switchTab('prets')">🔄 Prêts <span class="tab-badge" id="pretsBadge" style="display:none">0</span></button>
-    <button class="tab" onclick="switchTab('alertes')">🔔 Alertes <span class="tab-badge" id="alertesBadge" style="display:none">0</span></button>
+<!-- TABS -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('reception',this)">📥 Réception</button>
+    <button class="tab" onclick="switchTab('navettes',this)">🚚 Navettes</button>
+    <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
+    <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">0</span></button>
+    <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">0</span></button>
 </div>
 
-<div class="content">
+<!-- PAGES -->
+<div class="page">
 
-    <!-- ===== RÉCEPTION ===== -->
-    <div id="reception" class="tab-pane active">
-        <div class="section-title">Réception d'Article</div>
-
+    <!-- ═══ RÉCEPTION ═══ -->
+    <div id="reception" class="pane active">
+        <div class="page-title">📥 Réception d'Article</div>
         <div class="card">
             <form id="receptionForm">
                 <div class="form-grid">
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Magasin *</label>
-                        <select id="magasin" required>
+                        <select id="f_magasin" required>
                             <option value="">Sélectionner...</option>
-                            <option value="Lattes">Lattes</option>
-                            <option value="Vedène">Vedène</option>
-                            <option value="Aix">Aix</option>
-                            <option value="Nîmes">Nîmes</option>
-                            <option value="Vitrolles">Vitrolles</option>
+                            <option>Lattes</option><option>Vedène</option>
+                            <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Type *</label>
-                        <select id="typeArticle" required onchange="toggleTypeFields()">
+                        <select id="f_type" required onchange="toggleQty()">
                             <option value="">Sélectionner...</option>
-                            <option value="Navette">Navette (commande client)</option>
-                            <option value="Stock">Stock (consommables / RAB)</option>
-                            <option value="SAV">SAV</option>
-                            <option value="Prêt">Article Prêt</option>
+                            <option value="Navette">🚚 Navette (commande client)</option>
+                            <option value="Stock">📦 Stock (consommables)</option>
+                            <option value="Prêt">🔄 Article Prêt</option>
+                            <option value="SAV">🔧 SAV</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Nom du Client *</label>
-                        <input type="text" id="nomClient" required placeholder="Nom du client">
+                        <input id="f_client" type="text" required placeholder="Nom du client">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>N° AR</label>
-                        <input type="text" id="numeroAR" placeholder="Numéro AR">
+                        <input id="f_ar" type="text" placeholder="Numéro AR">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Article *</label>
-                        <input type="text" id="article" required placeholder="Nom de l'article">
+                        <input id="f_article" type="text" required placeholder="Nom de l'article">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Référence *</label>
-                        <input type="text" id="reference" required placeholder="Référence">
+                        <input id="f_ref" type="text" required placeholder="Référence">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Nombre de Colis *</label>
-                        <input type="number" id="nombreColis" min="1" value="1" required>
+                        <input id="f_colis" type="number" min="1" value="1" required>
                     </div>
-                    <div class="form-group" id="quantiteGroup" style="display:none">
+                    <div class="fg" id="qtyGroup" style="display:none">
                         <label>Quantité en Stock *</label>
-                        <input type="number" id="quantiteStock" min="1" value="1" placeholder="Quantité">
+                        <input id="f_qty" type="number" min="1" value="1">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Emplacement *</label>
-                        <input type="text" id="emplacement" required placeholder="Ex: Rayon A, Étagère 3">
+                        <input id="f_emplacement" type="text" required placeholder="Ex: Rayon A, Étagère 3">
                     </div>
-                    <div class="form-group">
+                    <div class="fg">
                         <label>Votre Prénom *</label>
-                        <input type="text" id="prenomKitchener" required placeholder="Votre prénom">
+                        <input id="f_prenom" type="text" required placeholder="Votre prénom">
                     </div>
-                    <div class="form-group full">
+                    <div class="fg full">
                         <label>Notes</label>
-                        <textarea id="notes" rows="2" placeholder="Observations..."></textarea>
+                        <textarea id="f_notes" rows="2" placeholder="Observations..."></textarea>
                     </div>
                 </div>
                 <div class="btn-row">
@@ -678,690 +512,711 @@
             </form>
         </div>
 
-        <div id="qrCodeResult" style="display:none">
+        <div id="qrResult" style="display:none">
             <div class="qr-box">
-                <div style="font-size:15px;font-weight:600;margin-bottom:8px;">✅ QR Code généré !</div>
-                <p style="font-size:13px;color:var(--text-muted);">Scannez avec l'appareil photo pour accéder directement à l'article</p>
+                <div style="font-size:16px;font-weight:800;color:var(--text)">✅ QR Code généré !</div>
+                <p style="font-size:13px;color:var(--text3);margin-top:6px;">Scannez avec l'appareil photo pour accéder directement à l'article</p>
                 <div id="qrcode"></div>
-                <div class="btn-row" style="justify-content:center;">
-                    <button class="btn btn-primary" onclick="printQRCode()">🖨️ Imprimer</button>
-                    <button class="btn btn-ghost" onclick="resetForm()">➕ Nouveau</button>
+                <div style="display:flex;gap:10px;justify-content:center">
+                    <button class="btn btn-primary" onclick="printQR()">🖨️ Imprimer</button>
+                    <button class="btn btn-outline" onclick="resetForm()">➕ Nouvel article</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ===== NAVETTES ===== -->
-    <div id="navettes" class="tab-pane">
-        <div class="section-title">Suivi des Navettes</div>
-
-        <div class="stats-row" id="navetteStats"></div>
-
+    <!-- ═══ NAVETTES ═══ -->
+    <div id="navettes" class="pane">
+        <div class="page-title">🚚 Suivi des Navettes</div>
+        <div class="stats-row" id="navStats"></div>
         <div class="filter-bar">
-            <select id="navMagasin" onchange="filterNavettes()">
+            <select id="n_mag" onchange="renderNavettes()">
                 <option value="">Tous les magasins</option>
-                <option value="Lattes">Lattes</option>
-                <option value="Vedène">Vedène</option>
-                <option value="Aix">Aix</option>
-                <option value="Nîmes">Nîmes</option>
-                <option value="Vitrolles">Vitrolles</option>
+                <option>Lattes</option><option>Vedène</option>
+                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
             </select>
-            <select id="navStatut" onchange="filterNavettes()">
+            <select id="n_stat" onchange="renderNavettes()">
                 <option value="">Tous les statuts</option>
                 <option value="Stock">En stock</option>
                 <option value="Sorti">Sorti</option>
                 <option value="SAV">SAV</option>
             </select>
-            <input type="text" id="navSearch" placeholder="🔍 Rechercher..." oninput="filterNavettes()">
+            <input id="n_search" placeholder="🔍 Rechercher client, article..." oninput="renderNavettes()" style="flex:1;min-width:200px;">
         </div>
-
-        <div id="navettesList"></div>
+        <div id="navetteList"></div>
     </div>
 
-    <!-- ===== STOCK ===== -->
-    <div id="stock" class="tab-pane">
-        <div class="section-title">Gestion du Stock</div>
-
+    <!-- ═══ STOCK ═══ -->
+    <div id="stock" class="pane">
+        <div class="page-title">📦 Gestion du Stock</div>
         <div class="stats-row" id="stockStats"></div>
-
         <div class="filter-bar">
-            <select id="stockMagasin" onchange="filterStockItems()">
+            <select id="s_mag" onchange="renderStock()">
                 <option value="">Tous les magasins</option>
-                <option value="Lattes">Lattes</option>
-                <option value="Vedène">Vedène</option>
-                <option value="Aix">Aix</option>
-                <option value="Nîmes">Nîmes</option>
-                <option value="Vitrolles">Vitrolles</option>
+                <option>Lattes</option><option>Vedène</option>
+                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
             </select>
-            <input type="text" id="stockSearch" placeholder="🔍 Rechercher..." oninput="filterStockItems()">
+            <input id="s_search" placeholder="🔍 Rechercher article, référence..." oninput="renderStock()" style="flex:1;min-width:200px;">
         </div>
-
         <div id="stockList"></div>
     </div>
 
-    <!-- ===== PRÊTS ===== -->
-    <div id="prets" class="tab-pane">
-        <div class="section-title">Gestion des Prêts</div>
-
+    <!-- ═══ PRÊTS ═══ -->
+    <div id="prets" class="pane">
+        <div class="page-title">🔄 Gestion des Prêts</div>
         <div class="stats-row" id="pretsStats"></div>
 
         <div class="filter-bar">
-            <select id="pretMagasin" onchange="filterPrets()">
+            <select id="p_mag" onchange="renderPrets()">
                 <option value="">Tous les magasins</option>
-                <option value="Lattes">Lattes</option>
-                <option value="Vedène">Vedène</option>
-                <option value="Aix">Aix</option>
-                <option value="Nîmes">Nîmes</option>
-                <option value="Vitrolles">Vitrolles</option>
+                <option>Lattes</option><option>Vedène</option>
+                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
             </select>
-            <select id="pretStatut" onchange="filterPrets()">
-                <option value="">Tous</option>
-                <option value="Prêt">En cours</option>
-                <option value="retard">En retard</option>
-                <option value="bientot">Retour bientôt</option>
-            </select>
+        </div>
+
+        <!-- Sous-onglets -->
+        <div class="sub-tabs">
+            <button class="sub-tab purple active" id="stab_dispo" onclick="setPretTab('dispo')">🟣 Disponibles à prêter</button>
+            <button class="sub-tab active" id="stab_encours" onclick="setPretTab('encours')">🔵 En cours de prêt</button>
+            <button class="sub-tab warn" id="stab_bientot" onclick="setPretTab('bientot')">🟡 Retour bientôt</button>
+            <button class="sub-tab danger" id="stab_retard" onclick="setPretTab('retard')">🔴 En retard</button>
         </div>
 
         <div id="pretsList"></div>
     </div>
 
-    <!-- ===== ALERTES ===== -->
-    <div id="alertes" class="tab-pane">
-        <div class="section-title">Alertes</div>
-
+    <!-- ═══ ALERTES ═══ -->
+    <div id="alertes" class="pane">
+        <div class="page-title">🔔 Alertes</div>
         <div class="filter-bar">
-            <select id="alerteMagasin" onchange="displayAlertes()">
+            <select id="a_mag" onchange="renderAlertes()">
                 <option value="">Tous les magasins</option>
-                <option value="Lattes">Lattes</option>
-                <option value="Vedène">Vedène</option>
-                <option value="Aix">Aix</option>
-                <option value="Nîmes">Nîmes</option>
-                <option value="Vitrolles">Vitrolles</option>
+                <option>Lattes</option><option>Vedène</option>
+                <option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
             </select>
         </div>
-
-        <div id="alertesList"></div>
+        <div id="alertList"></div>
     </div>
+
 </div>
 
-<!-- MODAL ARTICLE -->
-<div class="modal-overlay" id="articleModal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title" id="modalTitle">Détails</div>
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+    <div class="modal">
+        <div class="modal-top">
+            <div>
+                <div style="font-size:18px;font-weight:800;color:var(--text)" id="mTitle">Article</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px" id="mSub"></div>
+            </div>
             <button class="modal-close" onclick="closeModal()">×</button>
         </div>
-        <div id="modalBody"></div>
+        <div class="modal-body" id="mBody"></div>
     </div>
 </div>
 
 <script>
-// =============================================
-// ⚠️  REMPLACEZ PAR VOTRE URL GOOGLE APPS SCRIPT
-// =============================================
-const API_URL = 'VOTRE_URL_ICI';
+// ═══════════════════════════════════════
+// ⚠️  REMPLACEZ VOTRE_URL_ICI  ⚠️
+// ═══════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec';
 const APP_URL = window.location.origin + window.location.pathname;
 
 let articles = [];
-let historiquesCache = {};
+let histoCache = {};
+let currentPretTab = 'dispo';
 
-// Démarrage
+// ─── INIT ─────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
-    if (API_URL === 'https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec') {
-        alert('⚠️ Remplacez VOTRE_URL_ICI par votre URL de déploiement Google Apps Script dans le code.');
+    if (API_URL === 'VOTRE_URL_ICI') {
+        alert('⚠️ Configurez votre URL Google Apps Script dans le code.');
+        return;
     }
-    const params = new URLSearchParams(window.location.search);
-    const artId = params.get('article');
-    if (artId) {
-        loadData().then(() => openArticleModal(artId));
-    } else {
-        loadData();
-    }
+    const p = new URLSearchParams(window.location.search).get('article');
+    if (p) loadData().then(() => openModal(p));
+    else loadData();
 });
 
-// ─── API ─────────────────────────────────────
+// ─── API ──────────────────────────────
+function apiCall(params) {
+    return new Promise((resolve) => {
+        const cb = 'cb' + Date.now() + Math.random().toString(36).slice(2);
+        let done = false;
+
+        const cleanup = () => {
+            done = true;
+            delete window[cb];
+            const s = document.getElementById(cb);
+            if (s) s.remove();
+        };
+
+        window[cb] = (data) => { cleanup(); resolve(data || {}); };
+
+        const qs = new URLSearchParams({ ...params, callback: cb }).toString();
+        const s = document.createElement('script');
+        s.id = cb;
+        s.src = `${API_URL}?${qs}`;
+        s.onerror = () => { cleanup(); resolve({ error: 'Network error' }); };
+
+        // timeout 20s
+        setTimeout(() => {
+            if (!done) { cleanup(); resolve({ error: 'Timeout' }); }
+        }, 20000);
+
+        document.body.appendChild(s);
+    });
+}
 
 function loadData() {
     setStatus('loading', '🔄 Chargement...');
-    return new Promise((resolve, reject) => {
-        const cb = 'cb_' + Date.now();
-        window[cb] = (data) => {
-            cleanup(cb);
-            if (data.error) { setStatus('disconnected', '❌ Erreur'); reject(); return; }
-            articles = parseArticles(data);
-            setStatus('connected', `✅ ${articles.length} articles`);
-            refreshAllViews();
-            resolve();
-        };
-        const s = makeScript(`${API_URL}?action=getAllArticles&callback=${cb}&t=${Date.now()}`);
-        s.onerror = () => { setStatus('disconnected', '❌ Déconnecté'); reject(); };
+    return new Promise(async (resolve, reject) => {
+        const data = await apiCall({ action: 'getAllArticles', t: Date.now() });
+        if (data.error) {
+            setStatus('err', '❌ Déconnecté');
+            reject();
+            return;
+        }
+        articles = parseArticles(Array.isArray(data) ? data : []);
+        setStatus('ok', `✅ ${articles.length} articles`);
+        refreshBadges();
+        refreshCurrentPane();
+        resolve();
     });
 }
-
-function apiCall(params) {
-    return new Promise((resolve) => {
-        const cb = 'cb_' + Date.now();
-        window[cb] = (data) => { cleanup(cb); resolve(data || {}); };
-        const url = new URLSearchParams({ ...params, callback: cb });
-        const s = makeScript(`${API_URL}?${url.toString()}`);
-        s.onerror = () => { cleanup(cb); resolve({ error: 'Network error' }); };
-        setTimeout(() => { if (window[cb]) { cleanup(cb); resolve({ error: 'timeout' }); } }, 15000);
-    });
-}
-
-function cleanup(name) {
-    delete window[name];
-    const s = document.getElementById(name);
-    if (s) s.remove();
-}
-
-function makeScript(src) {
-    const s = document.createElement('script');
-    s.src = src;
-    document.body.appendChild(s);
-    return s;
-}
-
-// ─── PARSE ──────────────────────────────────
 
 function parseArticles(data) {
-    if (!Array.isArray(data)) return [];
     return data.map(r => ({
-        id: r.ID, magasin: r.Magasin, type: r.Type,
-        client: r.Client, numeroAR: r.NumeroAR,
-        article: r.Article, reference: r.Reference,
+        id: r.ID || '', magasin: r.Magasin || '', type: r.Type || '',
+        client: r.Client || '', numeroAR: r.NumeroAR || '',
+        article: r.Article || '', reference: r.Reference || '',
         nombreColis: parseInt(r.NombreColis) || 1,
         quantiteStock: (r.QuantiteStock !== null && r.QuantiteStock !== '') ? parseInt(r.QuantiteStock) : null,
         quantiteInitiale: (r.QuantiteInitiale !== null && r.QuantiteInitiale !== '') ? parseInt(r.QuantiteInitiale) : null,
-        emplacement: r.Emplacement, kitchener: r.Kitchener,
-        notes: r.Notes, statut: r.Statut,
-        dateReception: r.DateReception, datePret: r.DatePret,
-        prenomEmprunteur: r.PrenomEmprunteur,
-        dateRetourPrevue: r.DateRetourPrevue, dateRetourReel: r.DateRetourReel,
-        dateSortie: r.DateSortie, raisonSortie: r.RaisonSortie
+        emplacement: r.Emplacement || '', kitchener: r.Kitchener || '',
+        notes: r.Notes || '', statut: r.Statut || 'Stock',
+        dateReception: r.DateReception || '', datePret: r.DatePret || '',
+        prenomEmprunteur: r.PrenomEmprunteur || '',
+        dateRetourPrevue: r.DateRetourPrevue || '',
+        dateRetourReel: r.DateRetourReel || '',
+        dateSortie: r.DateSortie || '', raisonSortie: r.RaisonSortie || ''
     }));
 }
 
-// ─── NAVIGATION ─────────────────────────────
-
-function switchTab(name) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById(name).classList.add('active');
-    if (name === 'navettes') displayNavettes();
-    if (name === 'stock') displayStock();
-    if (name === 'prets') displayPrets();
-    if (name === 'alertes') displayAlertes();
-}
-
 function setStatus(cls, msg) {
-    const el = document.getElementById('connectionStatus');
-    el.className = 'status-pill ' + cls;
+    const el = document.getElementById('statusPill');
+    el.className = 'pill ' + cls;
     el.textContent = msg;
 }
 
-// ─── FORM RÉCEPTION ─────────────────────────
-
-function toggleTypeFields() {
-    const type = document.getElementById('typeArticle').value;
-    const qg = document.getElementById('quantiteGroup');
-    if (type === 'Stock') {
-        qg.style.display = 'flex';
-        document.getElementById('quantiteStock').required = true;
-    } else {
-        qg.style.display = 'none';
-        document.getElementById('quantiteStock').required = false;
-    }
+// ─── NAVIGATION ───────────────────────
+function switchTab(name, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(name).classList.add('active');
+    refreshCurrentPane();
 }
 
-document.getElementById('receptionForm').addEventListener('submit', async (e) => {
+function refreshCurrentPane() {
+    const active = document.querySelector('.pane.active');
+    if (!active) return;
+    const id = active.id;
+    if (id === 'navettes') renderNavettes();
+    if (id === 'stock') renderStock();
+    if (id === 'prets') renderPrets();
+    if (id === 'alertes') renderAlertes();
+}
+
+function refreshBadges() {
+    const retards = articles.filter(a => a.statut === 'Prêt' && a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date()).length;
+    const el = document.getElementById('retardBadge');
+    el.textContent = retards; el.style.display = retards > 0 ? 'inline' : 'none';
+
+    const alertes = articles.filter(a =>
+        (a.statut === 'Prêt' && a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date()) ||
+        (a.type === 'Stock' && a.quantiteStock !== null && a.quantiteStock <= 0)
+    ).length;
+    const el2 = document.getElementById('alertBadge');
+    el2.textContent = alertes; el2.style.display = alertes > 0 ? 'inline' : 'none';
+}
+
+// ─── FORM ─────────────────────────────
+function toggleQty() {
+    const t = document.getElementById('f_type').value;
+    const g = document.getElementById('qtyGroup');
+    g.style.display = t === 'Stock' ? 'flex' : 'none';
+    document.getElementById('f_qty').required = t === 'Stock';
+}
+
+document.getElementById('receptionForm').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
 
-    const type = document.getElementById('typeArticle').value;
-    const artData = {
-        id: 'ART-' + Date.now(),
-        magasin: document.getElementById('magasin').value,
-        type,
-        client: document.getElementById('nomClient').value,
-        numeroAR: document.getElementById('numeroAR').value,
-        article: document.getElementById('article').value,
-        reference: document.getElementById('reference').value,
-        nombreColis: parseInt(document.getElementById('nombreColis').value),
-        quantiteStock: type === 'Stock' ? parseInt(document.getElementById('quantiteStock').value) : null,
-        quantiteInitiale: type === 'Stock' ? parseInt(document.getElementById('quantiteStock').value) : null,
-        emplacement: document.getElementById('emplacement').value,
-        kitchener: document.getElementById('prenomKitchener').value,
-        notes: document.getElementById('notes').value,
-        statut: 'Stock',
-        dateReception: new Date().toISOString()
+    const type = document.getElementById('f_type').value;
+    const id = 'ART-' + Date.now();
+    const now = new Date().toISOString();
+
+    const params = {
+        action: 'addArticle', ID: id,
+        Magasin: document.getElementById('f_magasin').value,
+        Type: type,
+        Client: document.getElementById('f_client').value,
+        NumeroAR: document.getElementById('f_ar').value || '',
+        Article: document.getElementById('f_article').value,
+        Reference: document.getElementById('f_ref').value,
+        NombreColis: document.getElementById('f_colis').value,
+        QuantiteStock: type === 'Stock' ? document.getElementById('f_qty').value : '',
+        QuantiteInitiale: type === 'Stock' ? document.getElementById('f_qty').value : '',
+        Emplacement: document.getElementById('f_emplacement').value,
+        Kitchener: document.getElementById('f_prenom').value,
+        Notes: document.getElementById('f_notes').value || '',
+        Statut: 'Stock',
+        DateReception: now,
+        Historique: 'true'
     };
 
-    const r = await apiCall({
-        action: 'addArticle', ID: artData.id, Magasin: artData.magasin,
-        Type: artData.type, Client: artData.client, NumeroAR: artData.numeroAR || '',
-        Article: artData.article, Reference: artData.reference, NombreColis: artData.nombreColis,
-        QuantiteStock: artData.quantiteStock !== null ? artData.quantiteStock : '',
-        QuantiteInitiale: artData.quantiteInitiale !== null ? artData.quantiteInitiale : '',
-        Emplacement: artData.emplacement, Kitchener: artData.kitchener,
-        Notes: artData.notes || '', Statut: artData.statut,
-        DateReception: artData.dateReception, Historique: 'true'
-    });
+    const r = await apiCall(params);
 
     btn.disabled = false; btn.textContent = '✅ Générer le QR Code';
 
-    if (r.error) { alert('Erreur: ' + r.error); return; }
+    if (r.error) {
+        alert('❌ Erreur lors de la sauvegarde : ' + r.error + '\n\nVérifiez votre URL Google Apps Script.');
+        return;
+    }
 
-    const articleUrl = `${APP_URL}?article=${artData.id}`;
+    // QR code avec URL directe
+    const url = `${APP_URL}?article=${id}`;
     document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), { text: articleUrl, width: 220, height: 220 });
+    new QRCode(document.getElementById('qrcode'), { text: url, width: 220, height: 220 });
     document.getElementById('receptionForm').style.display = 'none';
-    document.getElementById('qrCodeResult').style.display = 'block';
-    setTimeout(() => loadData(), 1500);
+    document.getElementById('qrResult').style.display = 'block';
+    setTimeout(() => loadData(), 2000);
 });
 
 function resetForm() {
     document.getElementById('receptionForm').reset();
     document.getElementById('receptionForm').style.display = 'block';
-    document.getElementById('qrCodeResult').style.display = 'none';
-    document.getElementById('quantiteGroup').style.display = 'none';
+    document.getElementById('qrResult').style.display = 'none';
+    document.getElementById('qtyGroup').style.display = 'none';
 }
 
-function printQRCode() {
-    const w = window.open('', '', 'height=600,width=400');
-    w.document.write('<html><body style="text-align:center;padding:40px;">');
-    w.document.write(document.getElementById('qrCodeResult').innerHTML);
+function printQR() {
+    const w = window.open('', '', 'width=400,height=500');
+    w.document.write('<html><body style="text-align:center;padding:40px;font-family:sans-serif;">');
+    w.document.write(document.getElementById('qrResult').innerHTML);
     w.document.write('</body></html>');
     w.document.close(); w.print();
 }
 
-// ─── NAVETTES ───────────────────────────────
-
-function displayNavettes() {
-    const navettes = articles.filter(a => a.type === 'Navette');
-    const stats = {
-        total: navettes.length,
-        enStock: navettes.filter(a => a.statut === 'Stock').length,
-        sortis: navettes.filter(a => a.statut === 'Sorti').length,
-        sav: navettes.filter(a => a.statut === 'SAV').length
-    };
-
-    document.getElementById('navetteStats').innerHTML = `
-        <div class="stat-box cyan"><div class="num">${stats.total}</div><div class="lbl">Total Navettes</div></div>
-        <div class="stat-box green"><div class="num">${stats.enStock}</div><div class="lbl">En Stock</div></div>
-        <div class="stat-box blue"><div class="num">${stats.sortis}</div><div class="lbl">Sorties</div></div>
-        <div class="stat-box red"><div class="num">${stats.sav}</div><div class="lbl">SAV</div></div>
-    `;
-    filterNavettes();
-}
-
-function filterNavettes() {
-    const mag = document.getElementById('navMagasin').value;
-    const stat = document.getElementById('navStatut').value;
-    const search = document.getElementById('navSearch').value.toLowerCase();
+// ─── NAVETTES ─────────────────────────
+function renderNavettes() {
+    const mag = document.getElementById('n_mag').value;
+    const stat = document.getElementById('n_stat').value;
+    const q = document.getElementById('n_search').value.toLowerCase();
 
     let list = articles.filter(a => a.type === 'Navette');
     if (mag) list = list.filter(a => a.magasin === mag);
     if (stat) list = list.filter(a => a.statut === stat);
-    if (search) list = list.filter(a =>
-        (a.article||'').toLowerCase().includes(search) ||
-        (a.client||'').toLowerCase().includes(search) ||
-        (a.reference||'').toLowerCase().includes(search)
+    if (q) list = list.filter(a =>
+        a.article.toLowerCase().includes(q) ||
+        a.client.toLowerCase().includes(q) ||
+        a.reference.toLowerCase().includes(q)
     );
 
-    renderArticleList(list, 'navettesList', 'navette');
-}
-
-// ─── STOCK ──────────────────────────────────
-
-function displayStock() {
-    const stocks = articles.filter(a => a.type === 'Stock' && a.statut === 'Stock');
-    const totalQty = stocks.reduce((s, a) => s + (a.quantiteStock || 0), 0);
-    const faibles = stocks.filter(a => a.quantiteStock !== null && a.quantiteStock < 5 && a.quantiteStock > 0).length;
-    const epuises = stocks.filter(a => a.quantiteStock === 0).length;
-
-    document.getElementById('stockStats').innerHTML = `
-        <div class="stat-box green"><div class="num">${stocks.length}</div><div class="lbl">Articles en Stock</div></div>
-        <div class="stat-box blue"><div class="num">${totalQty}</div><div class="lbl">Quantité Totale</div></div>
-        <div class="stat-box orange"><div class="num">${faibles}</div><div class="lbl">Stocks Faibles</div></div>
-        <div class="stat-box red"><div class="num">${epuises}</div><div class="lbl">Épuisés</div></div>
+    const all = articles.filter(a => a.type === 'Navette');
+    document.getElementById('navStats').innerHTML = `
+        <div class="stat-card blue"><div class="num">${all.length}</div><div class="lbl">Total</div></div>
+        <div class="stat-card green"><div class="num">${all.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
+        <div class="stat-card orange"><div class="num">${all.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
+        <div class="stat-card red"><div class="num">${all.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>
     `;
-    filterStockItems();
+
+    renderList(list, 'navetteList');
 }
 
-function filterStockItems() {
-    const mag = document.getElementById('stockMagasin').value;
-    const search = document.getElementById('stockSearch').value.toLowerCase();
+// ─── STOCK ────────────────────────────
+function renderStock() {
+    const mag = document.getElementById('s_mag').value;
+    const q = document.getElementById('s_search').value.toLowerCase();
 
     let list = articles.filter(a => a.type === 'Stock');
     if (mag) list = list.filter(a => a.magasin === mag);
-    if (search) list = list.filter(a =>
-        (a.article||'').toLowerCase().includes(search) ||
-        (a.reference||'').toLowerCase().includes(search)
+    if (q) list = list.filter(a =>
+        a.article.toLowerCase().includes(q) ||
+        a.reference.toLowerCase().includes(q)
     );
 
-    if (list.length === 0) {
-        document.getElementById('stockList').innerHTML = '<div class="empty-state"><div class="icon">📦</div>Aucun article en stock</div>';
+    const all = articles.filter(a => a.type === 'Stock');
+    const totalQty = all.reduce((s, a) => s + (a.quantiteStock || 0), 0);
+
+    document.getElementById('stockStats').innerHTML = `
+        <div class="stat-card green"><div class="num">${all.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références</div></div>
+        <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Quantité totale</div></div>
+        <div class="stat-card orange"><div class="num">${all.filter(a=>a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<5).length}</div><div class="lbl">Stocks faibles</div></div>
+        <div class="stat-card red"><div class="num">${all.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>
+    `;
+
+    if (!list.length) {
+        document.getElementById('stockList').innerHTML = '<div class="empty"><div class="ico">📦</div><p>Aucun article en stock</p></div>';
         return;
     }
 
-    const html = list.map(a => {
-        const qty = a.quantiteStock !== null ? a.quantiteStock : a.nombreColis;
-        const qtyClass = qty === 0 ? 'empty' : (qty < 5 ? 'low' : '');
-        const badge = a.statut === 'Sorti' ? 'badge-sorti' : 'badge-stock';
-        const statutLabel = a.statut === 'Sorti' ? 'Épuisé' : 'En stock';
+    document.getElementById('stockList').innerHTML = list.map(a => {
+        const qty = a.quantiteStock;
+        const qCls = qty === null ? '' : (qty === 0 ? 'empty' : qty < 5 ? 'low' : 'ok');
+        const statBadge = a.statut === 'Sorti' ? 'b-sorti' : 'b-stock';
+        const statLabel = a.statut === 'Sorti' ? 'Épuisé' : 'En stock';
         return `
-        <div class="article-item" onclick="openArticleModal('${a.id}')">
-            <div class="article-item-header">
+        <div class="article-item" onclick="openModal('${a.id}')">
+            <div class="item-head">
                 <div>
-                    <div class="article-item-title">${a.article}</div>
-                    <div class="article-item-ref">${a.reference} — ${a.magasin}</div>
+                    <div class="item-title">${a.article}</div>
+                    <div class="item-ref">${a.reference}</div>
                 </div>
-                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                    <span class="badge ${badge}">${statutLabel}</span>
-                    ${a.quantiteStock !== null ? `<span class="stock-qty ${qtyClass}">${a.quantiteStock} <span style="font-size:12px;font-weight:400;color:var(--text-muted)">/ ${a.quantiteInitiale}</span></span>` : ''}
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                    <span class="badge ${statBadge}">${statLabel}</span>
+                    ${qty !== null ? `<div class="qty-display"><span class="qty-big ${qCls}">${qty}</span><span class="qty-of">/ ${a.quantiteInitiale}</span></div>` : ''}
                 </div>
             </div>
-            <div class="article-meta">
-                <span class="meta-chip">📍 <strong>${a.emplacement}</strong></span>
-                <span class="meta-chip">👤 <strong>${a.client}</strong></span>
-                ${a.nombreColis > 1 ? `<span class="meta-chip">📦 <strong>${a.nombreColis} colis</strong></span>` : ''}
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                <span class="meta">👤 <strong>${a.client}</strong></span>
             </div>
         </div>`;
     }).join('');
-
-    document.getElementById('stockList').innerHTML = html;
 }
 
-// ─── PRÊTS ──────────────────────────────────
+// ─── PRÊTS ────────────────────────────
+function setPretTab(tab) {
+    currentPretTab = tab;
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    const el = document.getElementById('stab_' + tab);
+    if (el) el.classList.add('active');
+    renderPrets();
+}
 
-function displayPrets() {
-    const prets = articles.filter(a => a.statut === 'Prêt');
-    const retards = prets.filter(a => new Date(a.dateRetourPrevue) < new Date());
-    const bientot = prets.filter(a => {
-        const diff = (new Date(a.dateRetourPrevue) - new Date()) / 86400000;
-        return diff >= 0 && diff <= 3;
+function renderPrets() {
+    const mag = document.getElementById('p_mag').value;
+
+    const allPretType = articles.filter(a => a.type === 'Prêt' || a.type === 'Navette' || a.type === 'Stock');
+    const dispo = articles.filter(a => a.statut === 'Stock' && a.type === 'Prêt');
+    const encours = articles.filter(a => a.statut === 'Prêt');
+    const retards = encours.filter(a => a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date());
+    const bientot = encours.filter(a => {
+        if (!a.dateRetourPrevue) return false;
+        const d = (new Date(a.dateRetourPrevue) - new Date()) / 86400000;
+        return d >= 0 && d <= 3;
     });
 
     document.getElementById('pretsStats').innerHTML = `
-        <div class="stat-box orange"><div class="num">${prets.length}</div><div class="lbl">Prêts Actifs</div></div>
-        <div class="stat-box red"><div class="num">${retards.length}</div><div class="lbl">En Retard</div></div>
-        <div class="stat-box blue"><div class="num">${bientot.length}</div><div class="lbl">Retour Bientôt</div></div>
+        <div class="stat-card purple"><div class="num">${dispo.length}</div><div class="lbl">Disponibles</div></div>
+        <div class="stat-card blue"><div class="num">${encours.length}</div><div class="lbl">En cours</div></div>
+        <div class="stat-card orange"><div class="num">${bientot.length}</div><div class="lbl">Retour bientôt</div></div>
+        <div class="stat-card red"><div class="num">${retards.length}</div><div class="lbl">En retard</div></div>
     `;
 
-    document.getElementById('pretsBadge').textContent = retards.length;
-    document.getElementById('pretsBadge').style.display = retards.length > 0 ? 'inline' : 'none';
+    // Mise à jour labels des sub-tabs
+    document.getElementById('stab_dispo').textContent = `🟣 Disponibles (${dispo.length})`;
+    document.getElementById('stab_encours').textContent = `🔵 En cours (${encours.length})`;
+    document.getElementById('stab_bientot').textContent = `🟡 Retour bientôt (${bientot.length})`;
+    document.getElementById('stab_retard').textContent = `🔴 En retard (${retards.length})`;
+    // Restaurer la classe active
+    document.getElementById('stab_' + currentPretTab).classList.add('active');
 
-    filterPrets();
-}
+    let list = [];
+    if (currentPretTab === 'dispo') list = dispo;
+    else if (currentPretTab === 'encours') list = encours;
+    else if (currentPretTab === 'bientot') list = bientot;
+    else if (currentPretTab === 'retard') list = retards;
 
-function filterPrets() {
-    const mag = document.getElementById('pretMagasin').value;
-    const stat = document.getElementById('pretStatut').value;
-
-    let list = articles.filter(a => a.statut === 'Prêt');
     if (mag) list = list.filter(a => a.magasin === mag);
 
-    if (stat === 'retard') list = list.filter(a => new Date(a.dateRetourPrevue) < new Date());
-    else if (stat === 'bientot') list = list.filter(a => {
-        const diff = (new Date(a.dateRetourPrevue) - new Date()) / 86400000;
-        return diff >= 0 && diff <= 3;
-    });
-    else if (stat === 'Prêt') list = list.filter(a => new Date(a.dateRetourPrevue) >= new Date());
-
-    if (list.length === 0) {
-        document.getElementById('pretsList').innerHTML = '<div class="empty-state"><div class="icon">🔄</div>Aucun prêt en cours</div>';
+    if (!list.length) {
+        const msgs = {
+            dispo: '📦 Aucun article disponible au prêt',
+            encours: '🔄 Aucun prêt en cours',
+            bientot: '✅ Aucun retour imminent',
+            retard: '✅ Aucun retard !'
+        };
+        document.getElementById('pretsList').innerHTML = `<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${msgs[currentPretTab]}</p></div>`;
         return;
     }
 
-    const html = list.map(a => {
-        const retard = new Date(a.dateRetourPrevue) < new Date();
-        const diff = Math.ceil((new Date(a.dateRetourPrevue) - new Date()) / 86400000);
-        return `
-        <div class="article-item" onclick="openArticleModal('${a.id}')" style="${retard ? 'border-color:var(--red)' : ''}">
-            <div class="article-item-header">
-                <div>
-                    <div class="article-item-title">${a.article}</div>
-                    <div class="article-item-ref">${a.reference} — ${a.magasin}</div>
+    document.getElementById('pretsList').innerHTML = list.map(a => {
+        if (currentPretTab === 'dispo') {
+            return `
+            <div class="article-item" onclick="openModal('${a.id}')">
+                <div class="item-head">
+                    <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
+                    <span class="badge b-purple">Disponible</span>
                 </div>
-                <span class="badge ${retard ? 'badge-retard' : 'badge-pret'}">
-                    ${retard ? `⚠️ +${Math.abs(diff)}j` : `↩️ J-${diff}`}
+                <div class="item-meta">
+                    <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                    <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                    <span class="meta">👤 <strong>${a.client}</strong></span>
+                </div>
+            </div>`;
+        }
+
+        const retard = a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date();
+        const diff = a.dateRetourPrevue ? Math.ceil((new Date(a.dateRetourPrevue) - new Date()) / 86400000) : null;
+        return `
+        <div class="article-item" onclick="openModal('${a.id}')" style="${retard ? 'border-color:var(--red-border);background:var(--red-soft)' : ''}">
+            <div class="item-head">
+                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
+                <span class="badge ${retard ? 'b-retard' : 'b-pret'}">
+                    ${retard ? `⚠️ +${Math.abs(diff)}j de retard` : diff !== null ? `↩️ J-${diff}` : 'En prêt'}
                 </span>
             </div>
-            <div class="article-meta">
-                <span class="meta-chip">👤 Prêté à <strong>${a.prenomEmprunteur}</strong></span>
-                <span class="meta-chip">📅 <strong>${new Date(a.datePret).toLocaleDateString()}</strong></span>
-                <span class="meta-chip">↩️ Retour <strong>${new Date(a.dateRetourPrevue).toLocaleDateString()}</strong></span>
-                <span class="meta-chip">👥 Client: <strong>${a.client}</strong></span>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">👤 Prêté à <strong>${a.prenomEmprunteur}</strong></span>
+                <span class="meta">📅 Le <strong>${a.datePret ? new Date(a.datePret).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                ${a.dateRetourPrevue ? `<span class="meta">↩️ Retour <strong>${new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
+                <span class="meta">📦 Client: <strong>${a.client}</strong></span>
             </div>
         </div>`;
     }).join('');
-
-    document.getElementById('pretsList').innerHTML = html;
 }
 
-// ─── ALERTES ────────────────────────────────
-
-function displayAlertes() {
-    const mag = document.getElementById('alerteMagasin').value;
+// ─── ALERTES ──────────────────────────
+function renderAlertes() {
+    const mag = document.getElementById('a_mag').value;
     const list = mag ? articles.filter(a => a.magasin === mag) : articles;
     let alertes = [];
 
-    list.filter(a => a.statut === 'Prêt' && new Date(a.dateRetourPrevue) < new Date())
+    list.filter(a => a.statut === 'Prêt' && a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date())
         .forEach(a => {
             const j = Math.floor((new Date() - new Date(a.dateRetourPrevue)) / 86400000);
-            alertes.push({ type: 'danger', t: `Prêt en retard — ${a.article}`, m: `${a.magasin} · ${a.prenomEmprunteur} · ${j}j de retard`, id: a.id });
+            alertes.push({ type: 'danger', t: `Prêt en retard — ${a.article}`, m: `${a.magasin} · Prêté à ${a.prenomEmprunteur} · ${j} jour(s) de retard`, id: a.id });
         });
 
-    list.filter(a => { if (a.statut !== 'Prêt') return false; const d = (new Date(a.dateRetourPrevue)-new Date())/86400000; return d>=0&&d<=3; })
+    list.filter(a => { if (a.statut !== 'Prêt' || !a.dateRetourPrevue) return false; const d = (new Date(a.dateRetourPrevue)-new Date())/86400000; return d>=0&&d<=3; })
         .forEach(a => {
             const j = Math.ceil((new Date(a.dateRetourPrevue)-new Date())/86400000);
-            alertes.push({ type: 'warning', t: `Retour bientôt — ${a.article}`, m: `${a.magasin} · ${a.prenomEmprunteur} · dans ${j}j`, id: a.id });
+            alertes.push({ type: 'warning', t: `Retour bientôt — ${a.article}`, m: `${a.magasin} · ${a.prenomEmprunteur} · dans ${j} jour(s)`, id: a.id });
         });
 
-    list.filter(a => a.type === 'Stock' && a.quantiteStock !== null && a.quantiteStock > 0 && a.quantiteStock < 5)
+    list.filter(a => a.type==='Stock' && a.quantiteStock!==null && a.quantiteStock>0 && a.quantiteStock<5)
         .forEach(a => alertes.push({ type: 'warning', t: `Stock faible — ${a.article}`, m: `${a.magasin} · ${a.quantiteStock} unité(s) restante(s)`, id: a.id }));
 
-    list.filter(a => a.type === 'Stock' && a.quantiteStock === 0)
-        .forEach(a => alertes.push({ type: 'danger', t: `Stock épuisé — ${a.article}`, m: `${a.magasin} · Réapprovisionner`, id: a.id }));
-
-    document.getElementById('alertesBadge').textContent = alertes.filter(a=>a.type==='danger').length;
-    document.getElementById('alertesBadge').style.display = alertes.filter(a=>a.type==='danger').length > 0 ? 'inline' : 'none';
+    list.filter(a => a.type==='Stock' && a.quantiteStock===0)
+        .forEach(a => alertes.push({ type: 'danger', t: `Stock épuisé — ${a.article}`, m: `${a.magasin} · À réapprovisionner`, id: a.id }));
 
     if (!alertes.length) {
-        document.getElementById('alertesList').innerHTML = '<div class="empty-state"><div class="icon">✅</div>Aucune alerte</div>';
+        document.getElementById('alertList').innerHTML = '<div class="empty"><div class="ico">✅</div><p>Aucune alerte — tout est en ordre !</p></div>';
         return;
     }
 
-    document.getElementById('alertesList').innerHTML = alertes.map(al => `
-        <div class="alert-box ${al.type}" onclick="openArticleModal('${al.id}')">
-            <span>${al.type==='danger'?'🔴':'🟡'}</span>
-            <div><strong>${al.t}</strong><br><span style="font-size:12px;opacity:.8">${al.m}</span></div>
+    document.getElementById('alertList').innerHTML = alertes.map(al => `
+        <div class="alert-item ${al.type}" onclick="openModal('${al.id}')">
+            <span style="font-size:20px">${al.type==='danger'?'🔴':'🟡'}</span>
+            <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text)">${al.t}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:3px">${al.m}</div>
+            </div>
         </div>`).join('');
 }
 
-// ─── MODAL ARTICLE ──────────────────────────
+// ─── LISTE GÉNÉRIQUE ─────────────────
+function renderList(list, containerId) {
+    if (!list.length) {
+        document.getElementById(containerId).innerHTML = '<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';
+        return;
+    }
+    document.getElementById(containerId).innerHTML = list.map(a => {
+        const bClass = { Stock: 'b-stock', Prêt: 'b-pret', Sorti: 'b-sorti', SAV: 'b-sav' }[a.statut] || 'b-stock';
+        return `
+        <div class="article-item" onclick="openModal('${a.id}')">
+            <div class="item-head">
+                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
+                <span class="badge ${bClass}">${a.statut}</span>
+            </div>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">👤 <strong>${a.client}</strong></span>
+                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                ${a.numeroAR ? `<span class="meta">AR: <strong>${a.numeroAR}</strong></span>` : ''}
+                ${a.nombreColis > 1 ? `<span class="meta">📦 <strong>${a.nombreColis} colis</strong></span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
 
-async function openArticleModal(articleId) {
-    const a = articles.find(x => x.id === articleId);
-    if (!a) { alert('Article introuvable'); return; }
+// ─── MODAL ────────────────────────────
+async function openModal(id) {
+    const a = articles.find(x => x.id === id);
+    if (!a) { alert('Article non trouvé'); return; }
 
-    document.getElementById('modalTitle').textContent = a.article;
+    document.getElementById('mTitle').textContent = a.article;
+    document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
+    document.getElementById('mBody').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text3)">⏳ Chargement...</div>';
+    document.getElementById('overlay').classList.add('active');
 
-    const histo = await loadHistorique(articleId);
+    const histo = await loadHisto(id);
 
-    // Détecter le type de badge
-    let badgeClass = 'badge-stock', badgeLabel = a.statut;
-    if (a.statut === 'Prêt') { badgeClass = 'badge-pret'; }
-    if (a.statut === 'Sorti') { badgeClass = 'badge-sorti'; }
-    if (a.statut === 'SAV' || a.type === 'SAV') { badgeClass = 'badge-sav'; }
+    const bClass = { Stock: 'b-stock', Prêt: 'b-pret', Sorti: 'b-sorti', SAV: 'b-sav' }[a.statut] || 'b-stock';
+    const typeClass = { Navette: 'b-navette', Stock: 'b-stock', Prêt: 'b-purple', SAV: 'b-sav' }[a.type] || 'b-navette';
 
     let html = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <span class="badge ${badgeClass}">${badgeLabel}</span>
-            <span class="badge badge-navette">${a.type}</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+            <span class="badge ${typeClass}">${a.type}</span>
+            <span class="badge ${bClass}">${a.statut}</span>
         </div>
         <div class="detail-grid">
-            <div class="detail-field"><div class="key">Magasin</div><div class="val">${a.magasin}</div></div>
-            <div class="detail-field"><div class="key">Client</div><div class="val">${a.client}</div></div>
-            <div class="detail-field"><div class="key">Référence</div><div class="val">${a.reference}</div></div>
-            <div class="detail-field"><div class="key">Emplacement</div><div class="val">${a.emplacement}</div></div>
-            ${a.numeroAR ? `<div class="detail-field"><div class="key">N° AR</div><div class="val">${a.numeroAR}</div></div>` : ''}
-            ${a.quantiteStock !== null ? `<div class="detail-field"><div class="key">Quantité</div><div class="val">${a.quantiteStock} / ${a.quantiteInitiale}</div></div>` : ''}
-            ${a.nombreColis > 1 ? `<div class="detail-field"><div class="key">Colis</div><div class="val">${a.nombreColis}</div></div>` : ''}
-            <div class="detail-field"><div class="key">Réceptionné par</div><div class="val">${a.kitchener}</div></div>
-            <div class="detail-field"><div class="key">Date Réception</div><div class="val">${new Date(a.dateReception).toLocaleDateString('fr-FR')}</div></div>
-            ${a.notes ? `<div class="detail-field full"><div class="key">Notes</div><div class="val">${a.notes}</div></div>` : ''}
-        </div>
-    `;
+            <div class="detail-field"><div class="k">Magasin</div><div class="v">${a.magasin}</div></div>
+            <div class="detail-field"><div class="k">Client</div><div class="v">${a.client}</div></div>
+            <div class="detail-field"><div class="k">Référence</div><div class="v">${a.reference}</div></div>
+            <div class="detail-field"><div class="k">Emplacement</div><div class="v">${a.emplacement}</div></div>
+            ${a.numeroAR ? `<div class="detail-field"><div class="k">N° AR</div><div class="v">${a.numeroAR}</div></div>` : ''}
+            ${a.quantiteStock !== null ? `<div class="detail-field"><div class="k">Quantité</div><div class="v">${a.quantiteStock} / ${a.quantiteInitiale}</div></div>` : ''}
+            <div class="detail-field"><div class="k">Réceptionné par</div><div class="v">${a.kitchener}</div></div>
+            <div class="detail-field"><div class="k">Date réception</div><div class="v">${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</div></div>
+            ${a.notes ? `<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>` : ''}
+        </div>`;
 
     if (a.statut === 'Prêt') {
         html += `
-        <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:14px;margin-bottom:16px;">
-            <div style="font-size:13px;color:var(--orange);font-weight:600;">En prêt depuis le ${new Date(a.datePret).toLocaleDateString('fr-FR')}</div>
-            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">Prêté à ${a.prenomEmprunteur} · Retour prévu le ${new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR')}</div>
+        <div style="background:var(--orange-soft);border:1.5px solid var(--orange-border);border-radius:var(--r2);padding:14px;margin-bottom:16px;">
+            <div style="font-weight:700;color:var(--orange)">🔄 En prêt</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:6px;">
+                Prêté à <strong>${a.prenomEmprunteur}</strong> depuis le <strong>${a.datePret ? new Date(a.datePret).toLocaleDateString('fr-FR') : '?'}</strong><br>
+                Retour prévu le <strong>${a.dateRetourPrevue ? new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR') : '?'}</strong>
+            </div>
         </div>`;
     }
 
-    // Actions
+    // Prénom bar + actions
     html += `
     <div class="prenom-bar">
         <label>👤 Votre prénom</label>
-        <input type="text" id="actionPrenom" placeholder="Obligatoire pour toute action">
+        <input type="text" id="actPrenom" placeholder="Obligatoire pour toute action">
     </div>
     <div class="btn-row">`;
 
     if (a.statut === 'Stock') {
-        html += `<button class="btn btn-success" onclick="actionSortir('${a.id}')">📤 Sortir</button>`;
-        html += `<button class="btn btn-warning" onclick="actionPreter('${a.id}')">🔄 Prêter</button>`;
-        html += `<button class="btn btn-ghost" onclick="actionEmplacement('${a.id}')">📍 Emplacement</button>`;
+        html += `
+        <button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>
+        <button class="btn btn-warning" onclick="actPreter('${a.id}')">🔄 Prêter</button>
+        <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
         if (a.type === 'Stock') {
-            html += `<button class="btn btn-cyan" onclick="actionSortirQte('${a.id}')">📦 Sortir quantité</button>`;
-            html += `<button class="btn btn-primary" onclick="actionAjouterQte('${a.id}')">➕ Ajouter stock</button>`;
+            html += `
+        <button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
+        <button class="btn btn-purple" onclick="actAjouterQte('${a.id}')">➕ Ajouter stock</button>`;
         }
     }
-
     if (a.statut === 'Prêt') {
-        html += `<button class="btn btn-success" onclick="actionRetourPret('${a.id}')">↩️ Retour de prêt</button>`;
+        html += `<button class="btn btn-success" onclick="actRetour('${a.id}')">↩️ Retour de prêt</button>`;
     }
-
     html += `</div>`;
 
     // Historique
-    html += `
-    <div class="divider"></div>
-    <div style="font-size:14px;font-weight:600;margin-bottom:12px;">📜 Historique</div>`;
+    html += `<div class="divider"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px;">📜 Historique</div>`;
 
-    if (histo.length === 0) {
-        html += '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px;">Aucun historique</div>';
+    if (!histo.length) {
+        html += '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;">Aucun historique disponible</div>';
     } else {
         html += histo.map(h => `
-            <div class="histo-item">
-                <div class="histo-date">${new Date(h.date).toLocaleString('fr-FR')}</div>
-                <div class="histo-action">${h.action} — ${h.utilisateur}</div>
-                ${h.details ? `<div class="histo-detail">${h.details}</div>` : ''}
-            </div>`).join('');
+        <div class="histo">
+            <div class="histo-date">${h.date ? new Date(h.date).toLocaleString('fr-FR') : '?'}</div>
+            <div class="histo-action">${h.action} — ${h.utilisateur}</div>
+            ${h.details ? `<div class="histo-detail">${h.details}</div>` : ''}
+        </div>`).join('');
     }
 
-    document.getElementById('modalBody').innerHTML = html;
-    document.getElementById('articleModal').classList.add('active');
+    document.getElementById('mBody').innerHTML = html;
 }
 
 function closeModal() {
-    document.getElementById('articleModal').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
 }
 
-// ─── ACTIONS ────────────────────────────────
-
+// ─── ACTIONS ──────────────────────────
 function getPrenom() {
-    const p = document.getElementById('actionPrenom').value.trim();
-    if (!p) { alert('Entrez votre prénom pour effectuer cette action'); return null; }
-    return p;
+    const v = (document.getElementById('actPrenom')?.value || '').trim();
+    if (!v) { alert('⚠️ Entrez votre prénom avant d\'effectuer cette action'); return null; }
+    return v;
 }
 
-async function actionSortir(id) {
+async function actSortir(id) {
     const prenom = getPrenom(); if (!prenom) return;
-    const raison = prompt('Raison de la sortie (ex: TLE, Poseur, Client) :');
+    const raison = prompt('Raison de la sortie (TLE, Poseur, Client...) :');
     if (!raison) return;
     const a = articles.find(x => x.id === id);
     a.statut = 'Sorti'; a.dateSortie = new Date().toISOString(); a.raisonSortie = raison;
     await doUpdate(a);
-    doHistorique(id, 'Sortie', prenom, `Raison: ${raison}`);
+    doHisto(id, 'Sortie', prenom, `Raison: ${raison}`);
     closeModal(); alert('✅ Article sorti'); loadData();
 }
 
-async function actionSortirQte(id) {
+async function actSortirQte(id) {
     const prenom = getPrenom(); if (!prenom) return;
     const a = articles.find(x => x.id === id);
-    const qteStr = prompt(`Quantité à sortir (stock actuel : ${a.quantiteStock}) :`);
-    if (!qteStr) return;
-    const qte = parseInt(qteStr);
+    const s = prompt(`Quantité à sortir (stock actuel : ${a.quantiteStock}) :`);
+    if (!s) return;
+    const qte = parseInt(s);
     if (isNaN(qte) || qte <= 0) { alert('Quantité invalide'); return; }
-    if (qte > a.quantiteStock) { alert(`Quantité insuffisante (${a.quantiteStock} disponible)`); return; }
+    if (qte > a.quantiteStock) { alert(`Stock insuffisant — disponible : ${a.quantiteStock}`); return; }
     a.quantiteStock -= qte;
     if (a.quantiteStock === 0) a.statut = 'Sorti';
     await doUpdate(a);
-    doHistorique(id, 'Sortie stock', prenom, `${qte} unité(s) sortie(s) — Reste: ${a.quantiteStock}`);
-    closeModal(); alert(`✅ ${qte} unité(s) sortie(s). Reste : ${a.quantiteStock}`); loadData();
+    doHisto(id, 'Sortie stock', prenom, `${qte} unité(s) sortie(s) — Reste : ${a.quantiteStock}`);
+    closeModal(); alert(`✅ ${qte} unité(s) sortie(s) — Reste : ${a.quantiteStock}`); loadData();
 }
 
-async function actionAjouterQte(id) {
+async function actAjouterQte(id) {
     const prenom = getPrenom(); if (!prenom) return;
     const a = articles.find(x => x.id === id);
-    const qteStr = prompt(`Quantité à ajouter (stock actuel : ${a.quantiteStock || 0}) :`);
-    if (!qteStr) return;
-    const qte = parseInt(qteStr);
+    const s = prompt(`Quantité à ajouter (stock actuel : ${a.quantiteStock || 0}) :`);
+    if (!s) return;
+    const qte = parseInt(s);
     if (isNaN(qte) || qte <= 0) { alert('Quantité invalide'); return; }
     a.quantiteStock = (a.quantiteStock || 0) + qte;
     a.quantiteInitiale = Math.max(a.quantiteInitiale || 0, a.quantiteStock);
     if (a.statut === 'Sorti') a.statut = 'Stock';
     await doUpdate(a);
-    doHistorique(id, 'Ajout stock', prenom, `+${qte} unité(s) — Nouveau stock: ${a.quantiteStock}`);
+    doHisto(id, 'Ajout stock', prenom, `+${qte} unité(s) — Nouveau stock : ${a.quantiteStock}`);
     closeModal(); alert(`✅ Stock mis à jour : ${a.quantiteStock} unité(s)`); loadData();
 }
 
-async function actionPreter(id) {
+async function actPreter(id) {
     const prenom = getPrenom(); if (!prenom) return;
-    const emprunteur = prompt('Prénom de l\'emprunteur :');
-    if (!emprunteur) return;
+    const emp = prompt('Prénom de l\'emprunteur :');
+    if (!emp) return;
     const dateStr = prompt('Date de retour prévue (JJ/MM/AAAA) :');
     if (!dateStr) return;
     const [j, m, y] = dateStr.split('/');
     const a = articles.find(x => x.id === id);
-    a.statut = 'Prêt';
-    a.datePret = new Date().toISOString();
-    a.prenomEmprunteur = emprunteur;
+    a.statut = 'Prêt'; a.datePret = new Date().toISOString();
+    a.prenomEmprunteur = emp;
     a.dateRetourPrevue = new Date(y, m-1, j).toISOString();
     await doUpdate(a);
-    doHistorique(id, 'Prêt', prenom, `À ${emprunteur} — Retour: ${dateStr}`);
+    doHisto(id, 'Prêt', prenom, `À ${emp} — Retour le ${dateStr}`);
     closeModal(); alert('✅ Prêt enregistré'); loadData();
 }
 
-async function actionRetourPret(id) {
+async function actRetour(id) {
     const prenom = getPrenom(); if (!prenom) return;
     const a = articles.find(x => x.id === id);
-    const emprunteur = a.prenomEmprunteur;
+    const emp = a.prenomEmprunteur;
     a.statut = 'Stock'; a.dateRetourReel = new Date().toISOString();
     await doUpdate(a);
-    doHistorique(id, 'Retour prêt', prenom, `Retourné par ${emprunteur}`);
+    doHisto(id, 'Retour prêt', prenom, `Retourné par ${emp}`);
     closeModal(); alert('✅ Retour enregistré'); loadData();
 }
 
-async function actionEmplacement(id) {
+async function actEmplacement(id) {
     const prenom = getPrenom(); if (!prenom) return;
     const a = articles.find(x => x.id === id);
-    const nouvel = prompt(`Nouvel emplacement (actuel: ${a.emplacement}) :`);
-    if (!nouvel) return;
-    const ancien = a.emplacement;
-    a.emplacement = nouvel;
+    const n = prompt(`Nouvel emplacement (actuel : ${a.emplacement}) :`);
+    if (!n) return;
+    const ancien = a.emplacement; a.emplacement = n;
     await doUpdate(a);
-    doHistorique(id, 'Changement emplacement', prenom, `${ancien} → ${nouvel}`);
+    doHisto(id, 'Changement emplacement', prenom, `${ancien} → ${n}`);
     closeModal(); alert('✅ Emplacement mis à jour'); loadData();
 }
-
-// ─── API CALLS ───────────────────────────────
 
 async function doUpdate(a) {
     return apiCall({
@@ -1379,67 +1234,20 @@ async function doUpdate(a) {
     });
 }
 
-function doHistorique(id, action, user, details = '') {
-    delete historiquesCache[id];
+function doHisto(id, action, user, details = '') {
+    delete histoCache[id];
     apiCall({ action: 'addHistorique', ArticleID: id, Action: action,
         Date: new Date().toISOString(), Utilisateur: user, Details: details });
 }
 
-async function loadHistorique(id) {
-    if (historiquesCache[id]) return historiquesCache[id];
-    return new Promise(resolve => {
-        const cb = 'hcb_' + Date.now();
-        window[cb] = (data) => { cleanup(cb); historiquesCache[id] = data || []; resolve(historiquesCache[id]); };
-        makeScript(`${API_URL}?action=getHistorique&articleId=${encodeURIComponent(id)}&callback=${cb}`);
-    });
+async function loadHisto(id) {
+    if (histoCache[id]) return histoCache[id];
+    const data = await apiCall({ action: 'getHistorique', articleId: id });
+    histoCache[id] = Array.isArray(data) ? data : [];
+    return histoCache[id];
 }
 
-// ─── RENDER LISTE GÉNÉRIQUE ─────────────────
-
-function renderArticleList(list, containerId, context) {
-    if (list.length === 0) {
-        document.getElementById(containerId).innerHTML = '<div class="empty-state"><div class="icon">📭</div>Aucun article</div>';
-        return;
-    }
-    document.getElementById(containerId).innerHTML = list.map(a => {
-        let badgeClass = 'badge-stock', badgeLabel = a.statut;
-        if (a.statut === 'Prêt') badgeClass = 'badge-pret';
-        if (a.statut === 'Sorti') badgeClass = 'badge-sorti';
-        if (a.statut === 'SAV' || a.type === 'SAV') { badgeClass = 'badge-sav'; badgeLabel = 'SAV'; }
-        return `
-        <div class="article-item" onclick="openArticleModal('${a.id}')">
-            <div class="article-item-header">
-                <div>
-                    <div class="article-item-title">${a.article}</div>
-                    <div class="article-item-ref">${a.reference}</div>
-                </div>
-                <span class="badge ${badgeClass}">${badgeLabel}</span>
-            </div>
-            <div class="article-meta">
-                <span class="meta-chip">🏪 <strong>${a.magasin}</strong></span>
-                <span class="meta-chip">👤 <strong>${a.client}</strong></span>
-                <span class="meta-chip">📍 <strong>${a.emplacement}</strong></span>
-                ${a.numeroAR ? `<span class="meta-chip">N°AR <strong>${a.numeroAR}</strong></span>` : ''}
-                ${a.nombreColis > 1 ? `<span class="meta-chip">📦 <strong>${a.nombreColis} colis</strong></span>` : ''}
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// ─── REFRESH ─────────────────────────────────
-
-function refreshAllViews() {
-    if (document.getElementById('navettes').classList.contains('active')) displayNavettes();
-    if (document.getElementById('stock').classList.contains('active')) displayStock();
-    if (document.getElementById('prets').classList.contains('active')) displayPrets();
-    if (document.getElementById('alertes').classList.contains('active')) displayAlertes();
-    // Badges
-    const retards = articles.filter(a => a.statut === 'Prêt' && new Date(a.dateRetourPrevue) < new Date()).length;
-    document.getElementById('pretsBadge').textContent = retards;
-    document.getElementById('pretsBadge').style.display = retards > 0 ? 'inline' : 'none';
-}
-
-// Recharger toutes les 60s
+// Actualisation auto
 setInterval(() => loadData(), 60000);
 </script>
 </body>
