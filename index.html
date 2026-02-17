@@ -469,11 +469,11 @@
                             <option value="SAV">🔧 SAV</option>
                         </select>
                     </div>
-                    <div class="fg">
-                        <label>Nom du Client *</label>
-                        <input id="f_client" type="text" required placeholder="Nom du client">
+                    <div class="fg" id="clientGroup">
+                        <label id="clientLabel">Nom du Client *</label>
+                        <input id="f_client" type="text" placeholder="Nom du client">
                     </div>
-                    <div class="fg">
+                    <div class="fg" id="arGroup">
                         <label>N° AR</label>
                         <input id="f_ar" type="text" placeholder="Numéro AR">
                     </div>
@@ -485,7 +485,7 @@
                         <label>Référence *</label>
                         <input id="f_ref" type="text" required placeholder="Référence">
                     </div>
-                    <div class="fg">
+                    <div class="fg" id="colisGroup">
                         <label>Nombre de Colis *</label>
                         <input id="f_colis" type="number" min="1" value="1" required>
                     </div>
@@ -742,9 +742,23 @@ function refreshBadges() {
 // ─── FORM ─────────────────────────────
 function toggleQty() {
     const t = document.getElementById('f_type').value;
-    const g = document.getElementById('qtyGroup');
-    g.style.display = t === 'Stock' ? 'flex' : 'none';
-    document.getElementById('f_qty').required = t === 'Stock';
+    const isStock = t === 'Stock';
+
+    // Champ quantité : visible uniquement pour Stock
+    document.getElementById('qtyGroup').style.display = isStock ? 'flex' : 'none';
+    document.getElementById('f_qty').required = isStock;
+
+    // Champ client : masqué pour Stock (consommables sans client)
+    document.getElementById('clientGroup').style.display = isStock ? 'none' : 'flex';
+    document.getElementById('f_client').required = !isStock;
+
+    // Champ N° AR : masqué pour Stock
+    document.getElementById('arGroup').style.display = isStock ? 'none' : 'flex';
+
+    // Nombre de colis : masqué pour Stock (on utilise la quantité)
+    document.getElementById('colisGroup').style.display = isStock ? 'none' : 'flex';
+    document.getElementById('f_colis').required = !isStock;
+    if (isStock) document.getElementById('f_colis').value = '1';
 }
 
 document.getElementById('receptionForm').addEventListener('submit', async e => {
@@ -753,6 +767,7 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
 
     const type = document.getElementById('f_type').value;
+    const isStock = type === 'Stock';
     const id = 'ART-' + Date.now();
     const now = new Date().toISOString();
 
@@ -760,13 +775,13 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
         action: 'addArticle', ID: id,
         Magasin: document.getElementById('f_magasin').value,
         Type: type,
-        Client: document.getElementById('f_client').value,
-        NumeroAR: document.getElementById('f_ar').value || '',
+        Client: isStock ? 'Stock interne' : document.getElementById('f_client').value,
+        NumeroAR: isStock ? '' : (document.getElementById('f_ar').value || ''),
         Article: document.getElementById('f_article').value,
         Reference: document.getElementById('f_ref').value,
-        NombreColis: document.getElementById('f_colis').value,
-        QuantiteStock: type === 'Stock' ? document.getElementById('f_qty').value : '',
-        QuantiteInitiale: type === 'Stock' ? document.getElementById('f_qty').value : '',
+        NombreColis: isStock ? '1' : document.getElementById('f_colis').value,
+        QuantiteStock: isStock ? document.getElementById('f_qty').value : '',
+        QuantiteInitiale: isStock ? document.getElementById('f_qty').value : '',
         Emplacement: document.getElementById('f_emplacement').value,
         Kitchener: document.getElementById('f_prenom').value,
         Notes: document.getElementById('f_notes').value || '',
@@ -798,6 +813,11 @@ function resetForm() {
     document.getElementById('receptionForm').style.display = 'block';
     document.getElementById('qrResult').style.display = 'none';
     document.getElementById('qtyGroup').style.display = 'none';
+    document.getElementById('clientGroup').style.display = 'flex';
+    document.getElementById('arGroup').style.display = 'flex';
+    document.getElementById('colisGroup').style.display = 'flex';
+    document.getElementById('f_client').required = true;
+    document.getElementById('f_colis').required = true;
 }
 
 function printQR() {
@@ -881,7 +901,6 @@ function renderStock() {
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-                <span class="meta">👤 <strong>${a.client}</strong></span>
             </div>
         </div>`;
     }).join('');
@@ -1066,14 +1085,23 @@ async function openModal(id) {
         </div>
         <div class="detail-grid">
             <div class="detail-field"><div class="k">Magasin</div><div class="v">${a.magasin}</div></div>
-            <div class="detail-field"><div class="k">Client</div><div class="v">${a.client}</div></div>
+            ${a.type !== 'Stock' && a.client && a.client !== 'Stock interne' ? `<div class="detail-field"><div class="k">Client</div><div class="v">${a.client}</div></div>` : ''}
             <div class="detail-field"><div class="k">Référence</div><div class="v">${a.reference}</div></div>
             <div class="detail-field"><div class="k">Emplacement</div><div class="v">${a.emplacement}</div></div>
             ${a.numeroAR ? `<div class="detail-field"><div class="k">N° AR</div><div class="v">${a.numeroAR}</div></div>` : ''}
-            ${a.quantiteStock !== null ? `<div class="detail-field"><div class="k">Quantité</div><div class="v">${a.quantiteStock} / ${a.quantiteInitiale}</div></div>` : ''}
+            ${a.quantiteStock !== null ? `<div class="detail-field"><div class="k">Quantité en stock</div><div class="v" style="font-size:18px;font-weight:800;color:${a.quantiteStock===0?'var(--red)':a.quantiteStock<5?'var(--orange)':'var(--green)'}">${a.quantiteStock} <span style="font-size:13px;font-weight:500;color:var(--text3)">/ ${a.quantiteInitiale}</span></div></div>` : ''}
+            ${a.nombreColis > 1 ? `<div class="detail-field"><div class="k">Colis</div><div class="v">${a.nombreColis}</div></div>` : ''}
             <div class="detail-field"><div class="k">Réceptionné par</div><div class="v">${a.kitchener}</div></div>
             <div class="detail-field"><div class="k">Date réception</div><div class="v">${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</div></div>
             ${a.notes ? `<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>` : ''}
+        </div>
+        <!-- QR Code section -->
+        <div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div>
+                <div style="font-size:13px;font-weight:700;color:var(--blue)">🔳 QR Code de l'article</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px;">Imprimez et collez sur le colis</div>
+            </div>
+            <button class="btn btn-primary" onclick="printArticleQR('${a.id}', '${a.article.replace(/'/g, "\\'")}', '${a.reference}', '${a.magasin}')">🖨️ Imprimer QR</button>
         </div>`;
 
     if (a.statut === 'Prêt') {
@@ -1131,6 +1159,35 @@ async function openModal(id) {
 
 function closeModal() {
     document.getElementById('overlay').classList.remove('active');
+}
+
+// Imprimer le QR code d'un article depuis la fiche
+function printArticleQR(id, nom, ref, magasin) {
+    const url = `${APP_URL}?article=${id}`;
+    const w = window.open('', '', 'width=400,height=560');
+    w.document.write(`
+        <html><head><title>QR Code — ${nom}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+        <style>
+            body { font-family: sans-serif; text-align: center; padding: 30px; background: white; }
+            h2 { font-size: 18px; margin-bottom: 4px; }
+            p { font-size: 13px; color: #666; margin: 4px 0; }
+            #qr { display: inline-block; margin: 16px 0; padding: 12px; border: 2px solid #eee; border-radius: 8px; }
+            .id { font-family: monospace; font-size: 11px; color: #999; margin-top: 8px; }
+        </style>
+        </head><body>
+        <h2>${nom}</h2>
+        <p>Réf : ${ref}</p>
+        <p>Magasin : ${magasin}</p>
+        <div id="qr"></div>
+        <div class="id">${id}</div>
+        <script>
+            new QRCode(document.getElementById('qr'), { text: '${url}', width: 200, height: 200 });
+            setTimeout(() => window.print(), 800);
+        <\/script>
+        </body></html>
+    `);
+    w.document.close();
 }
 
 // ─── ACTIONS ──────────────────────────
