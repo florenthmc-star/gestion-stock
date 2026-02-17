@@ -260,7 +260,7 @@
                         <select id="f_type" required onchange="toggleFormFields()">
                             <option value="">Sélectionner...</option>
                             <option value="Mise à disposition">🚚 Mise à disposition (client/SAV)</option>
-                            <option value="Stock">📦 Stock (consommables)</option>
+                            <option value="Stock">📦 Stock</option>
                             <option value="Article de prêt">🔄 Article de prêt</option>
                         </select>
                     </div>
@@ -296,6 +296,13 @@
                     <div class="fg" id="qtyGroup" style="display:none">
                         <label>Quantité en Stock *</label>
                         <input id="f_qty" type="number" min="1" value="1">
+                    </div>
+
+                    <!-- Seuil alerte : visible pour Stock uniquement -->
+                    <div class="fg" id="seuilGroup" style="display:none">
+                        <label>Seuil d'alerte stock faible</label>
+                        <input id="f_seuil" type="number" min="0" value="5" placeholder="Ex: 5">
+                        <span style="font-size:11px;color:var(--text3);">Alerte si quantité ≤ ce nombre</span>
                     </div>
 
                     <!-- Emplacement : texte libre sauf Lattes -->
@@ -499,6 +506,7 @@ let params = { alerteBientot: 3, alerteUrgent: 1, stockFaible: 5 };
 let seuilsPerso = {}; // { articleId: nombre }
 
 function loadParams() {
+    // Charger depuis localStorage en attendant (sera surchargé par l'API)
     try {
         const p = localStorage.getItem('hmc_params');
         if (p) params = { ...params, ...JSON.parse(p) };
@@ -508,22 +516,61 @@ function loadParams() {
     document.getElementById('param_alerte_bientot').value = params.alerteBientot;
     document.getElementById('param_alerte_urgent').value = params.alerteUrgent;
     document.getElementById('param_stock_faible').value = params.stockFaible;
+    // Tenter de charger depuis Google Sheets
+    loadParamsFromAPI();
+}
+
+async function loadParamsFromAPI() {
+    const data = await apiCall({ action: 'getParams' });
+    if (data && !data.error && data.params) {
+        try {
+            const p = typeof data.params === 'string' ? JSON.parse(data.params) : data.params;
+            params = { ...params, ...p };
+            document.getElementById('param_alerte_bientot').value = params.alerteBientot;
+            document.getElementById('param_alerte_urgent').value = params.alerteUrgent;
+            document.getElementById('param_stock_faible').value = params.stockFaible;
+        } catch(e) {}
+    }
+    if (data && !data.error && data.seuils) {
+        try {
+            const s = typeof data.seuils === 'string' ? JSON.parse(data.seuils) : data.seuils;
+            seuilsPerso = { ...seuilsPerso, ...s };
+        } catch(e) {}
+    }
+}
+
+async function saveParamsToAPI() {
+    await apiCall({
+        action: 'saveParams',
+        params: JSON.stringify(params),
+        seuils: JSON.stringify(seuilsPerso)
+    });
+    // Aussi en local comme backup
+    localStorage.setItem('hmc_params', JSON.stringify(params));
+    localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
+}
+
+async function saveSeuilsToAPI() {
+    localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
+    await apiCall({ action: 'saveParams', params: JSON.stringify(params), seuils: JSON.stringify(seuilsPerso) });
 }
 
 function saveParams() {
     params.alerteBientot = parseInt(document.getElementById('param_alerte_bientot').value) || 3;
     params.alerteUrgent = parseInt(document.getElementById('param_alerte_urgent').value) || 1;
     params.stockFaible = parseInt(document.getElementById('param_stock_faible').value) || 5;
-    localStorage.setItem('hmc_params', JSON.stringify(params));
-    alert('✅ Paramètres enregistrés !');
-    renderAlertes();
+    saveParamsToAPI().then(() => {
+        alert('✅ Paramètres enregistrés et synchronisés sur tous les appareils !');
+        renderAlertes();
+    });
 }
 
 function resetParams() {
     params = { alerteBientot: 3, alerteUrgent: 1, stockFaible: 5 };
-    localStorage.setItem('hmc_params', JSON.stringify(params));
-    loadParams();
-    alert('✅ Paramètres réinitialisés');
+    saveParamsToAPI().then(() => {
+        loadParams();
+        alert('✅ Paramètres réinitialisés');
+    });
 }
 
 function renderSeuilsListe() {
@@ -543,7 +590,7 @@ function renderSeuilsListe() {
 
 function setSeuil(id, val) {
     seuilsPerso[id] = parseInt(val) || 0;
-    localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
+    saveSeuilsToAPI();
 }
 
 // ─── INIT ─────────────────────────────
@@ -665,6 +712,7 @@ function toggleFormFields() {
     const isStock = t === 'Stock';
     document.getElementById('qtyGroup').style.display = isStock ? 'flex' : 'none';
     document.getElementById('f_qty').required = isStock;
+    document.getElementById('seuilGroup').style.display = isStock ? 'flex' : 'none';
     document.getElementById('clientGroup').style.display = isStock ? 'none' : 'flex';
     document.getElementById('f_client').required = !isStock;
     document.getElementById('arGroup').style.display = isStock ? 'none' : 'flex';
@@ -678,6 +726,7 @@ function resetForm() {
     document.getElementById('receptionForm').style.display = 'block';
     document.getElementById('qrResult').style.display = 'none';
     document.getElementById('qtyGroup').style.display = 'none';
+    document.getElementById('seuilGroup').style.display = 'none';
     document.getElementById('clientGroup').style.display = 'flex';
     document.getElementById('arGroup').style.display = 'flex';
     document.getElementById('colisGroup').style.display = 'flex';
@@ -717,6 +766,13 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
 
     if (r.error) { alert('❌ Erreur : '+r.error); return; }
+
+    // Sauvegarder le seuil d'alerte personnalisé si Stock
+    if (isStock) {
+        const seuilVal = parseInt(document.getElementById('f_seuil').value) || params.stockFaible;
+        seuilsPerso[id] = seuilVal;
+        saveSeuilsToAPI();
+    }
 
     // Données pour l'impression
     lastQRData = { id, article, reference, client, magasin, type, colis, emplacement };
@@ -831,39 +887,70 @@ function renderMAD() {
     const stat = document.getElementById('m_stat').value;
     const q = document.getElementById('m_search').value.toLowerCase();
 
-    let list = articles.filter(a => a.type === 'Mise à disposition');
-    if (mag) list = list.filter(a => a.magasin === mag);
-    if (stat) list = list.filter(a => a.statut === stat);
-    if (q) list = list.filter(a =>
-        a.article.toLowerCase().includes(q)||a.client.toLowerCase().includes(q)||a.reference.toLowerCase().includes(q)
-    );
+    // Stats filtrées par magasin sélectionné
+    const allFiltered = mag ? articles.filter(a=>a.type==='Mise à disposition'&&a.magasin===mag) : articles.filter(a=>a.type==='Mise à disposition');
 
-    const all = articles.filter(a => a.type === 'Mise à disposition');
     document.getElementById('madStats').innerHTML = `
-        <div class="stat-card blue"><div class="num">${all.length}</div><div class="lbl">Total</div></div>
-        <div class="stat-card green"><div class="num">${all.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
-        <div class="stat-card orange"><div class="num">${all.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
-        <div class="stat-card red"><div class="num">${all.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>
+        <div class="stat-card blue"><div class="num">${allFiltered.length}</div><div class="lbl">Total${mag?' — '+mag:''}</div></div>
+        <div class="stat-card green"><div class="num">${allFiltered.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
+        <div class="stat-card orange"><div class="num">${allFiltered.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
+        <div class="stat-card red"><div class="num">${allFiltered.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>
     `;
 
-    renderList(list, 'madList', false);
+    let list = allFiltered.slice();
+    if (stat) list = list.filter(a => a.statut === stat);
+    if (q) list = list.filter(a =>
+        (a.article||'').toLowerCase().includes(q) ||
+        (a.client||'').toLowerCase().includes(q) ||
+        (a.reference||'').toLowerCase().includes(q) ||
+        (a.numeroAR||'').toLowerCase().includes(q) ||
+        (a.emplacement||'').toLowerCase().includes(q) ||
+        (a.kitchener||'').toLowerCase().includes(q)
+    );
+
+    if (!list.length) { document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>'; return; }
+
+    const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
+    document.getElementById('madList').innerHTML = list.map(a=>`
+        <div class="article-item" onclick="openModal('${a.id}')">
+            <div class="item-head">
+                <div>
+                    <div class="item-title">${a.article}</div>
+                    <div class="item-ref">${a.reference}</div>
+                    ${a.client&&a.client!=='Stock interne'?`<div style="font-size:14px;font-weight:800;color:var(--text);margin-top:4px;">👤 ${a.client}</div>`:''}
+                </div>
+                <span class="badge ${bMap[a.statut]||'b-stock'}">${a.statut}</span>
+            </div>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                ${a.numeroAR?`<span class="meta">AR: <strong>${a.numeroAR}</strong></span>`:''}
+                ${a.nombreColis>1?`<span class="meta">📦 <strong>${a.nombreColis} colis</strong></span>`:''}
+            </div>
+        </div>`).join('');
 }
 
 // ─── STOCK ────────────────────────────
 function renderStock() {
     const mag = document.getElementById('s_mag').value;
     const q = document.getElementById('s_search').value.toLowerCase();
-    let list = articles.filter(a => a.type === 'Stock');
-    if (mag) list = list.filter(a => a.magasin === mag);
-    if (q) list = list.filter(a => a.article.toLowerCase().includes(q)||a.reference.toLowerCase().includes(q));
 
-    const all = articles.filter(a => a.type === 'Stock');
+    const allFiltered = mag ? articles.filter(a=>a.type==='Stock'&&a.magasin===mag) : articles.filter(a=>a.type==='Stock');
+
     document.getElementById('stockStats').innerHTML = `
-        <div class="stat-card green"><div class="num">${all.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références</div></div>
-        <div class="stat-card blue"><div class="num">${all.reduce((s,a)=>s+(a.quantiteStock||0),0)}</div><div class="lbl">Quantité totale</div></div>
-        <div class="stat-card orange"><div class="num">${all.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
-        <div class="stat-card red"><div class="num">${all.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>
+        <div class="stat-card green"><div class="num">${allFiltered.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références${mag?' — '+mag:''}</div></div>
+        <div class="stat-card blue"><div class="num">${allFiltered.reduce((s,a)=>s+(a.quantiteStock||0),0)}</div><div class="lbl">Quantité totale</div></div>
+        <div class="stat-card orange"><div class="num">${allFiltered.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
+        <div class="stat-card red"><div class="num">${allFiltered.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>
     `;
+
+    let list = allFiltered.slice();
+    if (q) list = list.filter(a =>
+        (a.article||'').toLowerCase().includes(q) ||
+        (a.reference||'').toLowerCase().includes(q) ||
+        (a.emplacement||'').toLowerCase().includes(q) ||
+        (a.notes||'').toLowerCase().includes(q)
+    );
 
     if (!list.length) { document.getElementById('stockList').innerHTML='<div class="empty"><div class="ico">📦</div><p>Aucun article en stock</p></div>'; return; }
 
@@ -882,6 +969,7 @@ function renderStock() {
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                ${seuil>0?`<span class="meta">⚙️ Seuil: <strong>${seuil}</strong></span>`:''}
             </div>
         </div>`;
     }).join('');
@@ -897,8 +985,11 @@ function setPretTab(tab) {
 
 function renderPrets() {
     const mag = document.getElementById('p_mag').value;
-    const dispo = articles.filter(a => a.type==='Article de prêt'&&a.statut==='Stock');
-    const encours = articles.filter(a => a.statut==='Prêt');
+
+    // Stats filtrées par magasin
+    const base = mag ? articles.filter(a=>a.magasin===mag) : articles;
+    const dispo = base.filter(a => a.type==='Article de prêt'&&a.statut==='Stock');
+    const encours = base.filter(a => a.statut==='Prêt');
     const retards = encours.filter(a => a.dateRetourPrevue&&new Date(a.dateRetourPrevue)<new Date());
     const bientot = encours.filter(a => {
         if (!a.dateRetourPrevue) return false;
@@ -907,7 +998,7 @@ function renderPrets() {
     });
 
     document.getElementById('pretsStats').innerHTML = `
-        <div class="stat-card purple"><div class="num">${dispo.length}</div><div class="lbl">Disponibles</div></div>
+        <div class="stat-card purple"><div class="num">${dispo.length}</div><div class="lbl">Disponibles${mag?' — '+mag:''}</div></div>
         <div class="stat-card blue"><div class="num">${encours.length}</div><div class="lbl">En cours</div></div>
         <div class="stat-card orange"><div class="num">${bientot.length}</div><div class="lbl">Retour bientôt</div></div>
         <div class="stat-card red"><div class="num">${retards.length}</div><div class="lbl">En retard</div></div>
@@ -1116,6 +1207,14 @@ function renderModal(a, histo) {
                 <div class="fg"><label>Article</label><input id="e_article" value="${a.article}"></div>
                 <div class="fg"><label>Référence</label><input id="e_reference" value="${a.reference}"></div>
                 <div class="fg"><label>Emplacement</label><input id="e_emplacement" value="${a.emplacement}"></div>
+                <div class="fg">
+                    <label>Catégorie</label>
+                    <select id="e_type">
+                        <option value="Mise à disposition" ${a.type==='Mise à disposition'?'selected':''}>🚚 Mise à disposition</option>
+                        <option value="Stock" ${a.type==='Stock'?'selected':''}>📦 Stock</option>
+                        <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
+                    </select>
+                </div>
                 ${a.client&&a.client!=='Stock interne'?`<div class="fg"><label>Client</label><input id="e_client" value="${a.client}"></div>`:''}
                 ${a.numeroAR?`<div class="fg"><label>N° AR</label><input id="e_ar" value="${a.numeroAR}"></div>`:''}
                 ${a.quantiteStock!==null?`<div class="fg"><label>Quantité</label><input id="e_qty" type="number" value="${a.quantiteStock}"></div>`:''}
@@ -1201,20 +1300,23 @@ async function actPreter(id) {
     const emp=prompt('Prénom emprunteur :'); if(!emp)return;
     const dateStr=prompt('Date retour (JJ/MM/AAAA) :'); if(!dateStr)return;
     const [j,m,y]=dateStr.split('/');
+    if (!j||!m||!y) { alert('Format de date invalide. Utilisez JJ/MM/AAAA'); return; }
     const a=articles.find(x=>x.id===id);
+    // Le statut passe à "Prêt" — l'article disparaît du stock et apparaît dans les prêts
     a.statut='Prêt'; a.datePret=new Date().toISOString();
     a.prenomEmprunteur=emp; a.dateRetourPrevue=new Date(y,m-1,j).toISOString();
     await doUpdate(a); doHisto(id,'Prêt',prenom,`À ${emp} — Retour: ${dateStr}`);
-    closeModal(); alert('✅ Prêt enregistré'); loadData();
+    closeModal(); alert('✅ Prêt enregistré — l\'article a été retiré du stock'); loadData();
 }
 
 async function actRetour(id) {
     const prenom=getPrenom(); if(!prenom)return;
     const a=articles.find(x=>x.id===id);
     const emp=a.prenomEmprunteur;
+    // Retour : repasse en Stock
     a.statut='Stock'; a.dateRetourReel=new Date().toISOString();
     await doUpdate(a); doHisto(id,'Retour prêt',prenom,`Retourné par ${emp}`);
-    closeModal(); alert('✅ Retour enregistré'); loadData();
+    closeModal(); alert('✅ Retour enregistré — l\'article est de nouveau en stock'); loadData();
 }
 
 async function actModifierDateRetour(id) {
@@ -1247,8 +1349,8 @@ function actSetSeuil(id) {
     const n=parseInt(val);
     if (isNaN(n)||n<0) { alert('Valeur invalide'); return; }
     seuilsPerso[id]=n;
-    localStorage.setItem('hmc_seuils',JSON.stringify(seuilsPerso));
-    alert(`✅ Seuil défini à ${n} unités pour "${a.article}"`);
+    saveSeuilsToAPI();
+    alert(`✅ Seuil défini à ${n} unités pour "${a.article}" — synchronisé sur tous les appareils`);
     refreshBadges();
 }
 
@@ -1261,9 +1363,11 @@ async function actSaveEdit(id) {
     const newArticle=get('e_article',a.article);
     const newRef=get('e_reference',a.reference);
     const newEmp=get('e_emplacement',a.emplacement);
-    const newClient=get('e_client',a.client);
-    const newAR=get('e_ar',a.numeroAR);
+    const newClient=get('e_client',a.client)||a.client;
+    const newAR=get('e_ar',a.numeroAR)||a.numeroAR;
     const newNotes=get('e_notes',a.notes);
+    const newTypeEl=document.getElementById('e_type');
+    const newType=newTypeEl?newTypeEl.value:a.type;
     const newQtyEl=document.getElementById('e_qty');
     const newQty=newQtyEl?parseInt(newQtyEl.value):a.quantiteStock;
     const newColisEl=document.getElementById('e_colis');
@@ -1272,11 +1376,23 @@ async function actSaveEdit(id) {
     if (newArticle!==a.article) changes.push(`Article: "${a.article}" → "${newArticle}"`);
     if (newRef!==a.reference) changes.push(`Réf: ${a.reference} → ${newRef}`);
     if (newEmp!==a.emplacement) changes.push(`Emplacement: ${a.emplacement} → ${newEmp}`);
+    if (newType!==a.type) changes.push(`Catégorie: ${a.type} → ${newType}`);
     if (newQtyEl&&newQty!==a.quantiteStock) changes.push(`Quantité: ${a.quantiteStock} → ${newQty}`);
     if (newColisEl&&newColis!==a.nombreColis) changes.push(`Colis: ${a.nombreColis} → ${newColis}`);
 
+    // Si changement de type vers Stock interne
+    if (newType==='Stock' && a.type!=='Stock') {
+        a.client='Stock interne';
+        a.quantiteStock = a.quantiteStock || 1;
+        a.quantiteInitiale = a.quantiteInitiale || 1;
+    }
+    // Si changement depuis Stock vers autre chose, on garde les infos
+    if (newType!=='Stock' && a.type==='Stock' && (!newClient||newClient==='Stock interne')) {
+        a.client = prompt('Ce type nécessite un client. Entrez le nom du client :') || 'Client';
+    }
+
     a.article=newArticle; a.reference=newRef; a.emplacement=newEmp;
-    a.client=newClient||a.client; a.numeroAR=newAR||a.numeroAR; a.notes=newNotes;
+    a.client=newClient; a.numeroAR=newAR; a.notes=newNotes; a.type=newType;
     if (newQtyEl) a.quantiteStock=newQty;
     if (newColisEl) a.nombreColis=newColis;
 
