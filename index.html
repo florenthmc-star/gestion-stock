@@ -410,6 +410,18 @@
                 <div class="si"><input type="number" id="param_urgent" min="0" max="10" value="1"><span>jours avant (0 = le jour même)</span></div>
             </div>
         </div>
+        <div class="settings-section">
+            <h3>🗑️ Nettoyage automatique</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Supprimez les anciens articles sortis ou retournés pour alléger la base de données.</p>
+            <div class="setting-row">
+                <label>Archiver automatiquement les articles sortis depuis plus de</label>
+                <div class="si"><input type="number" id="param_archive" min="30" max="365" value="90"><span>jours</span></div>
+            </div>
+            <p style="font-size:12px;color:var(--text3);margin-top:8px;">💡 Cela supprimera les articles avec statut "Sorti" ou prêts "Retourné" dont la date de sortie/retour date de plus de X jours.</p>
+            <div class="btn-row" style="margin-top:12px;">
+                <button class="btn btn-danger" onclick="actArchiveOld()">🗑️ Nettoyer maintenant</button>
+            </div>
+        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer — synchronisé sur tous les appareils</button>
             <button class="btn btn-outline" onclick="resetParams()">↺ Réinitialiser</button>
@@ -445,7 +457,7 @@
 
 <script>
 // ══════════════════════════════════
-// ⚠️  REMPLACEZ VOTRE_URL_ICI  ⚠️
+// Configuration API
 // ══════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycbw4iOVF_nKgOsFhdXDdJRGziUPDKw-qAj4QLU3CadpeqBYVyTLiUxa9WM5bGFUDsFmAiA/exec';
 const APP_URL = window.location.origin + window.location.pathname;
@@ -456,14 +468,13 @@ let pretsActifs = [];     // prêts individuels (sous-articles générés par ac
 let histoCache = {};
 let currentPretTab = 'dispo';
 let lastQRData = null;
-let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5 };
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5, archiveJours:90 };
 let seuilsPerso = {};
 let _renderTimer = null;  // debounce
 
 // ─── INIT ─────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
     loadParamsLocal();
-    if (API_URL === 'VOTRE_URL_ICI') { alert('⚠️ Configurez votre URL Google Apps Script.'); return; }
     const artId = new URLSearchParams(window.location.search).get('article');
     loadData().then(() => { if (artId) openModal(artId); });
 });
@@ -480,7 +491,7 @@ function loadParamsLocal() {
 function applyParamsToForm() {
     document.getElementById('param_bientot').value = params.alerteBientot;
     document.getElementById('param_urgent').value = params.alerteUrgent;
-    // param_seuil supprimé - on garde juste stockFaible=5 par défaut dans le code
+    if(document.getElementById('param_archive')) document.getElementById('param_archive').value = params.archiveJours;
 }
 
 async function loadParamsFromAPI() {
@@ -499,12 +510,12 @@ async function saveParamsToAPI() {
 function saveParams() {
     params.alerteBientot = parseInt(document.getElementById('param_bientot').value)||3;
     params.alerteUrgent  = parseInt(document.getElementById('param_urgent').value)||1;
-    // stockFaible reste à 5 par défaut (modifiable uniquement par article)
+    params.archiveJours  = parseInt(document.getElementById('param_archive')?.value)||90;
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
 function resetParams() {
-    params={alerteBientot:3,alerteUrgent:1,stockFaible:5};
+    params={alerteBientot:3,alerteUrgent:1,stockFaible:5,archiveJours:90};
     saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
 
@@ -1143,10 +1154,12 @@ async function actAjouterQte(id){
     const s=prompt(`Quantité à ajouter (actuel: ${a.quantiteStock||0} ${libelle}) :`);if(!s)return;
     const qte=parseInt(s);
     if(isNaN(qte)||qte<=0){alert('Quantité invalide');return;}
-    a.quantiteStock=(a.quantiteStock||0)+qte;
+    const oldQty=a.quantiteStock||0;
+    a.quantiteStock=oldQty+qte;
     a.quantiteInitiale=Math.max(a.quantiteInitiale||0,a.quantiteStock);
     if(a.statut==='Sorti')a.statut='Stock';
-    await doUpdate(a);doHisto(id,'Ajout',p,`+${qte} — Total: ${a.quantiteStock}`);
+    await doUpdate(a);
+    doHisto(id,'Ajout stock',p,`+${qte} unités · Nouveau total: ${a.quantiteStock}`);
     closeModal();alert(`✅ Mis à jour : ${a.quantiteStock} ${libelle}`);loadData();
 }
 
@@ -1349,6 +1362,50 @@ async function loadHisto(id){
     const data=await apiCall({action:'getHistorique',articleId:id});
     histoCache[id]=Array.isArray(data)?data:[];
     return histoCache[id];
+}
+
+// ─── NETTOYAGE / ARCHIVAGE ────────
+async function actArchiveOld() {
+    const jours = params.archiveJours || 90;
+    const conf = confirm(`⚠️ Vous allez supprimer tous les articles avec statut "Sorti" ou prêts "Retourné" de plus de ${jours} jours.\n\nCette action est irréversible. Continuer ?`);
+    if(!conf) return;
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - jours);
+    
+    // Trouver les articles à archiver
+    const toArchive = articles.filter(a => {
+        // Articles sortis
+        if(a.statut === 'Sorti' && a.dateSortie) {
+            return new Date(a.dateSortie) < cutoffDate;
+        }
+        // Prêts retournés
+        if(a.type === 'Prêt individuel' && a.statut === 'Retourné' && a.dateRetourReel) {
+            return new Date(a.dateRetourReel) < cutoffDate;
+        }
+        return false;
+    });
+    
+    if(toArchive.length === 0) {
+        alert('✅ Aucun article à nettoyer — base de données déjà propre !');
+        return;
+    }
+    
+    const conf2 = confirm(`${toArchive.length} article(s) seront supprimés.\n\nConfirmer la suppression ?`);
+    if(!conf2) return;
+    
+    // Appeler l'API pour archiver
+    const result = await apiCall({
+        action: 'archiveArticles',
+        ids: JSON.stringify(toArchive.map(a => a.id))
+    });
+    
+    if(result.error) {
+        alert('❌ Erreur : ' + result.error);
+    } else {
+        alert(`✅ ${result.deleted || toArchive.length} article(s) supprimé(s) avec succès !`);
+        loadData();
+    }
 }
 
 // Auto-refresh toutes les 90s
