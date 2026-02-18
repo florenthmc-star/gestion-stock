@@ -410,14 +410,6 @@
                 <div class="si"><input type="number" id="param_urgent" min="0" max="10" value="1"><span>jours avant (0 = le jour même)</span></div>
             </div>
         </div>
-        <div class="settings-section">
-            <h3>📦 Alertes stock — Seuil par défaut</h3>
-            <div class="setting-row">
-                <label>Alerte stock faible si quantité ≤</label>
-                <div class="si"><input type="number" id="param_seuil" min="1" max="100" value="5"><span>unités (défaut global)</span></div>
-            </div>
-            <p style="font-size:12px;color:var(--text3);margin-top:6px;">💡 Seuil personnalisable par article dans sa fiche ou lors de la création.</p>
-        </div>
         <div class="btn-row">
             <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer — synchronisé sur tous les appareils</button>
             <button class="btn btn-outline" onclick="resetParams()">↺ Réinitialiser</button>
@@ -425,7 +417,8 @@
     </div>
     <div class="card">
         <div class="settings-section">
-            <h3>📋 Seuils personnalisés par article Stock</h3>
+            <h3>📋 Seuils d'alerte personnalisés par article Stock</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Définissez un seuil individuel pour chaque article. Modifiable aussi lors de la création ou dans la fiche article.</p>
             <div id="seuilsListe"></div>
         </div>
     </div>
@@ -487,7 +480,7 @@ function loadParamsLocal() {
 function applyParamsToForm() {
     document.getElementById('param_bientot').value = params.alerteBientot;
     document.getElementById('param_urgent').value = params.alerteUrgent;
-    document.getElementById('param_seuil').value = params.stockFaible;
+    // param_seuil supprimé - on garde juste stockFaible=5 par défaut dans le code
 }
 
 async function loadParamsFromAPI() {
@@ -506,7 +499,7 @@ async function saveParamsToAPI() {
 function saveParams() {
     params.alerteBientot = parseInt(document.getElementById('param_bientot').value)||3;
     params.alerteUrgent  = parseInt(document.getElementById('param_urgent').value)||1;
-    params.stockFaible   = parseInt(document.getElementById('param_seuil').value)||5;
+    // stockFaible reste à 5 par défaut (modifiable uniquement par article)
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
@@ -1272,15 +1265,58 @@ async function actSaveEdit(id){
     const newClient=get('e_client',a.client),newAR=get('e_ar',a.numeroAR),newNotes=get('e_notes',a.notes);
     const newQtyEl=document.getElementById('e_qty'),newQty=newQtyEl?parseInt(newQtyEl.value):a.quantiteStock;
     const newColisEl=document.getElementById('e_colis'),newColis=newColisEl?parseInt(newColisEl.value):a.nombreColis;
+    
     if(newArt!==a.article)changes.push(`Article: "${a.article}"→"${newArt}"`);
     if(newRef!==a.reference)changes.push(`Réf: ${a.reference}→${newRef}`);
     if(newEmp!==a.emplacement)changes.push(`Empl: ${a.emplacement}→${newEmp}`);
     if(newType!==a.type)changes.push(`Catégorie: ${a.type}→${newType}`);
     if(newQtyEl&&newQty!==a.quantiteStock)changes.push(`Qté: ${a.quantiteStock}→${newQty}`);
-    a.article=newArt;a.reference=newRef;a.emplacement=newEmp;a.type=newType;
+    
+    // Gestion du changement de type
+    const oldType=a.type;
+    a.type=newType;
+    
+    // Si on passe vers "Article de prêt" et qu'il n'y avait pas de quantité
+    if(newType==='Article de prêt' && oldType!=='Article de prêt' && oldType!=='Stock'){
+        // Demander la quantité à prêter
+        const qStr=prompt('Cet article devient un article de prêt.\nCombien d\'unités disponibles à prêter ?','1');
+        if(!qStr){alert('Changement annulé');return;}
+        const q=parseInt(qStr);
+        if(isNaN(q)||q<=0){alert('Quantité invalide');return;}
+        a.quantiteStock=q;
+        a.quantiteInitiale=q;
+        changes.push(`Quantité de prêt définie: ${q}`);
+    }
+    
+    // Si on passe de Stock vers Article de prêt : garder la quantité
+    if(newType==='Article de prêt' && oldType==='Stock'){
+        // La quantité existe déjà, on la garde
+        if(!a.quantiteStock) a.quantiteStock=1;
+        if(!a.quantiteInitiale) a.quantiteInitiale=a.quantiteStock;
+    }
+    
+    // Si on passe vers Stock et pas de quantité
+    if(newType==='Stock' && oldType!=='Stock' && oldType!=='Article de prêt'){
+        const qStr=prompt('Cet article devient un stock.\nQuantité en stock :','1');
+        if(!qStr){alert('Changement annulé');return;}
+        const q=parseInt(qStr);
+        if(isNaN(q)||q<0){alert('Quantité invalide');return;}
+        a.quantiteStock=q;
+        a.quantiteInitiale=q;
+        changes.push(`Quantité stock définie: ${q}`);
+    }
+    
+    // Si on passe vers Mise à disposition : retirer les quantités
+    if(newType==='Mise à disposition'){
+        a.quantiteStock=null;
+        a.quantiteInitiale=null;
+    }
+    
+    a.article=newArt;a.reference=newRef;a.emplacement=newEmp;
     a.client=newClient||a.client;a.numeroAR=newAR||a.numeroAR;a.notes=newNotes;
-    if(newQtyEl)a.quantiteStock=newQty;
-    if(newColisEl)a.nombreColis=newColis;
+    if(newQtyEl && (newType==='Stock' || newType==='Article de prêt')) a.quantiteStock=newQty;
+    if(newColisEl && newType==='Mise à disposition') a.nombreColis=newColis;
+    
     await doUpdate(a);
     if(changes.length)doHisto(id,'Modification',p,changes.join(' · '));
     closeModal();alert('✅ Article modifié');loadData();
