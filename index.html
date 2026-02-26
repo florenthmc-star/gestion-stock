@@ -228,6 +228,7 @@
     <button class="tab active" onclick="switchTab('reception',this)">📥 Réception</button>
     <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
+    <button class="tab" onclick="switchTab('tle',this)">🚚 TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
@@ -263,6 +264,14 @@
                     <label>Nom du Client *</label>
                     <input id="f_client" type="text" placeholder="Nom du client">
                 </div>
+                <!-- Sous-type MAD : visible uniquement pour Mise à disposition -->
+                <div class="fg" id="madSubtypeGroup" style="display:none">
+                    <label>Type *</label>
+                    <select id="f_mad_subtype">
+                        <option value="Commande">📦 Commande client</option>
+                        <option value="SAV">🔧 SAV</option>
+                    </select>
+                </div>
                 <div class="fg" id="arGroup">
                     <label>N° AR</label>
                     <input id="f_ar" type="text" placeholder="Numéro AR">
@@ -284,6 +293,12 @@
                     <label id="qtyLabel">Quantité *</label>
                     <input id="f_qty" type="number" min="1" value="1">
                     <span class="hint" id="qtyHint"></span>
+                </div>
+                <!-- Prix de vente : visible pour Stock uniquement -->
+                <div class="fg" id="priceGroup" style="display:none">
+                    <label>Prix de vente unitaire (€)</label>
+                    <input id="f_price" type="number" min="0" step="0.01" placeholder="Ex: 45.00">
+                    <span class="hint">Optionnel - utile si l'article peut être vendu</span>
                 </div>
                 <!-- Seuil alerte : visible pour Stock uniquement -->
                 <div class="fg" id="seuilGroup" style="display:none">
@@ -361,6 +376,20 @@
         <input id="s_search" placeholder="🔍 Article, référence, emplacement..." oninput="renderStock()" style="flex:1;min-width:180px;">
     </div>
     <div id="stockList"></div>
+</div>
+
+<!-- ═══ TLE - ARTICLES VENDUS ═══ -->
+<div id="tle" class="pane">
+    <div class="page-title">🚚 Articles vendus — TLE</div>
+    <div class="stats-row" id="tleStats"></div>
+    <div class="filter-bar">
+        <select id="t_mag" onchange="renderTLE()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <input id="t_search" placeholder="🔍 Article, référence..." oninput="renderTLE()" style="flex:1;min-width:180px;">
+    </div>
+    <div id="tleList"></div>
 </div>
 
 <!-- ═══ PRÊTS ═══ -->
@@ -586,7 +615,11 @@ function parseArticles(data) {
         dateReception:r.DateReception||'', datePret:r.DatePret||'',
         prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
         dateRetourPrevue:r.DateRetourPrevue||'', dateRetourReel:r.DateRetourReel||'',
-        dateSortie:r.DateSortie||'', raisonSortie:r.RaisonSortie||''
+        dateSortie:r.DateSortie||'', raisonSortie:r.RaisonSortie||'',
+        // V6.1 nouveaux champs avec valeurs par défaut
+        madSubtype:r.MADSubtype||'Commande',
+        prixVente:r.PrixVente?parseFloat(r.PrixVente):null,
+        statutMAD:r.StatutMAD||''
     }));
 }
 
@@ -605,6 +638,7 @@ function refreshCurrentPane() {
     const id = document.querySelector('.pane.active')?.id;
     if (id==='mad') renderMAD();
     else if (id==='stock') renderStock();
+    else if (id==='tle') renderTLE();
     else if (id==='prets') renderPrets();
     else if (id==='alertes') renderAlertes();
     else if (id==='parametres') renderSeuilsListe();
@@ -613,8 +647,15 @@ function refreshCurrentPane() {
 function refreshBadges() {
     const retards = pretsActifs.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date()).length;
     const rb=document.getElementById('retardBadge'); rb.textContent=retards; rb.style.display=retards>0?'inline':'none';
-    const madSAV=articles.filter(a=>a.type==='Mise à disposition'&&a.statut==='SAV').length;
+    
+    // Badge MAD : compter les SAV (madSubtype = "SAV")
+    const madSAV=articles.filter(a=>a.type==='Mise à disposition'&&a.madSubtype==='SAV').length;
     const mb=document.getElementById('madBadge'); mb.textContent=madSAV; mb.style.display=madSAV>0?'inline':'none';
+    
+    // Badge TLE : articles vendus en attente
+    const tleEnAttente=articles.filter(a=>a.statut==='Vendu - Attente TLE').length;
+    const tb=document.getElementById('tleBadge'); tb.textContent=tleEnAttente; tb.style.display=tleEnAttente>0?'inline':'none';
+    
     const stockAlerts=articles.filter(a=>{
         if(a.type!=='Stock'||a.quantiteStock===null) return false;
         const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
@@ -641,20 +682,29 @@ function getEmplacement(){
 function toggleFormFields() {
     const t=document.getElementById('f_type').value;
     const isStock=t==='Stock', isPret=t==='Article de prêt', isMAD=t==='Mise à disposition';
-    // Client + AR : seulement pour MAD
+    
+    // Client + AR + Sous-type MAD : seulement pour MAD
     document.getElementById('clientGroup').style.display=isMAD?'flex':'none';
     document.getElementById('f_client').required=isMAD;
     document.getElementById('arGroup').style.display=isMAD?'flex':'none';
+    document.getElementById('madSubtypeGroup').style.display=isMAD?'flex':'none';
+    
     // Colis : seulement pour MAD
     document.getElementById('colisGroup').style.display=isMAD?'flex':'none';
     document.getElementById('f_colis').required=isMAD;
+    
     // Quantité : pour Stock et Article de prêt
     document.getElementById('qtyGroup').style.display=(isStock||isPret)?'flex':'none';
     document.getElementById('f_qty').required=isStock||isPret;
     document.getElementById('qtyLabel').textContent=isPret?'Quantité disponible à prêter *':'Quantité en Stock *';
     document.getElementById('qtyHint').textContent=isPret?'Nombre d\'articles disponibles (ex: 6 mitigeurs)':'';
+    
+    // Prix : seulement pour Stock
+    document.getElementById('priceGroup').style.display=isStock?'flex':'none';
+    
     // Seuil : seulement pour Stock
     document.getElementById('seuilGroup').style.display=isStock?'flex':'none';
+    
     if(isMAD) document.getElementById('f_colis').value='1';
 }
 
@@ -662,7 +712,7 @@ function resetForm() {
     document.getElementById('receptionForm').reset();
     document.getElementById('receptionForm').style.display='block';
     document.getElementById('qrResult').style.display='none';
-    ['qtyGroup','seuilGroup'].forEach(id=>document.getElementById(id).style.display='none');
+    ['qtyGroup','seuilGroup','priceGroup','madSubtypeGroup'].forEach(id=>document.getElementById(id).style.display='none');
     ['clientGroup','arGroup','colisGroup'].forEach(id=>document.getElementById(id).style.display='flex');
     document.getElementById('f_client').required=true;
     document.getElementById('f_colis').required=true;
@@ -682,6 +732,11 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
     const article=document.getElementById('f_article').value;
     const reference=document.getElementById('f_ref').value;
     const qty=isStock||isPret?parseInt(document.getElementById('f_qty').value)||1:null;
+    
+    // V6.1 nouveaux champs
+    const madSubtype=isMAD?document.getElementById('f_mad_subtype').value:'';
+    const prixVente=isStock?(document.getElementById('f_price').value||''):'';
+    const statutMAD=isMAD?'À prévenir':'';
 
     const r=await apiCall({
         action:'addArticle', ID:id,
@@ -696,7 +751,11 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         Emplacement:emplacement,
         Kitchener:document.getElementById('f_prenom').value,
         Notes:document.getElementById('f_notes').value||'',
-        Statut:'Stock', DateReception:now, Historique:'true'
+        Statut:'Stock', DateReception:now, Historique:'true',
+        // V6.1 nouveaux champs
+        MADSubtype:madSubtype,
+        PrixVente:prixVente,
+        StatutMAD:statutMAD
     });
 
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
@@ -768,25 +827,39 @@ function renderMAD() {
     const mag=document.getElementById('m_mag').value, stat=document.getElementById('m_stat').value;
     const q=document.getElementById('m_search').value.toLowerCase();
     const allF=articles.filter(a=>a.type==='Mise à disposition'&&(!mag||a.magasin===mag));
+    
+    // V6.1 : Compter les SAV (madSubtype = "SAV")
+    const savCount=allF.filter(a=>a.madSubtype==='SAV').length;
+    
     document.getElementById('madStats').innerHTML=`
         <div class="stat-card blue"><div class="num">${allF.length}</div><div class="lbl">Total${mag?' '+mag:''}</div></div>
         <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
         <div class="stat-card orange"><div class="num">${allF.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
-        <div class="stat-card red"><div class="num">${allF.filter(a=>a.statut==='SAV').length}</div><div class="lbl">SAV</div></div>`;
+        <div class="stat-card purple"><div class="num">${savCount}</div><div class="lbl">SAV</div></div>`;
     let list=allF.slice();
     if(stat) list=list.filter(a=>a.statut===stat);
     if(q) list=list.filter(a=>['article','client','reference','numeroAR','emplacement','kitchener'].some(k=>(a[k]||'').toLowerCase().includes(q)));
     if(!list.length){document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';return;}
     const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
-    document.getElementById('madList').innerHTML=list.map(a=>`
-        <div class="article-item" onclick="openModal('${a.id}')">
+    document.getElementById('madList').innerHTML=list.map(a=>{
+        // V6.1 : Badges pour SAV et statutMAD
+        const isSAV=a.madSubtype==='SAV';
+        const badges=[];
+        badges.push(`<span class="badge ${bMap[a.statut]||'b-stock'}">${a.statut}</span>`);
+        if(isSAV)badges.push(`<span class="badge b-purple">🔧 SAV</span>`);
+        if(a.statutMAD==='À prévenir')badges.push(`<span class="badge" style="background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange-border)">📞 À prévenir</span>`);
+        if(a.statutMAD==='Client prévenu')badges.push(`<span class="badge b-dispo">✅ Prévenu</span>`);
+        
+        return`<div class="article-item" onclick="openModal('${a.id}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${a.article}</div>
                     ${a.client&&a.client!=='Stock interne'?`<div class="item-client">👤 ${a.client}</div>`:''}
                     <div class="item-ref">${a.reference}</div>
                 </div>
-                <span class="badge ${bMap[a.statut]||'b-stock'}">${a.statut}</span>
+                <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+                    ${badges.join('')}
+                </div>
             </div>
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
@@ -794,14 +867,21 @@ function renderMAD() {
                 ${a.numeroAR?`<span class="meta">AR: <strong>${a.numeroAR}</strong></span>`:''}
                 ${a.nombreColis>1?`<span class="meta">📦 <strong>${a.nombreColis} colis</strong></span>`:''}
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 // ─── STOCK ─────────────────────────
 function renderStock() {
     const mag=document.getElementById('s_mag').value;
     const q=document.getElementById('s_search').value.toLowerCase();
-    const allF=articles.filter(a=>a.type==='Stock'&&(!mag||a.magasin===mag));
+    // IMPORTANT V6.1 : Exclure les articles vendus en attente TLE
+    const allF=articles.filter(a=>
+        a.type==='Stock' &&
+        a.statut!=='Vendu - Attente TLE' &&
+        a.statut!=='Sorti - Remis TLE' &&
+        (!mag||a.magasin===mag)
+    );
     const totalQty=allF.reduce((s,a)=>s+(a.quantiteStock||0),0);
     document.getElementById('stockStats').innerHTML=`
         <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références${mag?' '+mag:''}</div></div>
@@ -825,6 +905,56 @@ function renderStock() {
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ─── TLE - ARTICLES VENDUS ────────
+function renderTLE() {
+    const mag=document.getElementById('t_mag').value;
+    const q=document.getElementById('t_search').value.toLowerCase();
+    
+    const allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE');
+    const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&(!q||a.article.toLowerCase().includes(q)||a.reference.toLowerCase().includes(q)));
+    
+    const totalQty=filtered.reduce((s,a)=>s+(a.quantiteStock||0),0);
+    const totalValeur=filtered.reduce((s,a)=>{
+        const prix=a.prixVente||0;
+        const qty=a.quantiteStock||0;
+        return s+(prix*qty);
+    },0);
+    
+    document.getElementById('tleStats').innerHTML=`
+        <div class="stat-card orange"><div class="num">${filtered.length}</div><div class="lbl">Articles en attente${mag?' '+mag:''}</div></div>
+        <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Unités totales</div></div>
+        <div class="stat-card green"><div class="num">${totalValeur.toFixed(2)}€</div><div class="lbl">Valeur totale</div></div>`;
+    
+    if(!filtered.length){
+        document.getElementById('tleList').innerHTML='<div class="empty"><div class="ico">✅</div><p>Aucun article en attente TLE</p></div>';
+        return;
+    }
+    
+    document.getElementById('tleList').innerHTML=filtered.map(a=>{
+        const qty=a.quantiteStock||0;
+        const prix=a.prixVente;
+        const prixTotal=prix?(prix*qty).toFixed(2):'?';
+        return`<div class="article-item" onclick="openModal('${a.id}')">
+            <div class="item-head">
+                <div>
+                    <div class="item-title">${a.article}</div>
+                    <div class="item-ref">${a.reference}</div>
+                </div>
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+                    <span class="badge b-pret">🚚 Attente TLE</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--orange);">${qty} unité(s)</span>
+                    ${prix?`<span style="font-size:13px;color:var(--text3);">${prix}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>`:''}
+                </div>
+            </div>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                <span class="meta">📅 Vendu le <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
             </div>
         </div>`;
     }).join('');
@@ -1028,10 +1158,18 @@ function renderModalContent(a, histo) {
     <div class="btn-row">`;
 
     if(isMAD&&a.statut==='Stock'){
+        // V6.1 : Bouton "Prévenir client" si statutMAD = "À prévenir"
+        if(a.statutMAD==='À prévenir'){
+            html+=`<button class="btn btn-warning" onclick="actPrevenirClient('${a.id}')">📞 Prévenir client</button>`;
+        }
         html+=`<button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
     }
     if(isStock&&a.statut==='Stock'){
+        // V6.1 : Bouton "Vendre" si quantité > 0
+        if(a.quantiteStock>0){
+            html+=`<button class="btn btn-warning" onclick="actVendre('${a.id}')">💰 Vendre</button>`;
+        }
         html+=`<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
                <button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter stock</button>
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>
@@ -1046,6 +1184,10 @@ function renderModalContent(a, histo) {
     if(isPretIndividuel&&a.statut==='En cours'){
         html+=`<button class="btn btn-success" onclick="actRetourPret('${a.id}')">↩️ Retour de prêt</button>
                <button class="btn btn-warning" onclick="actModifierDateRetour('${a.id}')">📅 Modifier retour</button>`;
+    }
+    // V6.1 : Bouton "Remis à TLE" pour articles vendus
+    if(a.statut==='Vendu - Attente TLE'){
+        html+=`<button class="btn btn-success" onclick="actRemisTLE('${a.id}')">✅ Remis à TLE</button>`;
     }
     html+=`</div>`;
 
@@ -1258,6 +1400,76 @@ async function actEmplacement(id){
     closeModal();alert('✅ Emplacement mis à jour');loadData();
 }
 
+// V6.1 ─── NOUVELLE ACTION : VENDRE ───────────
+async function actVendre(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    
+    const qStr=prompt(`Quantité à vendre (disponible: ${a.quantiteStock}) :`);
+    if(!qStr)return;
+    const qte=parseInt(qStr);
+    if(isNaN(qte)||qte<=0||qte>a.quantiteStock){alert('Quantité invalide ou stock insuffisant');return;}
+    
+    const prixInfo=a.prixVente?` à ${a.prixVente}€/unité (total: ${(qte*a.prixVente).toFixed(2)}€)`:'';
+    const conf=confirm(`Vendre ${qte} unité(s)${prixInfo} ?\n\nL'article ira dans l'onglet TLE en attente de récupération.`);
+    if(!conf)return;
+    
+    // Créer article vendu
+    const venteId='VENTE-'+Date.now();
+    await apiCall({
+        action:'addArticle', ID:venteId,
+        Type:'Stock', Statut:'Vendu - Attente TLE',
+        Article:a.article, Reference:a.reference,
+        Magasin:a.magasin, Emplacement:a.emplacement,
+        QuantiteStock:qte, QuantiteInitiale:qte,
+        PrixVente:a.prixVente||'', ParentId:id,
+        Kitchener:p, DateReception:new Date().toISOString(),
+        Notes:`Vendu le ${new Date().toLocaleDateString('fr-FR')}`,
+        Client:'', NumeroAR:'', NombreColis:'', DatePret:'',
+        PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
+        DateSortie:'', RaisonSortie:'', MADSubtype:'', StatutMAD:''
+    });
+    
+    // Déduire du stock parent
+    a.quantiteStock-=qte;
+    if(a.quantiteStock===0)a.statut='Sorti';
+    await doUpdate(a);
+    
+    const prixDetail=a.prixVente?` à ${a.prixVente}€ = ${(qte*a.prixVente).toFixed(2)}€`:'';
+    doHisto(id,'Vente',p,`${qte} unité(s) vendues${prixDetail} — En attente TLE`);
+    
+    closeModal();alert(`✅ ${qte} unité(s) vendues — Article dans l'onglet TLE`);loadData();
+}
+
+// V6.1 ─── NOUVELLE ACTION : REMIS À TLE ──────
+async function actRemisTLE(id){
+    const p=getPrenom();if(!p)return;
+    const conf=confirm('Confirmer la remise à TLE ?\n\nL\'article sera marqué comme "Sorti - Remis TLE" et disparaîtra de l\'onglet TLE.');
+    if(!conf)return;
+    
+    const a=articles.find(x=>x.id===id);
+    a.statut='Sorti - Remis TLE';
+    a.dateSortie=new Date().toISOString();
+    a.raisonSortie='Remis à TLE';
+    
+    await doUpdate(a);
+    doHisto(id,'Remis à TLE',p,`${a.quantiteStock} unité(s) récupérées par TLE`);
+    
+    closeModal();alert('✅ Article remis à TLE');loadData();
+}
+
+// V6.1 ─── NOUVELLE ACTION : PRÉVENIR CLIENT ──
+async function actPrevenirClient(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    
+    a.statutMAD='Client prévenu';
+    await doUpdate(a);
+    doHisto(id,'Client prévenu',p,'Client/Poseur contacté');
+    
+    closeModal();alert('✅ Client marqué comme prévenu');loadData();
+}
+
 function actSetSeuil(id){
     const a=articles.find(x=>x.id===id);
     const actuel=seuilsPerso[id]!==undefined?seuilsPerso[id]:params.stockFaible;
@@ -1348,7 +1560,11 @@ async function doUpdate(a){
         DatePret:a.datePret||'', PrenomEmprunteur:a.prenomEmprunteur||'',
         DateRetourPrevue:a.dateRetourPrevue||'', DateRetourReel:a.dateRetourReel||'',
         DateSortie:a.dateSortie||'', RaisonSortie:a.raisonSortie||'',
-        ParentId:a.parentId||''
+        ParentId:a.parentId||'',
+        // V6.1 nouveaux champs
+        MADSubtype:a.madSubtype||'',
+        PrixVente:a.prixVente||'',
+        StatutMAD:a.statutMAD||''
     });
 }
 
