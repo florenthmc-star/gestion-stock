@@ -267,10 +267,16 @@
                 <!-- Sous-type MAD : visible uniquement pour Mise à disposition -->
                 <div class="fg" id="madSubtypeGroup" style="display:none">
                     <label>Type *</label>
-                    <select id="f_mad_subtype">
+                    <select id="f_mad_subtype" onchange="onMadSubtypeChange()">
                         <option value="Commande">📦 Commande client</option>
                         <option value="SAV">🔧 SAV</option>
                     </select>
+                </div>
+                <!-- Délai alerte SAV : visible si SAV sélectionné -->
+                <div class="fg" id="savDelaiGroup" style="display:none">
+                    <label>Alerte si SAV > X jours</label>
+                    <input id="f_sav_delai" type="number" min="1" value="30" placeholder="Ex: 30">
+                    <span class="hint">Alerte si le SAV reste plus de X jours en magasin</span>
                 </div>
                 <div class="fg" id="arGroup">
                     <label>N° AR</label>
@@ -294,11 +300,19 @@
                     <input id="f_qty" type="number" min="1" value="1">
                     <span class="hint" id="qtyHint"></span>
                 </div>
+                <!-- Sous-type Stock : visible uniquement pour Stock -->
+                <div class="fg" id="stockSubtypeGroup" style="display:none">
+                    <label>Type de stock *</label>
+                    <select id="f_stock_subtype" onchange="onStockSubtypeChange()">
+                        <option value="Interne">📦 Stock interne</option>
+                        <option value="Vendable">💰 Stock vendable</option>
+                    </select>
+                </div>
                 <!-- Prix de vente : visible pour Stock uniquement -->
                 <div class="fg" id="priceGroup" style="display:none">
-                    <label>Prix de vente unitaire (€)</label>
+                    <label>Prix de vente unitaire (€) *</label>
                     <input id="f_price" type="number" min="0" step="0.01" placeholder="Ex: 45.00">
-                    <span class="hint">Optionnel - utile si l'article peut être vendu</span>
+                    <span class="hint">Prix auquel l'article sera vendu</span>
                 </div>
                 <!-- Seuil alerte : visible pour Stock uniquement -->
                 <div class="fg" id="seuilGroup" style="display:none">
@@ -353,11 +367,15 @@
             <option value="">Tous les magasins</option>
             <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
         </select>
+        <select id="m_subtype" onchange="renderMAD()">
+            <option value="">Tous les types</option>
+            <option value="Commande">📦 Commandes uniquement</option>
+            <option value="SAV">🔧 SAV uniquement</option>
+        </select>
         <select id="m_stat" onchange="renderMAD()">
             <option value="">Tous les statuts</option>
             <option value="Stock">En stock</option>
             <option value="Sorti">Sorti</option>
-            <option value="SAV">SAV</option>
         </select>
         <input id="m_search" placeholder="🔍 Client, article, réf, AR..." oninput="renderMAD()" style="flex:1;min-width:180px;">
     </div>
@@ -440,6 +458,22 @@
             </div>
         </div>
         <div class="settings-section">
+            <h3>⏰ Alertes MAD qui traînent — Délai</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Alerte si une mise à disposition reste trop longtemps en magasin.</p>
+            <div class="setting-row">
+                <label>Alerte si MAD en magasin depuis plus de</label>
+                <div class="si"><input type="number" id="param_mad_delai" min="1" max="90" value="15"><span>jours</span></div>
+            </div>
+        </div>
+        <div class="settings-section">
+            <h3>🔧 Alertes SAV qui traînent — Délai</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Alerte si un SAV reste trop longtemps en magasin.</p>
+            <div class="setting-row">
+                <label>Alerte si SAV en magasin depuis plus de</label>
+                <div class="si"><input type="number" id="param_sav_delai" min="1" max="90" value="30"><span>jours</span></div>
+            </div>
+        </div>
+        <div class="settings-section">
             <h3>🗑️ Nettoyage automatique</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Supprimez les anciens articles sortis ou retournés pour alléger la base de données.</p>
             <div class="setting-row">
@@ -497,8 +531,10 @@ let pretsActifs = [];     // prêts individuels (sous-articles générés par ac
 let histoCache = {};
 let currentPretTab = 'dispo';
 let lastQRData = null;
-let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5, archiveJours:90 };
-let seuilsPerso = {};
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
+let seuilsPerso = {};     // seuils stock faible par article
+let seuilsMAD = {};       // V6.2 : seuils délai MAD par article
+let seuilsSAV = {};       // V6.2 : seuils délai SAV par article
 let _renderTimer = null;  // debounce
 
 // ─── INIT ─────────────────────────
@@ -513,6 +549,8 @@ function loadParamsLocal() {
     try {
         const p = localStorage.getItem('hmc_params'); if(p) params={...params,...JSON.parse(p)};
         const s = localStorage.getItem('hmc_seuils'); if(s) seuilsPerso=JSON.parse(s);
+        const sm = localStorage.getItem('hmc_seuils_mad'); if(sm) seuilsMAD=JSON.parse(sm);
+        const ss = localStorage.getItem('hmc_seuils_sav'); if(ss) seuilsSAV=JSON.parse(ss);
     } catch(e){}
     applyParamsToForm();
 }
@@ -521,30 +559,44 @@ function applyParamsToForm() {
     document.getElementById('param_bientot').value = params.alerteBientot;
     document.getElementById('param_urgent').value = params.alerteUrgent;
     if(document.getElementById('param_archive')) document.getElementById('param_archive').value = params.archiveJours;
+    if(document.getElementById('param_mad_delai')) document.getElementById('param_mad_delai').value = params.madDelaiDefaut||15;
+    if(document.getElementById('param_sav_delai')) document.getElementById('param_sav_delai').value = params.savDelaiDefaut||30;
 }
 
 async function loadParamsFromAPI() {
     const data = await apiCall({ action:'getParams' });
     if (data?.params) { try{ params={...params,...JSON.parse(data.params)}; }catch(e){} }
     if (data?.seuils) { try{ seuilsPerso={...seuilsPerso,...JSON.parse(data.seuils)}; }catch(e){} }
+    if (data?.seuilsMAD) { try{ seuilsMAD={...seuilsMAD,...JSON.parse(data.seuilsMAD)}; }catch(e){} }
+    if (data?.seuilsSAV) { try{ seuilsSAV={...seuilsSAV,...JSON.parse(data.seuilsSAV)}; }catch(e){} }
     applyParamsToForm();
 }
 
 async function saveParamsToAPI() {
     localStorage.setItem('hmc_params', JSON.stringify(params));
     localStorage.setItem('hmc_seuils', JSON.stringify(seuilsPerso));
-    return apiCall({ action:'saveParams', params:JSON.stringify(params), seuils:JSON.stringify(seuilsPerso) });
+    localStorage.setItem('hmc_seuils_mad', JSON.stringify(seuilsMAD));
+    localStorage.setItem('hmc_seuils_sav', JSON.stringify(seuilsSAV));
+    return apiCall({ 
+        action:'saveParams', 
+        params:JSON.stringify(params), 
+        seuils:JSON.stringify(seuilsPerso),
+        seuilsMAD:JSON.stringify(seuilsMAD),
+        seuilsSAV:JSON.stringify(seuilsSAV)
+    });
 }
 
 function saveParams() {
     params.alerteBientot = parseInt(document.getElementById('param_bientot').value)||3;
     params.alerteUrgent  = parseInt(document.getElementById('param_urgent').value)||1;
     params.archiveJours  = parseInt(document.getElementById('param_archive')?.value)||90;
+    params.madDelaiDefaut = parseInt(document.getElementById('param_mad_delai')?.value)||15;
+    params.savDelaiDefaut = parseInt(document.getElementById('param_sav_delai')?.value)||30;
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
 function resetParams() {
-    params={alerteBientot:3,alerteUrgent:1,stockFaible:5,archiveJours:90};
+    params={alerteBientot:3,alerteUrgent:1,stockFaible:5,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30};
     saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
 
@@ -616,10 +668,13 @@ function parseArticles(data) {
         prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
         dateRetourPrevue:r.DateRetourPrevue||'', dateRetourReel:r.DateRetourReel||'',
         dateSortie:r.DateSortie||'', raisonSortie:r.RaisonSortie||'',
-        // V6.1 nouveaux champs avec valeurs par défaut
+        // V6.1 champs avec valeurs par défaut
         madSubtype:r.MADSubtype||'Commande',
         prixVente:r.PrixVente?parseFloat(r.PrixVente):null,
-        statutMAD:r.StatutMAD||''
+        statutMAD:r.StatutMAD||'',
+        savDelaiAlerte:r.SAVDelaiAlerte?parseInt(r.SAVDelaiAlerte):null,
+        // V6.2 nouveau champ avec défaut
+        stockSubtype:r.StockSubtype||'Interne'  // Si vide = Stock interne (ancien comportement)
     }));
 }
 
@@ -689,6 +744,10 @@ function toggleFormFields() {
     document.getElementById('arGroup').style.display=isMAD?'flex':'none';
     document.getElementById('madSubtypeGroup').style.display=isMAD?'flex':'none';
     
+    // Délai SAV : géré par onMadSubtypeChange()
+    if(isMAD) onMadSubtypeChange();
+    else document.getElementById('savDelaiGroup').style.display='none';
+    
     // Colis : seulement pour MAD
     document.getElementById('colisGroup').style.display=isMAD?'flex':'none';
     document.getElementById('f_colis').required=isMAD;
@@ -699,8 +758,12 @@ function toggleFormFields() {
     document.getElementById('qtyLabel').textContent=isPret?'Quantité disponible à prêter *':'Quantité en Stock *';
     document.getElementById('qtyHint').textContent=isPret?'Nombre d\'articles disponibles (ex: 6 mitigeurs)':'';
     
-    // Prix : seulement pour Stock
-    document.getElementById('priceGroup').style.display=isStock?'flex':'none';
+    // V6.2 : Sous-type Stock + Prix
+    document.getElementById('stockSubtypeGroup').style.display=isStock?'flex':'none';
+    if(isStock) onStockSubtypeChange(); // Gérer affichage prix
+    else {
+        document.getElementById('priceGroup').style.display='none';
+    }
     
     // Seuil : seulement pour Stock
     document.getElementById('seuilGroup').style.display=isStock?'flex':'none';
@@ -708,14 +771,39 @@ function toggleFormFields() {
     if(isMAD) document.getElementById('f_colis').value='1';
 }
 
+function onStockSubtypeChange() {
+    const subtype = document.getElementById('f_stock_subtype')?.value;
+    const priceGroup = document.getElementById('priceGroup');
+    const priceInput = document.getElementById('f_price');
+    if(priceGroup && priceInput) {
+        if(subtype === 'Vendable') {
+            priceGroup.style.display = 'flex';
+            priceInput.required = true;
+        } else {
+            priceGroup.style.display = 'none';
+            priceInput.required = false;
+            priceInput.value = '';
+        }
+    }
+}
+
+function onMadSubtypeChange() {
+    const subtype = document.getElementById('f_mad_subtype')?.value;
+    const savGroup = document.getElementById('savDelaiGroup');
+    if(savGroup) {
+        savGroup.style.display = subtype === 'SAV' ? 'flex' : 'none';
+    }
+}
+
 function resetForm() {
     document.getElementById('receptionForm').reset();
     document.getElementById('receptionForm').style.display='block';
     document.getElementById('qrResult').style.display='none';
-    ['qtyGroup','seuilGroup','priceGroup','madSubtypeGroup'].forEach(id=>document.getElementById(id).style.display='none');
+    ['qtyGroup','seuilGroup','priceGroup','madSubtypeGroup','stockSubtypeGroup','savDelaiGroup'].forEach(id=>document.getElementById(id).style.display='none');
     ['clientGroup','arGroup','colisGroup'].forEach(id=>document.getElementById(id).style.display='flex');
     document.getElementById('f_client').required=true;
     document.getElementById('f_colis').required=true;
+    document.getElementById('f_price').required=false;
     document.getElementById('f_emplacement_text').style.display='block';
     document.getElementById('f_emplacement_select').style.display='none';
 }
@@ -733,10 +821,21 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
     const reference=document.getElementById('f_ref').value;
     const qty=isStock||isPret?parseInt(document.getElementById('f_qty').value)||1:null;
     
-    // V6.1 nouveaux champs
+    // V6.1 champs
     const madSubtype=isMAD?document.getElementById('f_mad_subtype').value:'';
-    const prixVente=isStock?(document.getElementById('f_price').value||''):'';
     const statutMAD=isMAD?'À prévenir':'';
+    const savDelaiAlerte=isMAD&&madSubtype==='SAV'?document.getElementById('f_sav_delai').value:'';
+    
+    // V6.2 nouveaux champs Stock
+    const stockSubtype=isStock?document.getElementById('f_stock_subtype').value:'';
+    const prixVente=isStock&&stockSubtype==='Vendable'?document.getElementById('f_price').value:'';
+    
+    // V6.2 Validation prix si vendable
+    if(isStock&&stockSubtype==='Vendable'&&!prixVente){
+        alert('⚠️ Le prix de vente est obligatoire pour un stock vendable');
+        btn.disabled=false; btn.textContent='✅ Générer le QR Code';
+        return;
+    }
 
     const r=await apiCall({
         action:'addArticle', ID:id,
@@ -752,10 +851,13 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         Kitchener:document.getElementById('f_prenom').value,
         Notes:document.getElementById('f_notes').value||'',
         Statut:'Stock', DateReception:now, Historique:'true',
-        // V6.1 nouveaux champs
+        // V6.1 champs
         MADSubtype:madSubtype,
         PrixVente:prixVente,
-        StatutMAD:statutMAD
+        StatutMAD:statutMAD,
+        SAVDelaiAlerte:savDelaiAlerte,
+        // V6.2 nouveaux champs
+        StockSubtype:stockSubtype
     });
 
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
@@ -824,7 +926,9 @@ function printArticleQR(id) {
 
 // ─── MISES À DISPO ─────────────────
 function renderMAD() {
-    const mag=document.getElementById('m_mag').value, stat=document.getElementById('m_stat').value;
+    const mag=document.getElementById('m_mag').value;
+    const subtype=document.getElementById('m_subtype').value;  // V6.2 nouveau filtre
+    const stat=document.getElementById('m_stat').value;
     const q=document.getElementById('m_search').value.toLowerCase();
     const allF=articles.filter(a=>a.type==='Mise à disposition'&&(!mag||a.magasin===mag));
     
@@ -837,6 +941,10 @@ function renderMAD() {
         <div class="stat-card orange"><div class="num">${allF.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
         <div class="stat-card purple"><div class="num">${savCount}</div><div class="lbl">SAV</div></div>`;
     let list=allF.slice();
+    
+    // V6.2 : Filtre par sous-type (Commande/SAV)
+    if(subtype) list=list.filter(a=>a.madSubtype===subtype);
+    
     if(stat) list=list.filter(a=>a.statut===stat);
     if(q) list=list.filter(a=>['article','client','reference','numeroAR','emplacement','kitchener'].some(k=>(a[k]||'').toLowerCase().includes(q)));
     if(!list.length){document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';return;}
@@ -894,17 +1002,22 @@ function renderStock() {
     document.getElementById('stockList').innerHTML=list.map(a=>{
         const qty=a.quantiteStock, seuil=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
         const qCls=qty===null?'':(qty===0?'empty':qty<=seuil?'low':'ok');
+        const isVendable=a.stockSubtype==='Vendable';
+        const prix=a.prixVente;
+        
         return`<div class="article-item" onclick="openModal('${a.id}')">
             <div class="item-head">
                 <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
+                    ${isVendable&&prix?`<span class="badge" style="background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);font-size:13px;font-weight:700;">💰 ${prix}€</span>`:''}
                     ${qty!==null?`<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>`:''}
                 </div>
             </div>
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                ${isVendable?`<span class="meta" style="color:var(--green);font-weight:600;">💰 Article vendable</span>`:''}
             </div>
         </div>`;
     }).join('');
@@ -939,10 +1052,12 @@ function renderTLE() {
         const qty=a.quantiteStock||0;
         const prix=a.prixVente;
         const prixTotal=prix?(prix*qty).toFixed(2):'?';
+        const client=a.client||'Client non renseigné';
         return`<div class="article-item" onclick="openModal('${a.id}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${a.article}</div>
+                    <div class="item-client">👤 ${client}</div>
                     <div class="item-ref">${a.reference}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
@@ -1073,6 +1188,30 @@ function renderAlertes() {
     arts.filter(a=>a.type==='Stock'&&a.quantiteStock===0)
         .forEach(a=>alertes.push({type:'danger',t:`Stock épuisé — ${a.article}`,m:`${a.magasin} · À réapprovisionner`,id:a.id}));
 
+    // V6.2 : Alertes MAD qui traînent
+    arts.filter(a=>{
+        if(a.type!=='Mise à disposition'||a.statut==='Sorti'||!a.dateReception)return false;
+        const delai=seuilsMAD[a.id]||params.madDelaiDefaut||15;
+        const joursEnMagasin=Math.floor((now-new Date(a.dateReception))/86400000);
+        return joursEnMagasin>delai;
+    }).forEach(a=>{
+        const joursEnMagasin=Math.floor((now-new Date(a.dateReception))/86400000);
+        const delai=seuilsMAD[a.id]||params.madDelaiDefaut||15;
+        alertes.push({type:'warning',t:`MAD qui traîne — ${a.article}`,m:`${a.magasin} · En magasin depuis ${joursEnMagasin}j (seuil: ${delai}j)`,id:a.id});
+    });
+
+    // V6.2 : Alertes SAV qui traînent
+    arts.filter(a=>{
+        if(a.type!=='Mise à disposition'||a.madSubtype!=='SAV'||a.statut==='Sorti'||!a.dateReception)return false;
+        const delai=a.savDelaiAlerte||seuilsSAV[a.id]||params.savDelaiDefaut||30;
+        const joursEnMagasin=Math.floor((now-new Date(a.dateReception))/86400000);
+        return joursEnMagasin>delai;
+    }).forEach(a=>{
+        const joursEnMagasin=Math.floor((now-new Date(a.dateReception))/86400000);
+        const delai=a.savDelaiAlerte||seuilsSAV[a.id]||params.savDelaiDefaut||30;
+        alertes.push({type:'danger',t:`🔧 SAV qui traîne — ${a.article}`,m:`${a.magasin} · En magasin depuis ${joursEnMagasin}j (seuil: ${delai}j) · Client: ${a.client}`,id:a.id});
+    });
+
     if(!alertes.length){document.getElementById('alertList').innerHTML='<div class="empty"><div class="ico">✅</div><p>Aucune alerte !</p></div>';return;}
     document.getElementById('alertList').innerHTML=alertes.map(al=>`
         <div class="alert-item ${al.type}" onclick="openModal('${al.id}')">
@@ -1166,8 +1305,8 @@ function renderModalContent(a, histo) {
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
     }
     if(isStock&&a.statut==='Stock'){
-        // V6.1 : Bouton "Vendre" si quantité > 0
-        if(a.quantiteStock>0){
+        // V6.2 : Bouton "Vendre" UNIQUEMENT si stockSubtype = "Vendable"
+        if(a.stockSubtype==='Vendable'&&a.quantiteStock>0){
             html+=`<button class="btn btn-warning" onclick="actVendre('${a.id}')">💰 Vendre</button>`;
         }
         html+=`<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
@@ -1343,6 +1482,8 @@ async function actPreter(id){
             DateRetourPrevue:new Date(y,m-1,j).toISOString(),
             ParentId:id, Historique:'false'
         });
+        // V6.2 : Historique pour chaque prêt individuel
+        doHisto(pretId,'Prêt créé',p,`Prêté à ${emp} · Retour: ${dateStr} · Article parent: ${parent.article}`);
     }
     // Déduire du stock parent
     parent.quantiteStock-=qte;
@@ -1360,6 +1501,8 @@ async function actRetourPret(id){
     // Remettre dans le stock du parent
     const parent=articles.find(x=>x.id===pret.parentId);
     if(parent){parent.quantiteStock=(parent.quantiteStock||0)+1;await doUpdate(parent);}
+    // V6.2 : Historique sur le prêt individuel
+    doHisto(id,'Retour de prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
     doHisto(pret.parentId||id,'Retour prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
     closeModal();alert('✅ Retour enregistré — article remis disponible');loadData();
 }
@@ -1373,6 +1516,8 @@ async function actRetourPretDirect(pretId,parentId){
     await doUpdate(pret);
     const parent=articles.find(x=>x.id===parentId);
     if(parent){parent.quantiteStock=(parent.quantiteStock||0)+1;await doUpdate(parent);}
+    // V6.2 : Historique sur le prêt individuel
+    doHisto(pretId,'Retour de prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
     doHisto(parentId,'Retour prêt',p,`Retourné par ${pret.prenomEmprunteur}`);
     alert('✅ Retour enregistré');loadData().then(()=>openModal(parentId));
 }
@@ -1400,21 +1545,27 @@ async function actEmplacement(id){
     closeModal();alert('✅ Emplacement mis à jour');loadData();
 }
 
-// V6.1 ─── NOUVELLE ACTION : VENDRE ───────────
+// V6.2 ─── ACTION VENDRE (refait complètement) ───
 async function actVendre(id){
     const p=getPrenom();if(!p)return;
     const a=articles.find(x=>x.id===id);
     
+    // 1. Demander nom du client
+    const client=prompt('Nom du client :');
+    if(!client){alert('Le nom du client est obligatoire');return;}
+    
+    // 2. Demander quantité
     const qStr=prompt(`Quantité à vendre (disponible: ${a.quantiteStock}) :`);
     if(!qStr)return;
     const qte=parseInt(qStr);
     if(isNaN(qte)||qte<=0||qte>a.quantiteStock){alert('Quantité invalide ou stock insuffisant');return;}
     
-    const prixInfo=a.prixVente?` à ${a.prixVente}€/unité (total: ${(qte*a.prixVente).toFixed(2)}€)`:'';
-    const conf=confirm(`Vendre ${qte} unité(s)${prixInfo} ?\n\nL'article ira dans l'onglet TLE en attente de récupération.`);
+    // 3. Confirmation avec prix
+    const prixTotal=(qte*a.prixVente).toFixed(2);
+    const conf=confirm(`Vendre ${qte} unité(s) à ${client} ?\n\nPrix unitaire : ${a.prixVente}€\nTotal : ${prixTotal}€\n\nL'article sera transféré dans l'onglet TLE.`);
     if(!conf)return;
     
-    // Créer article vendu
+    // 4. Créer article TLE
     const venteId='VENTE-'+Date.now();
     await apiCall({
         action:'addArticle', ID:venteId,
@@ -1422,23 +1573,29 @@ async function actVendre(id){
         Article:a.article, Reference:a.reference,
         Magasin:a.magasin, Emplacement:a.emplacement,
         QuantiteStock:qte, QuantiteInitiale:qte,
-        PrixVente:a.prixVente||'', ParentId:id,
+        PrixVente:a.prixVente, ParentId:id,
         Kitchener:p, DateReception:new Date().toISOString(),
-        Notes:`Vendu le ${new Date().toLocaleDateString('fr-FR')}`,
-        Client:'', NumeroAR:'', NombreColis:'', DatePret:'',
+        Notes:`Vendu à ${client} le ${new Date().toLocaleDateString('fr-FR')}`,
+        Client:client,  // V6.2 : Stocker le nom du client
+        NumeroAR:'', NombreColis:'', DatePret:'',
         PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
-        DateSortie:'', RaisonSortie:'', MADSubtype:'', StatutMAD:''
+        DateSortie:'', RaisonSortie:'', 
+        MADSubtype:'', StatutMAD:'', StockSubtype:'Vendable', SAVDelaiAlerte:''
     });
     
-    // Déduire du stock parent
-    a.quantiteStock-=qte;
-    if(a.quantiteStock===0)a.statut='Sorti';
-    await doUpdate(a);
+    // 5. V6.2 : SUPPRIMER COMPLÈTEMENT ou déduire quantité
+    if(qte===a.quantiteStock){
+        // Supprimer l'article complètement
+        await apiCall({action:'deleteArticle',ID:id});
+        doHisto(id,'Vente complète',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Article supprimé`);
+    } else {
+        // Déduire la quantité
+        a.quantiteStock-=qte;
+        await doUpdate(a);
+        doHisto(id,'Vente partielle',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+    }
     
-    const prixDetail=a.prixVente?` à ${a.prixVente}€ = ${(qte*a.prixVente).toFixed(2)}€`:'';
-    doHisto(id,'Vente',p,`${qte} unité(s) vendues${prixDetail} — En attente TLE`);
-    
-    closeModal();alert(`✅ ${qte} unité(s) vendues — Article dans l'onglet TLE`);loadData();
+    closeModal();alert(`✅ ${qte} unité(s) vendues à ${client} — Article dans l'onglet TLE`);loadData();
 }
 
 // V6.1 ─── NOUVELLE ACTION : REMIS À TLE ──────
@@ -1468,6 +1625,31 @@ async function actPrevenirClient(id){
     doHisto(id,'Client prévenu',p,'Client/Poseur contacté');
     
     closeModal();alert('✅ Client marqué comme prévenu');loadData();
+}
+
+// V6.2 ─── NOUVELLE ACTION : SUPPRIMER STOCK ÉPUISÉ ──
+async function actSupprimerStock(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    
+    if(a.quantiteStock!==0){
+        alert('⚠️ Impossible de supprimer : stock non épuisé');
+        return;
+    }
+    
+    const conf1=confirm(`⚠️ ATTENTION ⚠️\n\nSupprimer définitivement l'article "${a.article}" ?\n\nCette action est IRRÉVERSIBLE.\nL'article sera supprimé de la base de données.`);
+    if(!conf1)return;
+    
+    const conf2=confirm(`Es-tu vraiment sûr(e) ?\n\nL'article "${a.article}" sera définitivement supprimé.\nIl ne sera plus récupérable.`);
+    if(!conf2)return;
+    
+    const result=await apiCall({action:'deleteArticle',ID:id});
+    if(result.error){
+        alert('❌ Erreur : '+result.error);
+        return;
+    }
+    
+    closeModal();alert('✅ Article supprimé définitivement');loadData();
 }
 
 function actSetSeuil(id){
@@ -1561,10 +1743,13 @@ async function doUpdate(a){
         DateRetourPrevue:a.dateRetourPrevue||'', DateRetourReel:a.dateRetourReel||'',
         DateSortie:a.dateSortie||'', RaisonSortie:a.raisonSortie||'',
         ParentId:a.parentId||'',
-        // V6.1 nouveaux champs
+        // V6.1 champs
         MADSubtype:a.madSubtype||'',
         PrixVente:a.prixVente||'',
-        StatutMAD:a.statutMAD||''
+        StatutMAD:a.statutMAD||'',
+        SAVDelaiAlerte:a.savDelaiAlerte||'',
+        // V6.2 nouveau champ
+        StockSubtype:a.stockSubtype||''
     });
 }
 
