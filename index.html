@@ -327,7 +327,7 @@
                         <option value="">Sélectionner...</option>
                         <option>Réserve</option>
                         <option>Bureau en haut</option>
-                        <option>Accueil</option>
+                        <option>Local RDC</option>
                     </select>
                 </div>
                 <div class="fg">
@@ -390,6 +390,11 @@
         <select id="s_mag" onchange="renderStock()">
             <option value="">Tous les magasins</option>
             <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <select id="s_subtype" onchange="renderStock()">
+            <option value="">Tous types</option>
+            <option value="Interne">📦 Stock interne</option>
+            <option value="Vendable">💰 Stock vendable</option>
         </select>
         <input id="s_search" placeholder="🔍 Article, référence, emplacement..." oninput="renderStock()" style="flex:1;min-width:180px;">
     </div>
@@ -673,8 +678,11 @@ function parseArticles(data) {
         prixVente:r.PrixVente?parseFloat(r.PrixVente):null,
         statutMAD:r.StatutMAD||'',
         savDelaiAlerte:r.SAVDelaiAlerte?parseInt(r.SAVDelaiAlerte):null,
-        // V6.2 nouveau champ avec défaut
-        stockSubtype:r.StockSubtype||'Interne'  // Si vide = Stock interne (ancien comportement)
+        // V6.2 champ
+        stockSubtype:r.StockSubtype||'Interne',  // Si vide = Stock interne (ancien comportement)
+        // V6.2.1 nouveaux champs vente
+        recuperePar:r.RecuperePar||'',
+        dateTLE:r.DateTLE||''
     }));
 }
 
@@ -946,7 +954,7 @@ function renderMAD() {
     if(subtype) list=list.filter(a=>a.madSubtype===subtype);
     
     if(stat) list=list.filter(a=>a.statut===stat);
-    if(q) list=list.filter(a=>['article','client','reference','numeroAR','emplacement','kitchener'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(q) list=list.filter(a=>smartSearch(a,q.toLowerCase()));
     if(!list.length){document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';return;}
     const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
     document.getElementById('madList').innerHTML=list.map(a=>{
@@ -982,13 +990,15 @@ function renderMAD() {
 // ─── STOCK ─────────────────────────
 function renderStock() {
     const mag=document.getElementById('s_mag').value;
+    const subtype=document.getElementById('s_subtype').value;
     const q=document.getElementById('s_search').value.toLowerCase();
     // IMPORTANT V6.1 : Exclure les articles vendus en attente TLE
     const allF=articles.filter(a=>
         a.type==='Stock' &&
         a.statut!=='Vendu - Attente TLE' &&
         a.statut!=='Sorti - Remis TLE' &&
-        (!mag||a.magasin===mag)
+        (!mag||a.magasin===mag) &&
+        (!subtype||a.stockSubtype===subtype)
     );
     const totalQty=allF.reduce((s,a)=>s+(a.quantiteStock||0),0);
     document.getElementById('stockStats').innerHTML=`
@@ -997,7 +1007,7 @@ function renderStock() {
         <div class="stat-card orange"><div class="num">${allF.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
         <div class="stat-card red"><div class="num">${allF.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>`;
     let list=allF.slice();
-    if(q) list=list.filter(a=>['article','reference','emplacement','notes'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(q) list=list.filter(a=>smartSearch(a,q));
     if(!list.length){document.getElementById('stockList').innerHTML='<div class="empty"><div class="ico">📦</div><p>Aucun article</p></div>';return;}
     document.getElementById('stockList').innerHTML=list.map(a=>{
         const qty=a.quantiteStock, seuil=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
@@ -1029,7 +1039,7 @@ function renderTLE() {
     const q=document.getElementById('t_search').value.toLowerCase();
     
     const allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE');
-    const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&(!q||a.article.toLowerCase().includes(q)||a.reference.toLowerCase().includes(q)));
+    const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&smartSearch(a,q));
     
     const totalQty=filtered.reduce((s,a)=>s+(a.quantiteStock||0),0);
     const totalValeur=filtered.reduce((s,a)=>{
@@ -1053,7 +1063,14 @@ function renderTLE() {
         const prix=a.prixVente;
         const prixTotal=prix?(prix*qty).toFixed(2):'?';
         const client=a.client||'Client non renseigné';
-        return`<div class="article-item" onclick="openModal('${a.id}')">
+        
+        // V6.2.1 : Afficher date TLE si présente
+        const dateTLEStr=a.dateTLE?new Date(a.dateTLE).toLocaleDateString('fr-FR'):'';
+        const now=new Date();
+        const joursRestants=a.dateTLE?Math.ceil((new Date(a.dateTLE)-now)/86400000):null;
+        const urgentTLE=joursRestants!==null&&joursRestants<=2&&joursRestants>=0;
+        
+        return`<div class="article-item" onclick="openModal('${a.id}')" style="${urgentTLE?'border-color:var(--orange-border);':''}">
             <div class="item-head">
                 <div>
                     <div class="item-title">${a.article}</div>
@@ -1062,6 +1079,7 @@ function renderTLE() {
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge b-pret">🚚 Attente TLE</span>
+                    ${urgentTLE?`<span class="badge b-warn">⚠️ J-${joursRestants}</span>`:''}
                     <span style="font-size:14px;font-weight:700;color:var(--orange);">${qty} unité(s)</span>
                     ${prix?`<span style="font-size:13px;color:var(--text3);">${prix}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>`:''}
                 </div>
@@ -1070,6 +1088,7 @@ function renderTLE() {
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
                 <span class="meta">📅 Vendu le <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                ${dateTLEStr?`<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">${urgentTLE?'⚠️':'📦'} TLE récup: <strong>${dateTLEStr}</strong></span>`:''}
             </div>
         </div>`;
     }).join('');
@@ -1122,7 +1141,7 @@ function renderPrets() {
     else if(currentPretTab==='bientot') list=bientot;
     else if(currentPretTab==='retard') list=retards;
 
-    if(q) list=list.filter(a=>['article','client','prenomEmprunteur','reference'].some(k=>(a[k]||'').toLowerCase().includes(q)));
+    if(q) list=list.filter(a=>smartSearch(a,q.toLowerCase()));
     if(!list.length){document.getElementById('pretsList').innerHTML=`<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;return;}
 
     if(currentPretTab==='dispo'){
@@ -1212,6 +1231,17 @@ function renderAlertes() {
         alertes.push({type:'danger',t:`🔧 SAV qui traîne — ${a.article}`,m:`${a.magasin} · En magasin depuis ${joursEnMagasin}j (seuil: ${delai}j) · Client: ${a.client}`,id:a.id});
     });
 
+    // V6.2.1 : Alertes TLE à récupérer bientôt
+    arts.filter(a=>{
+        if(a.statut!=='Vendu - Attente TLE'||!a.dateTLE)return false;
+        const joursAvant=Math.ceil((new Date(a.dateTLE)-now)/86400000);
+        return joursAvant<=2&&joursAvant>=0;
+    }).forEach(a=>{
+        const joursAvant=Math.ceil((new Date(a.dateTLE)-now)/86400000);
+        const dateStr=new Date(a.dateTLE).toLocaleDateString('fr-FR');
+        alertes.push({type:'warning',t:`📦 TLE à récupérer bientôt — ${a.article}`,m:`${a.magasin} · Client: ${a.client} · Récup: ${dateStr} (J-${joursAvant})`,id:a.id});
+    });
+
     if(!alertes.length){document.getElementById('alertList').innerHTML='<div class="empty"><div class="ico">✅</div><p>Aucune alerte !</p></div>';return;}
     document.getElementById('alertList').innerHTML=alertes.map(al=>`
         <div class="alert-item ${al.type}" onclick="openModal('${al.id}')">
@@ -1224,6 +1254,14 @@ function renderAlertes() {
 async function openModal(id) {
     const a=articles.find(x=>x.id===id)||pretsActifs.find(x=>x.id===id);
     if(!a){alert('Article non trouvé');return;}
+    
+    // V6.2.1 : SÉCURITÉ - Bloquer accès QR articles sortis
+    const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
+    if(statutsInterdits.includes(a.statut)){
+        alert('🔒 ACCÈS REFUSÉ\n\nCet article est sorti du stock.\nLe QR code n\'est plus valide.');
+        return;
+    }
+    
     document.getElementById('mTitle').textContent=a.article;
     document.getElementById('mSub').textContent=`${a.reference} · ${a.magasin} · ${a.type}`;
     document.getElementById('mBody').innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">⏳ Chargement...</div>';
@@ -1327,6 +1365,9 @@ function renderModalContent(a, histo) {
     // V6.1 : Bouton "Remis à TLE" pour articles vendus
     if(a.statut==='Vendu - Attente TLE'){
         html+=`<button class="btn btn-success" onclick="actRemisTLE('${a.id}')">✅ Remis à TLE</button>`;
+        if(a.dateTLE){
+            html+=`<button class="btn btn-outline" onclick="actModifierDateTLE('${a.id}')">📅 Modifier date TLE</button>`;
+        }
     }
     html+=`</div>`;
 
@@ -1406,6 +1447,41 @@ function closeModal(){document.getElementById('overlay').classList.remove('activ
 // ─── ACTIONS ───────────────────────
 function getPrenom(){const v=(document.getElementById('actPrenom')?.value||'').trim();if(!v){alert('⚠️ Entrez votre prénom');return null;}return v;}
 
+// V6.2.1 : Smart search - Recherche intelligente
+function smartSearch(item, query) {
+    const q = query.toLowerCase().trim();
+    if(!q) return true;
+    
+    const fields = [
+        item.article || '',
+        item.client || '',
+        item.reference || '',
+        item.numeroAR || '',
+        item.emplacement || '',
+        item.prenomEmprunteur || '',
+        item.notes || ''
+    ];
+    
+    // Exact match
+    for(let field of fields) {
+        if(field.toLowerCase() === q) return true;
+    }
+    
+    // Match début de mot
+    for(let field of fields) {
+        const words = field.toLowerCase().split(' ');
+        if(words.some(w => w.startsWith(q))) return true;
+    }
+    
+    // Match contient
+    for(let field of fields) {
+        if(field.toLowerCase().includes(q)) return true;
+    }
+    
+    return false;
+}
+
+
 async function actSortir(id){
     const p=getPrenom();if(!p)return;
     const raison=prompt('Raison de la sortie :');if(!raison)return;
@@ -1459,7 +1535,7 @@ async function actPreter(id){
         if(qte>parent.quantiteStock){alert(`Seulement ${parent.quantiteStock} disponible(s)`);return;}
     }
 
-    const emp=prompt('Prénom de l\'emprunteur :');if(!emp)return;
+    const emp=prompt('Nom et N° dossier :');if(!emp)return;
     const dateStr=prompt('Date de retour prévue (JJ/MM/AAAA) :');if(!dateStr)return;
     const [j,m,y]=dateStr.split('/');
     if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
@@ -1560,42 +1636,75 @@ async function actVendre(id){
     const qte=parseInt(qStr);
     if(isNaN(qte)||qte<=0||qte>a.quantiteStock){alert('Quantité invalide ou stock insuffisant');return;}
     
-    // 3. Confirmation avec prix
-    const prixTotal=(qte*a.prixVente).toFixed(2);
-    const conf=confirm(`Vendre ${qte} unité(s) à ${client} ?\n\nPrix unitaire : ${a.prixVente}€\nTotal : ${prixTotal}€\n\nL'article sera transféré dans l'onglet TLE.`);
-    if(!conf)return;
+    // 3. V6.2.1 : Demander qui récupère
+    const choixRecup=confirm('Qui récupère l\'article ?\n\n✅ OK = Client récupère directement\n❌ ANNULER = TLE doit récupérer');
+    const recuperePar=choixRecup?'Client':'TLE';
     
-    // 4. Créer article TLE
-    const venteId='VENTE-'+Date.now();
-    await apiCall({
-        action:'addArticle', ID:venteId,
-        Type:'Stock', Statut:'Vendu - Attente TLE',
-        Article:a.article, Reference:a.reference,
-        Magasin:a.magasin, Emplacement:a.emplacement,
-        QuantiteStock:qte, QuantiteInitiale:qte,
-        PrixVente:a.prixVente, ParentId:id,
-        Kitchener:p, DateReception:new Date().toISOString(),
-        Notes:`Vendu à ${client} le ${new Date().toLocaleDateString('fr-FR')}`,
-        Client:client,  // V6.2 : Stocker le nom du client
-        NumeroAR:'', NombreColis:'', DatePret:'',
-        PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
-        DateSortie:'', RaisonSortie:'', 
-        MADSubtype:'', StatutMAD:'', StockSubtype:'Vendable', SAVDelaiAlerte:''
-    });
-    
-    // 5. V6.2 : SUPPRIMER COMPLÈTEMENT ou déduire quantité
-    if(qte===a.quantiteStock){
-        // Supprimer l'article complètement
-        await apiCall({action:'deleteArticle',ID:id});
-        doHisto(id,'Vente complète',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Article supprimé`);
-    } else {
-        // Déduire la quantité
-        a.quantiteStock-=qte;
-        await doUpdate(a);
-        doHisto(id,'Vente partielle',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+    let dateTLE='';
+    if(recuperePar==='TLE'){
+        // Demander date récupération TLE
+        const dateStr=prompt('📅 Date de récupération TLE (JJ/MM/AAAA) :\n\n⏰ Info : Saisir 3 semaines avant livraison client');
+        if(!dateStr){alert('Date obligatoire pour récupération TLE');return;}
+        const [j,m,y]=dateStr.split('/');
+        if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+        dateTLE=new Date(y,m-1,j).toISOString();
     }
     
-    closeModal();alert(`✅ ${qte} unité(s) vendues à ${client} — Article dans l'onglet TLE`);loadData();
+    // 4. Confirmation avec prix
+    const prixTotal=(qte*a.prixVente).toFixed(2);
+    const msgConfirm=recuperePar==='Client'
+        ?`Vendre ${qte} unité(s) à ${client} ?\n\nPrix unitaire : ${a.prixVente}€\nTotal : ${prixTotal}€\n\n✅ Client récupère → Article sera marqué "Sorti"`
+        :`Vendre ${qte} unité(s) à ${client} ?\n\nPrix unitaire : ${a.prixVente}€\nTotal : ${prixTotal}€\n\n📦 TLE récupère le ${new Date(dateTLE).toLocaleDateString('fr-FR')}\n→ Article dans onglet TLE`;
+    const conf=confirm(msgConfirm);
+    if(!conf)return;
+    
+    if(recuperePar==='Client'){
+        // Client récupère → Marquer comme Sorti directement
+        if(qte===a.quantiteStock){
+            a.statut='Sorti - Récupéré client';
+            a.dateSortie=new Date().toISOString();
+            a.raisonSortie=`Vendu et récupéré par ${client} (${prixTotal}€)`;
+            await doUpdate(a);
+            doHisto(id,'Vente - Client récupère',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Article sorti`);
+        } else {
+            a.quantiteStock-=qte;
+            await doUpdate(a);
+            doHisto(id,'Vente partielle - Client récupère',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+        }
+        closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\nClient a récupéré l'article`);loadData();
+    } else {
+        // TLE récupère → Créer article TLE
+        const venteId='VENTE-'+Date.now();
+        await apiCall({
+            action:'addArticle', ID:venteId,
+            Type:'Stock', Statut:'Vendu - Attente TLE',
+            Article:a.article, Reference:a.reference,
+            Magasin:a.magasin, Emplacement:a.emplacement,
+            QuantiteStock:qte, QuantiteInitiale:qte,
+            PrixVente:a.prixVente, ParentId:id,
+            Kitchener:p, DateReception:new Date().toISOString(),
+            Notes:`Vendu à ${client} le ${new Date().toLocaleDateString('fr-FR')}`,
+            Client:client,
+            RecuperePar:'TLE',
+            DateTLE:dateTLE,
+            NumeroAR:'', NombreColis:'', DatePret:'',
+            PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
+            DateSortie:'', RaisonSortie:'', 
+            MADSubtype:'', StatutMAD:'', StockSubtype:'Vendable', SAVDelaiAlerte:''
+        });
+        
+        // Supprimer ou déduire quantité
+        if(qte===a.quantiteStock){
+            await apiCall({action:'deleteArticle',ID:id});
+            doHisto(id,'Vente complète - TLE',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — TLE récup: ${new Date(dateTLE).toLocaleDateString('fr-FR')}`);
+        } else {
+            a.quantiteStock-=qte;
+            await doUpdate(a);
+            doHisto(id,'Vente partielle - TLE',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+        }
+        
+        closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\n📦 TLE récupère le ${new Date(dateTLE).toLocaleDateString('fr-FR')}`);loadData();
+    }
 }
 
 // V6.1 ─── NOUVELLE ACTION : REMIS À TLE ──────
@@ -1613,6 +1722,27 @@ async function actRemisTLE(id){
     doHisto(id,'Remis à TLE',p,`${a.quantiteStock} unité(s) récupérées par TLE`);
     
     closeModal();alert('✅ Article remis à TLE');loadData();
+}
+
+// V6.2.1 ─── NOUVELLE ACTION : MODIFIER DATE TLE ──────
+async function actModifierDateTLE(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    
+    const actuelle=a.dateTLE?new Date(a.dateTLE).toLocaleDateString('fr-FR'):'Non définie';
+    const dateStr=prompt(`Modifier la date de récupération TLE\n\nDate actuelle : ${actuelle}\nNouvelle date (JJ/MM/AAAA) :\n\n⏰ Info : 3 semaines avant livraison client`);
+    if(!dateStr)return;
+    
+    const [j,m,y]=dateStr.split('/');
+    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+    
+    const nouvelleDateStr=`${j}/${m}/${y}`;
+    a.dateTLE=new Date(y,m-1,j).toISOString();
+    
+    await doUpdate(a);
+    doHisto(id,'Modification date TLE',p,`${actuelle} → ${nouvelleDateStr}`);
+    
+    alert('✅ Date TLE modifiée');loadData().then(()=>openModal(id));
 }
 
 // V6.1 ─── NOUVELLE ACTION : PRÉVENIR CLIENT ──
@@ -1748,8 +1878,11 @@ async function doUpdate(a){
         PrixVente:a.prixVente||'',
         StatutMAD:a.statutMAD||'',
         SAVDelaiAlerte:a.savDelaiAlerte||'',
-        // V6.2 nouveau champ
-        StockSubtype:a.stockSubtype||''
+        // V6.2 champ
+        StockSubtype:a.stockSubtype||'',
+        // V6.2.1 nouveaux champs
+        RecuperePar:a.recuperePar||'',
+        DateTLE:a.dateTLE||''
     });
 }
 
