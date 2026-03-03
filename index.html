@@ -410,11 +410,6 @@
             <option value="">Tous les magasins</option>
             <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
         </select>
-        <select id="t_statut" onchange="renderTLE()">
-            <option value="">Tout type</option>
-            <option value="Vendu - Attente TLE">📦 En attente TLE</option>
-            <option value="Sorti - Remis TLE">✅ Remis à TLE</option>
-        </select>
         <input id="t_search" placeholder="🔍 Article, référence..." oninput="renderTLE()" style="flex:1;min-width:180px;">
     </div>
     <div id="tleList"></div>
@@ -541,7 +536,7 @@ let pretsActifs = [];     // prêts individuels (sous-articles générés par ac
 let histoCache = {};
 let currentPretTab = 'dispo';
 let lastQRData = null;
-let params = { alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
 let seuilsPerso = {};     // seuils stock faible par article
 let seuilsMAD = {};       // V6.2 : seuils délai MAD par article
 let seuilsSAV = {};       // V6.2 : seuils délai SAV par article
@@ -1058,16 +1053,9 @@ function renderStock() {
 // ─── TLE - ARTICLES VENDUS ────────
 function renderTLE() {
     const mag=document.getElementById('t_mag').value;
-    const statutFilter=document.getElementById('t_statut').value;
     const q=document.getElementById('t_search').value.toLowerCase();
     
-    // V7.1 : Filtrer selon statut sélectionné
-    let allVendus;
-    if(statutFilter){
-        allVendus=articles.filter(a=>a.statut===statutFilter);
-    }else{
-        allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE'||a.statut==='Sorti - Remis TLE');
-    }
+    const allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE');
     const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&smartSearch(a,q));
     
     const totalQty=filtered.reduce((s,a)=>s+(a.quantiteStock||0),0);
@@ -1344,6 +1332,13 @@ async function openModal(id) {
     const a=articles.find(x=>x.id===id)||pretsActifs.find(x=>x.id===id);
     if(!a){alert('Article non trouvé');return;}
     
+    // V6.2.1 : SÉCURITÉ - Bloquer accès QR articles sortis
+    const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
+    if(statutsInterdits.includes(a.statut)){
+        alert('🔒 ACCÈS REFUSÉ\n\nCet article est sorti du stock.\nLe QR code n\'est plus valide.');
+        return;
+    }
+    
     document.getElementById('mTitle').textContent=a.article;
     document.getElementById('mSub').textContent=`${a.reference} · ${a.magasin} · ${a.type}`;
     document.getElementById('mBody').innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">⏳ Chargement...</div>';
@@ -1357,10 +1352,6 @@ function renderModalContent(a, histo) {
     const isArticlePret=a.type==='Article de prêt';
     const isStock=a.type==='Stock';
     const isMAD=a.type==='Mise à disposition';
-    
-    // V7.1 : Détecter si article sorti
-    const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
-    const estSorti=statutsInterdits.includes(a.statut);
 
     const typeClass={'Mise à disposition':'b-mad','Stock':'b-stock','Article de prêt':'b-purple','Prêt individuel':'b-pret'}[a.type]||'b-mad';
     const bClass={Stock:'b-stock',Prêt:'b-pret','En cours':'b-pret',Retourné:'b-sorti',Sorti:'b-sorti',SAV:'b-sav'}[a.statut]||'b-stock';
@@ -1370,14 +1361,6 @@ function renderModalContent(a, histo) {
         <span class="badge ${typeClass}">${a.type}</span>
         <span class="badge ${bClass}">${a.statut}</span>
     </div>`;
-    
-    // V7.1 : Bannière pour articles sortis
-    if(estSorti){
-        html+=`<div style="background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center;">
-            <div style="font-weight:700;margin-bottom:4px;">🔒 Article sorti du stock</div>
-            <div style="font-size:13px;">Aucune action possible · Historique consultable ci-dessous</div>
-        </div>`;
-    }
 
     // Compteur disponible pour Article de prêt
     if(isArticlePret){
@@ -1416,19 +1399,17 @@ function renderModalContent(a, histo) {
         ${a.notes?`<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>`:''}
     </div>`;
 
-    // Bouton QR (masqué si article sorti)
-    if(!isPretIndividuel&&!estSorti){
+    // Bouton QR
+    if(!isPretIndividuel){
         html+=`<div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <span style="font-size:12px;font-weight:600;color:var(--blue);">🔳 Étiquette QR</span>
             <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;" onclick="printArticleQR('${a.id}')">🖨️ Imprimer</button>
         </div>`;
     }
 
-    // V7.1 : Bloquer actions si article sorti
-    if(!estSorti){
-        // Actions
-        html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
-        <div class="btn-row">`;
+    // Actions
+    html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
+    <div class="btn-row">`;
 
     if(isMAD&&a.statut==='Stock'){
         // V6.1 : Bouton "Prévenir client" si statutMAD = "À prévenir"
@@ -1466,10 +1447,9 @@ function renderModalContent(a, histo) {
         }
     }
     html+=`</div>`;
-    } // Fin du if(!estSorti) - bloquer actions si article sorti
 
     // V7 : Prêts en cours depuis array prets[]
-    if(isArticlePret&&!estSorti){
+    if(isArticlePret){
         try {
             const pretsCet=(a.prets||[]).filter(p=>p.statut==='En cours');
             html+=`<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
@@ -1498,17 +1478,16 @@ function renderModalContent(a, histo) {
         }
     }
 
-    // Modifier (seulement si pas sorti)
-    if(!estSorti){
-        html+=`<div class="divider"></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-            <div class="section-lbl">✏️ Modifier l'article</div>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
-        </div>
-        <div id="editSection_${a.id}" style="display:none;">
-            <div class="edit-form">
-                <div class="form-grid">
-                    <div class="fg"><label>Article</label><input id="e_article" value="${a.article}"></div>
+    // Modifier
+    html+=`<div class="divider"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-lbl">✏️ Modifier l'article</div>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
+    </div>
+    <div id="editSection_${a.id}" style="display:none;">
+        <div class="edit-form">
+            <div class="form-grid">
+                <div class="fg"><label>Article</label><input id="e_article" value="${a.article}"></div>
                 <div class="fg"><label>Référence</label><input id="e_reference" value="${a.reference}"></div>
                 <div class="fg"><label>Emplacement</label><input id="e_emplacement" value="${a.emplacement}"></div>
                 <div class="fg">
@@ -1528,13 +1507,11 @@ function renderModalContent(a, histo) {
             <div class="btn-row">
                 <button class="btn btn-primary" onclick="actSaveEdit('${a.id}')">💾 Enregistrer</button>
                 <button class="btn btn-outline" onclick="toggleEdit('${a.id}')">Annuler</button>
-                <button class="btn btn-danger" onclick="actSupprimerArticle('${a.id}')">🗑️ Supprimer</button>
             </div>
         </div>
     </div>`;
-    } // Fin if(!estSorti) pour modification
 
-    // Historique (toujours visible même si sorti)
+    // Historique
     html+=`<div class="divider"></div><div class="section-lbl">📜 Historique</div>`;
     if(!histo.length) html+=`<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Aucun historique</div>`;
     else html+=histo.map(h=>`<div class="histo">
@@ -1942,26 +1919,6 @@ function actSetSeuil(id){
     const n=parseInt(val);if(isNaN(n)||n<0){alert('Valeur invalide');return;}
     seuilsPerso[id]=n;saveParamsToAPI();
     alert(`✅ Seuil défini à ${n} unités`);refreshBadges();
-}
-
-async function actSaveEdit(id){
-
-// V7.1 ─── NOUVELLE ACTION : SUPPRIMER ARTICLE ──────
-async function actSupprimerArticle(id){
-    const p=getPrenom();if(!p)return;
-    const a=articles.find(x=>x.id===id);
-    if(!a)return;
-    
-    const conf=confirm(`⚠️ ATTENTION\n\nVous allez SUPPRIMER définitivement cet article :\n\n${a.article}\nRéf: ${a.reference}\nMagasin: ${a.magasin}\n\nCette action est IRRÉVERSIBLE.\n\nVoulez-vous vraiment continuer ?`);
-    if(!conf)return;
-    
-    const conf2=confirm(`⚠️ DERNIÈRE CONFIRMATION\n\nL'article "${a.article}" sera DÉFINITIVEMENT supprimé.\n\nCliquez OK pour SUPPRIMER.`);
-    if(!conf2)return;
-    
-    await apiCall({action:'deleteArticle',ID:id});
-    doHisto(id,'Suppression',p,`Article supprimé: ${a.article} (${a.reference})`);
-    
-    closeModal();alert(`✅ Article "${a.article}" supprimé`);loadData();
 }
 
 async function actSaveEdit(id){
