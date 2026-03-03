@@ -679,18 +679,10 @@ function parseArticles(data) {
         statutMAD:r.StatutMAD||'',
         savDelaiAlerte:r.SAVDelaiAlerte?parseInt(r.SAVDelaiAlerte):null,
         // V6.2 champ
-        stockSubtype:r.StockSubtype||'Interne',
-        // V6.2.1 champs vente
+        stockSubtype:r.StockSubtype||'Interne',  // Si vide = Stock interne (ancien comportement)
+        // V6.2.1 nouveaux champs vente
         recuperePar:r.RecuperePar||'',
-        dateTLE:r.DateTLE||'',
-        // V7 NOUVEAU - Array prêts avec parsing sécurisé
-        prets:(()=>{
-            try{
-                return r.Prets&&r.Prets!==''?JSON.parse(r.Prets):[];
-            }catch(e){
-                return [];
-            }
-        })()
+        dateTLE:r.DateTLE||''
     }));
 }
 
@@ -716,16 +708,7 @@ function refreshCurrentPane() {
 }
 
 function refreshBadges() {
-    // V7 : Compter retards depuis arrays prets[]
-    const now = new Date();
-    let retards = 0;
-    articles.filter(a=>a.type==='Article de prêt'&&a.prets&&a.prets.length>0).forEach(art=>{
-        art.prets.forEach(p=>{
-            if(p.statut==='En cours'&&p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now){
-                retards++;
-            }
-        });
-    });
+    const retards = pretsActifs.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date()).length;
     const rb=document.getElementById('retardBadge'); rb.textContent=retards; rb.style.display=retards>0?'inline':'none';
     
     // Badge MAD : compter les SAV (madSubtype = "SAV")
@@ -1129,29 +1112,10 @@ function renderPrets() {
     const q=(document.getElementById('p_search')?.value||'').toLowerCase();
     const now=new Date();
 
-    // V7 : Articles de prêt du catalogue
+    // Articles de prêt (catalogue)
     const catalogue=articles.filter(a=>a.type==='Article de prêt'&&(!mag||a.magasin===mag));
-    
-    // V7 : Prêts en cours = extraction depuis arrays prets[]
-    let allPrets=[];
-    catalogue.forEach(art=>{
-        if(art.prets&&art.prets.length>0){
-            art.prets.forEach(p=>{
-                if(p.statut==='En cours'){
-                    allPrets.push({
-                        ...p,
-                        parentId:art.id,
-                        article:art.article,
-                        reference:art.reference,
-                        magasin:art.magasin,
-                        emplacement:art.emplacement
-                    });
-                }
-            });
-        }
-    });
-    
-    const encours=allPrets;
+    // Prêts individuels actifs (statut = 'En cours')
+    const encours=pretsActifs.filter(p=>p.statut==='En cours'&&(!mag||p.magasin===mag));
     const retards=encours.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now);
     const bientot=encours.filter(p=>{if(!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;});
     const dispoArticles=catalogue.filter(a=>a.quantiteStock>0);
@@ -1177,13 +1141,13 @@ function renderPrets() {
     else if(currentPretTab==='bientot') list=bientot;
     else if(currentPretTab==='retard') list=retards;
 
-    if(q) list=list.filter(a=>smartSearch(a,q));
+    if(q) list=list.filter(a=>smartSearch(a,q.toLowerCase()));
     if(!list.length){document.getElementById('pretsList').innerHTML=`<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;return;}
 
     if(currentPretTab==='dispo'){
         // Afficher les articles de prêt avec compteur dispo/total
         document.getElementById('pretsList').innerHTML=list.map(a=>{
-            const pretsCet=(a.prets||[]).filter(p=>p.statut==='En cours');
+            const pretsCet=pretsActifs.filter(p=>p.parentId===a.id&&p.statut==='En cours');
             return`<div class="article-item" onclick="openModal('${a.id}')">
                 <div class="item-head">
                     <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
@@ -1200,28 +1164,7 @@ function renderPrets() {
             </div>`;
         }).join('');
     } else {
-        // V7 : Afficher les prêts depuis arrays
-        document.getElementById('pretsList').innerHTML=list.map(p=>{
-            const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now;
-            const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000):null;
-            return`<div class="article-item" onclick="openModal('${p.parentId}')" style="${retard?'border-color:var(--red-border);':''}">
-                <div class="item-head">
-                    <div>
-                        <div class="item-title">${p.article}</div>
-                        <div class="item-client">👤 ${p.emprunteur||'?'}</div>
-                        <div class="item-ref">${p.reference}</div>
-                    </div>
-                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`⚠️ +${Math.abs(diff)}j`:diff!==null?`↩️ J-${diff}`:'En prêt'}</span>
-                </div>
-                <div class="item-meta">
-                    <span class="meta">🏪 <strong>${p.magasin}</strong></span>
-                    <span class="meta">📅 Prêté le <strong>${p.datePret?new Date(p.datePret).toLocaleDateString('fr-FR'):'?'}</strong></span>
-                    ${p.dateRetourPrevue?`<span class="meta">↩️ Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
-                </div>
-            </div>`;
-        }).join('');
-    }
-}
+        // Afficher les prêts individuels
         document.getElementById('pretsList').innerHTML=list.map(p=>{
             const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now;
             const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000):null;
@@ -1248,35 +1191,15 @@ function renderPrets() {
 function renderAlertes() {
     const mag=document.getElementById('a_mag').value;
     const arts=mag?articles.filter(a=>a.magasin===mag):articles;
-    
-    // V7 : Construire liste prêts depuis arrays
-    let allPrets=[];
-    const catalogue=articles.filter(a=>a.type==='Article de prêt'&&(!mag||a.magasin===mag));
-    catalogue.forEach(art=>{
-        if(art.prets&&art.prets.length>0){
-            art.prets.forEach(p=>{
-                if(p.statut==='En cours'){
-                    allPrets.push({
-                        ...p,
-                        parentId:art.id,
-                        article:art.article,
-                        magasin:art.magasin
-                    });
-                }
-            });
-        }
-    });
-    
+    const prets=mag?pretsActifs.filter(p=>p.magasin===mag):pretsActifs;
     let alertes=[];
     const now=new Date();
 
-    // Alertes prêts en retard
-    allPrets.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now)
-        .forEach(p=>{const j=Math.floor((now-new Date(p.dateRetourPrevue))/86400000);alertes.push({type:'danger',t:`Prêt en retard — ${p.article}`,m:`${p.magasin} · ${p.emprunteur} · ${j}j de retard`,id:p.parentId});});
+    prets.filter(p=>p.statut==='En cours'&&p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now)
+        .forEach(p=>{const j=Math.floor((now-new Date(p.dateRetourPrevue))/86400000);alertes.push({type:'danger',t:`Prêt en retard — ${p.article}`,m:`${p.magasin} · ${p.prenomEmprunteur} · ${j}j de retard`,id:p.id});});
 
-    // Alertes prêts bientôt
-    allPrets.filter(p=>{if(!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;})
-        .forEach(p=>{const j=Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000);alertes.push({type:'warning',t:`Retour bientôt — ${p.article}`,m:`${p.magasin} · ${p.emprunteur} · dans ${j}j`,id:p.parentId});});
+    prets.filter(p=>{if(p.statut!=='En cours'||!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;})
+        .forEach(p=>{const j=Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000);alertes.push({type:'warning',t:`Retour bientôt — ${p.article}`,m:`${p.magasin} · ${p.prenomEmprunteur} · dans ${j}j`,id:p.id});});
 
     arts.filter(a=>{if(a.type!=='Stock'||a.quantiteStock===null)return false;const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock>0&&a.quantiteStock<=s;})
         .forEach(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;alertes.push({type:'warning',t:`Stock faible — ${a.article}`,m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`,id:a.id});});
@@ -1448,34 +1371,29 @@ function renderModalContent(a, histo) {
     }
     html+=`</div>`;
 
-    // V7 : Prêts en cours depuis array prets[]
+    // Prêts individuels en cours pour Article de prêt
     if(isArticlePret){
-        try {
-            const pretsCet=(a.prets||[]).filter(p=>p.statut==='En cours');
-            html+=`<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
-            if(!pretsCet.length) html+=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
-            else html+=pretsCet.map(p=>{
-                const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date();
-                const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-new Date())/86400000):null;
-                return`<div class="loan-item ${retard?'retard':diff!==null&&diff<=params.alerteBientot?'bientot':''}">
-                    <div class="loan-head">
-                        <span class="loan-client">👤 ${p.emprunteur||'?'}</span>
-                        <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`+${Math.abs(diff)}j retard`:diff!==null?`J-${diff}`:'En prêt'}</span>
-                    </div>
-                    <div class="loan-meta">
-                        <span>📅 Prêté le <strong>${p.datePret?new Date(p.datePret).toLocaleDateString('fr-FR'):'?'}</strong>${p.pretePar?' par '+p.pretePar:''}</span>
-                        ${p.dateRetourPrevue?`<span>↩️ Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
-                    </div>
-                    <div class="btn-row" style="margin-top:8px;">
-                        <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretFromArray('${a.id}','${p.pretId}')">↩️ Retour</button>
-                        <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetourArray('${a.id}','${p.pretId}')">📅 Modifier date</button>
-                    </div>
-                </div>`;
-            }).join('');
-        } catch(e) {
-            console.error('Erreur affichage prêts:', e);
-            html+=`<div class="divider"></div><div style="color:var(--red);padding:12px;text-align:center;">❌ Erreur affichage prêts</div>`;
-        }
+        const pretsCet=pretsActifs.filter(p=>p.parentId===a.id&&p.statut==='En cours');
+        html+=`<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
+        if(!pretsCet.length) html+=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
+        else html+=pretsCet.map(p=>{
+            const retard=p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<new Date();
+            const diff=p.dateRetourPrevue?Math.ceil((new Date(p.dateRetourPrevue)-new Date())/86400000):null;
+            return`<div class="loan-item ${retard?'retard':diff!==null&&diff<=params.alerteBientot?'bientot':''}">
+                <div class="loan-head">
+                    <span class="loan-client">👤 ${p.prenomEmprunteur}</span>
+                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard?`+${Math.abs(diff)}j retard`:diff!==null?`J-${diff}`:'En prêt'}</span>
+                </div>
+                <div class="loan-meta">
+                    <span>📅 Prêté le <strong>${p.datePret?new Date(p.datePret).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                    ${p.dateRetourPrevue?`<span>↩️ Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>`:''}
+                </div>
+                <div class="btn-row" style="margin-top:8px;">
+                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretDirect('${p.id}','${a.id}')">↩️ Retour</button>
+                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetour('${p.id}')">📅 Modifier date</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // Modifier
@@ -1603,7 +1521,7 @@ async function actAjouterQte(id){
 }
 
 async function actPreter(id){
-    // V7 : Nouveau système - ajoute au array prets[] au lieu de créer articles
+    // id = l'article de prêt parent
     const p=getPrenom();if(!p)return;
     const parent=articles.find(x=>x.id===id);
     if(!parent||parent.quantiteStock<=0){alert('Aucune unité disponible');return;}
@@ -1622,83 +1540,36 @@ async function actPreter(id){
     const [j,m,y]=dateStr.split('/');
     if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
 
-    // V7 : Créer entrées dans array prets[] au lieu de nouveaux articles
-    const now=new Date().toISOString();
-    const dateRetour=new Date(y,m-1,j).toISOString();
-    
-    if(!parent.prets) parent.prets=[];
-    
+    // Créer un article "Prêt individuel" pour chaque unité prêtée
+    // (ou un seul avec quantité, selon besoin — ici on fait un prêt = une ligne pour traçabilité)
     for(let i=0;i<qte;i++){
         const pretId='PRET-'+Date.now()+'-'+i;
-        parent.prets.push({
-            pretId: pretId,
-            emprunteur: emp,
-            datePret: now,
-            dateRetourPrevue: dateRetour,
-            pretePar: p,
-            statut: 'En cours'
+        const now=new Date().toISOString();
+        await apiCall({
+            action:'addArticle', ID:pretId,
+            Magasin:parent.magasin, Type:'Prêt individuel',
+            Client:'', NumeroAR:'',
+            Article:parent.article, Reference:parent.reference,
+            NombreColis:'1', QuantiteStock:'', QuantiteInitiale:'',
+            Emplacement:parent.emplacement, Kitchener:p,
+            Notes:'', Statut:'En cours',
+            DateReception:now, DatePret:now,
+            PrenomEmprunteur:emp,
+            DateRetourPrevue:new Date(y,m-1,j).toISOString(),
+            ParentId:id, Historique:'false'
         });
-        doHisto(id,'Prêt créé',p,`Prêté à ${emp} · Retour: ${dateStr} · ID: ${pretId}`);
+        // V6.2 : Historique pour chaque prêt individuel
+        doHisto(pretId,'Prêt créé',p,`Prêté à ${emp} · Retour: ${dateStr} · Article parent: ${parent.article}`);
     }
-    
-    // Déduire du stock
+    // Déduire du stock parent
     parent.quantiteStock-=qte;
     await doUpdate(parent);
     doHisto(id,'Prêt',p,`${qte} unité(s) à ${emp} — Retour: ${dateStr} — Reste dispo: ${parent.quantiteStock}`);
     closeModal();alert(`✅ ${qte} unité(s) prêtée(s) à ${emp}`);loadData();
 }
 
-// V7 ─── RETOUR DEPUIS ARRAY ─────
-async function actRetourPretFromArray(parentId, pretId){
-    const p=getPrenom();if(!p)return;
-    
-    const parent=articles.find(x=>x.id===parentId);
-    if(!parent||!parent.prets)return;
-    
-    const pretIndex=parent.prets.findIndex(pr=>pr.pretId===pretId);
-    if(pretIndex===-1){alert('Prêt non trouvé');return;}
-    
-    const pret=parent.prets[pretIndex];
-    pret.statut='Retourné';
-    pret.dateRetourReel=new Date().toISOString();
-    pret.retournePar=p;
-    
-    // Remettre dans le stock
-    parent.quantiteStock=(parent.quantiteStock||0)+1;
-    
-    await doUpdate(parent);
-    doHisto(parentId,'Retour de prêt',p,`Retourné par ${pret.emprunteur} (ID: ${pretId})`);
-    
-    alert('✅ Retour enregistré');loadData().then(()=>openModal(parentId));
-}
-
-// V7 ─── MODIFIER DATE RETOUR ARRAY ─────
-async function actModifierDateRetourArray(parentId, pretId){
-    const p=getPrenom();if(!p)return;
-    
-    const parent=articles.find(x=>x.id===parentId);
-    if(!parent||!parent.prets)return;
-    
-    const pret=parent.prets.find(pr=>pr.pretId===pretId);
-    if(!pret){alert('Prêt non trouvé');return;}
-    
-    const actuelle=pret.dateRetourPrevue?new Date(pret.dateRetourPrevue).toLocaleDateString('fr-FR'):'?';
-    const dateStr=prompt(`Nouvelle date de retour (actuelle: ${actuelle})\nFormat: JJ/MM/AAAA :`);
-    if(!dateStr)return;
-    const[j,m,y]=dateStr.split('/');
-    if(!j||!m||!y){alert('Format invalide');return;}
-    
-    pret.dateRetourPrevue=new Date(y,m-1,j).toISOString();
-    
-    await doUpdate(parent);
-    doHisto(parentId,'Modification date retour',p,`${actuelle} → ${dateStr} (Prêt ${pret.emprunteur})`);
-    
-    alert('✅ Date modifiée');loadData().then(()=>openModal(parentId));
-}
-
-// V7 : Garder anciennes fonctions pour compatibilité avec prêts existants V6.2
 async function actRetourPret(id){
-    // id = le prêt individuel (ancien système)
+    // id = le prêt individuel
     const p=getPrenom();if(!p)return;
     const pret=pretsActifs.find(x=>x.id===id);if(!pret)return;
     pret.statut='Retourné';pret.dateRetourReel=new Date().toISOString();
@@ -2009,11 +1880,9 @@ async function doUpdate(a){
         SAVDelaiAlerte:a.savDelaiAlerte||'',
         // V6.2 champ
         StockSubtype:a.stockSubtype||'',
-        // V6.2.1 champs
+        // V6.2.1 nouveaux champs
         RecuperePar:a.recuperePar||'',
-        DateTLE:a.dateTLE||'',
-        // V7 NOUVEAU
-        Prets:a.prets?JSON.stringify(a.prets):''
+        DateTLE:a.dateTLE||''
     });
 }
 
