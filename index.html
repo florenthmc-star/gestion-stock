@@ -1560,15 +1560,16 @@ function smartSearch(item, query) {
     const q = query.toLowerCase().trim();
     if(!q) return true;
     
+    // Convertir TOUS les champs en string pour éviter l'erreur toLowerCase
     const fields = [
-        item.article || '',
-        item.client || '',
-        item.reference || '',
-        item.numeroAR || '',
-        item.emplacement || '',
-        item.prenomEmprunteur || '',
-        item.emprunteur || '', // V7 : pour prêts arrays
-        item.notes || ''
+        String(item.article || ''),
+        String(item.client || ''),
+        String(item.reference || ''),
+        String(item.numeroAR || ''),
+        String(item.emplacement || ''),
+        String(item.prenomEmprunteur || ''),
+        String(item.emprunteur || ''),
+        String(item.notes || '')
     ];
     
     // Exact match
