@@ -1010,7 +1010,7 @@ function renderMAD() {
     if(subtype) list=list.filter(a=>a.madSubtype===subtype);
     
     if(stat) list=list.filter(a=>a.statut===stat);
-    if(q) list=list.filter(a=>smartSearch(a,q.toLowerCase()));
+    if(q) list=list.filter(a=>smartSearch(a,q));
     if(!list.length){document.getElementById('madList').innerHTML='<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>';return;}
     const bMap={Stock:'b-stock',Prêt:'b-pret',Sorti:'b-sorti',SAV:'b-sav'};
     document.getElementById('madList').innerHTML=list.map(a=>{
@@ -1353,13 +1353,6 @@ async function openModal(id) {
     const a=articles.find(x=>x.id===id)||pretsActifs.find(x=>x.id===id);
     if(!a){alert('Article non trouvé');return;}
     
-    // V6.2.1 : SÉCURITÉ - Bloquer accès QR articles sortis
-    const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
-    if(statutsInterdits.includes(a.statut)){
-        alert('🔒 ACCÈS REFUSÉ\n\nCet article est sorti du stock.\nLe QR code n\'est plus valide.');
-        return;
-    }
-    
     document.getElementById('mTitle').textContent=a.article;
     document.getElementById('mSub').textContent=`${a.reference} · ${a.magasin} · ${a.type}`;
     document.getElementById('mBody').innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">⏳ Chargement...</div>';
@@ -1373,6 +1366,10 @@ function renderModalContent(a, histo) {
     const isArticlePret=a.type==='Article de prêt';
     const isStock=a.type==='Stock';
     const isMAD=a.type==='Mise à disposition';
+    
+    // Détecter si article sorti
+    const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
+    const estSorti=statutsInterdits.includes(a.statut);
 
     const typeClass={'Mise à disposition':'b-mad','Stock':'b-stock','Article de prêt':'b-purple','Prêt individuel':'b-pret'}[a.type]||'b-mad';
     const bClass={Stock:'b-stock',Prêt:'b-pret','En cours':'b-pret',Retourné:'b-sorti',Sorti:'b-sorti',SAV:'b-sav'}[a.statut]||'b-stock';
@@ -1382,6 +1379,14 @@ function renderModalContent(a, histo) {
         <span class="badge ${typeClass}">${a.type}</span>
         <span class="badge ${bClass}">${a.statut}</span>
     </div>`;
+    
+    // Bannière pour articles sortis
+    if(estSorti){
+        html+=`<div style="background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center;">
+            <div style="font-weight:700;margin-bottom:4px;">🔒 Article sorti du stock</div>
+            <div style="font-size:13px;">Aucune action possible · Historique consultable ci-dessous</div>
+        </div>`;
+    }
 
     // Compteur disponible pour Article de prêt
     if(isArticlePret){
@@ -1420,17 +1425,18 @@ function renderModalContent(a, histo) {
         ${a.notes?`<div class="detail-field full"><div class="k">Notes</div><div class="v">${a.notes}</div></div>`:''}
     </div>`;
 
-    // Bouton QR
-    if(!isPretIndividuel){
+    // Bouton QR (masqué si sorti)
+    if(!isPretIndividuel&&!estSorti){
         html+=`<div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <span style="font-size:12px;font-weight:600;color:var(--blue);">🔳 Étiquette QR</span>
             <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;" onclick="printArticleQR('${a.id}')">🖨️ Imprimer</button>
         </div>`;
     }
 
-    // Actions
-    html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
-    <div class="btn-row">`;
+    // Actions (masquées si sorti)
+    if(!estSorti){
+        html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
+        <div class="btn-row">`;
 
     if(isMAD&&a.statut==='Stock'){
         // V6.1 : Bouton "Prévenir client" si statutMAD = "À prévenir"
@@ -1468,9 +1474,10 @@ function renderModalContent(a, histo) {
         }
     }
     html+=`</div>`;
+    } // Fin if(!estSorti) - masquer actions
 
-    // V7 : Prêts en cours depuis array prets[]
-    if(isArticlePret){
+    // V7 : Prêts en cours depuis array prets[] (masqué si sorti)
+    if(isArticlePret&&!estSorti){
         const pretsCet=(a.prets||[]).filter(p=>p.statut==='En cours');
         html+=`<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
         if(!pretsCet.length) html+=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
@@ -1494,41 +1501,43 @@ function renderModalContent(a, histo) {
         }).join('');
     }
 
-    // Modifier
-    html+=`<div class="divider"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="section-lbl">✏️ Modifier l'article</div>
-        <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
-    </div>
-    <div id="editSection_${a.id}" style="display:none;">
-        <div class="edit-form">
-            <div class="form-grid">
-                <div class="fg"><label>Article</label><input id="e_article" value="${a.article}"></div>
-                <div class="fg"><label>Référence</label><input id="e_reference" value="${a.reference}"></div>
-                <div class="fg"><label>Emplacement</label><input id="e_emplacement" value="${a.emplacement}"></div>
-                <div class="fg">
-                    <label>Catégorie</label>
-                    <select id="e_type">
-                        <option value="Mise à disposition" ${a.type==='Mise à disposition'?'selected':''}>🚚 Mise à disposition</option>
-                        <option value="Stock" ${a.type==='Stock'?'selected':''}>📦 Stock</option>
-                        <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
-                    </select>
+    // Modifier (masqué si sorti)
+    if(!estSorti){
+        html+=`<div class="divider"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="section-lbl">✏️ Modifier l'article</div>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${a.id}')">Modifier</button>
+        </div>
+        <div id="editSection_${a.id}" style="display:none;">
+            <div class="edit-form">
+                <div class="form-grid">
+                    <div class="fg"><label>Article</label><input id="e_article" value="${a.article}"></div>
+                    <div class="fg"><label>Référence</label><input id="e_reference" value="${a.reference}"></div>
+                    <div class="fg"><label>Emplacement</label><input id="e_emplacement" value="${a.emplacement}"></div>
+                    <div class="fg">
+                        <label>Catégorie</label>
+                        <select id="e_type">
+                            <option value="Mise à disposition" ${a.type==='Mise à disposition'?'selected':''}>🚚 Mise à disposition</option>
+                            <option value="Stock" ${a.type==='Stock'?'selected':''}>📦 Stock</option>
+                            <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
+                        </select>
+                    </div>
+                    ${isMAD?`<div class="fg"><label>Client</label><input id="e_client" value="${a.client||''}"></div>`:''}
+                    ${a.numeroAR?`<div class="fg"><label>N° AR</label><input id="e_ar" value="${a.numeroAR}"></div>`:''}
+                    ${a.quantiteStock!==null?`<div class="fg"><label>Quantité</label><input id="e_qty" type="number" value="${a.quantiteStock}"></div>`:''}
+                    ${isMAD&&a.nombreColis>0?`<div class="fg"><label>Nb Colis</label><input id="e_colis" type="number" value="${a.nombreColis}"></div>`:''}
+                    <div class="fg full"><label>Notes</label><textarea id="e_notes" rows="2">${a.notes||''}</textarea></div>
                 </div>
-                ${isMAD?`<div class="fg"><label>Client</label><input id="e_client" value="${a.client||''}"></div>`:''}
-                ${a.numeroAR?`<div class="fg"><label>N° AR</label><input id="e_ar" value="${a.numeroAR}"></div>`:''}
-                ${a.quantiteStock!==null?`<div class="fg"><label>Quantité</label><input id="e_qty" type="number" value="${a.quantiteStock}"></div>`:''}
-                ${isMAD&&a.nombreColis>0?`<div class="fg"><label>Nb Colis</label><input id="e_colis" type="number" value="${a.nombreColis}"></div>`:''}
-                <div class="fg full"><label>Notes</label><textarea id="e_notes" rows="2">${a.notes||''}</textarea></div>
-            </div>
-            <div class="btn-row">
+                <div class="btn-row">
                 <button class="btn btn-primary" onclick="actSaveEdit('${a.id}')">💾 Enregistrer</button>
                 <button class="btn btn-outline" onclick="toggleEdit('${a.id}')">Annuler</button>
                 <button class="btn btn-danger" onclick="actSupprimerArticle('${a.id}')">🗑️ Supprimer</button>
             </div>
         </div>
     </div>`;
+    } // Fin if(!estSorti) - masquer modification
 
-    // Historique
+    // Historique (toujours visible, même si sorti)
     html+=`<div class="divider"></div><div class="section-lbl">📜 Historique</div>`;
     if(!histo.length) html+=`<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Aucun historique</div>`;
     else html+=histo.map(h=>`<div class="histo">
