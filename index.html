@@ -317,7 +317,7 @@
                 <!-- Seuil alerte : visible pour Stock uniquement -->
                 <div class="fg" id="seuilGroup" style="display:none">
                     <label>Seuil d'alerte (stock faible)</label>
-                    <input id="f_seuil" type="number" min="0" value="5">
+                    <input id="f_seuil" type="number" min="0" value="0">
                     <span class="hint">Alerte si quantité ≤ ce nombre</span>
                 </div>
                 <div class="fg" id="emplacementGroup">
@@ -993,7 +993,7 @@ function renderMAD() {
     const mag=document.getElementById('m_mag').value;
     const subtype=document.getElementById('m_subtype').value;  // V6.2 nouveau filtre
     const stat=document.getElementById('m_stat').value;
-    const q=document.getElementById('m_search').value.toLowerCase();
+    const q=(document.getElementById('m_search')?.value||'').toLowerCase();
     const allF=articles.filter(a=>a.type==='Mise à disposition'&&(!mag||a.magasin===mag));
     
     // V6.1 : Compter les SAV (madSubtype = "SAV")
@@ -1047,7 +1047,7 @@ function renderMAD() {
 function renderStock() {
     const mag=document.getElementById('s_mag').value;
     const subtype=document.getElementById('s_subtype').value;
-    const q=document.getElementById('s_search').value.toLowerCase();
+    const q=(document.getElementById('s_search')?.value||'').toLowerCase();
     // IMPORTANT V6.1 : Exclure les articles vendus en attente TLE
     const allF=articles.filter(a=>
         a.type==='Stock' &&
@@ -1093,7 +1093,7 @@ function renderStock() {
 function renderTLE() {
     const mag=document.getElementById('t_mag').value;
     const statutFilter=document.getElementById('t_statut').value;
-    const q=document.getElementById('t_search').value.toLowerCase();
+    const q=(document.getElementById('t_search')?.value||'').toLowerCase();
     
     // FIX2 : Filtrer selon statut sélectionné
     let allVendus;
@@ -1567,6 +1567,7 @@ function smartSearch(item, query) {
         item.numeroAR || '',
         item.emplacement || '',
         item.prenomEmprunteur || '',
+        item.emprunteur || '', // V7 : pour prêts arrays
         item.notes || ''
     ];
     
