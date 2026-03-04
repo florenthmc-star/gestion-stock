@@ -410,6 +410,11 @@
             <option value="">Tous les magasins</option>
             <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
         </select>
+        <select id="t_statut" onchange="renderTLE()">
+            <option value="">Tout type</option>
+            <option value="Vendu - Attente TLE">📦 En attente TLE</option>
+            <option value="Sorti - Remis TLE">✅ Remis à TLE</option>
+        </select>
         <input id="t_search" placeholder="🔍 Article, référence..." oninput="renderTLE()" style="flex:1;min-width:180px;">
     </div>
     <div id="tleList"></div>
@@ -536,7 +541,7 @@ let pretsActifs = [];     // prêts individuels (sous-articles générés par ac
 let histoCache = {};
 let currentPretTab = 'dispo';
 let lastQRData = null;
-let params = { alerteBientot:3, alerteUrgent:1, stockFaible:5, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
 let seuilsPerso = {};     // seuils stock faible par article
 let seuilsMAD = {};       // V6.2 : seuils délai MAD par article
 let seuilsSAV = {};       // V6.2 : seuils délai SAV par article
@@ -601,7 +606,7 @@ function saveParams() {
 }
 
 function resetParams() {
-    params={alerteBientot:3,alerteUrgent:1,stockFaible:5,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30};
+    params={alerteBientot:3,alerteUrgent:1,stockFaible:0,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30};
     saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
 
@@ -646,7 +651,7 @@ async function loadData() {
     if (dataArticles.error) { setStatus('err','❌ Déconnecté'); return; }
     articles = parseArticles(Array.isArray(dataArticles)?dataArticles:[]);
     
-    // V7 : SÉCURITÉ QR - Bloquer complètement si QR article sorti
+    // V7 : SÉCURITÉ QR - Bloquer COMPLÈTEMENT si QR article sorti
     const urlParams = new URLSearchParams(window.location.search);
     const qrId = urlParams.get('id');
     if(qrId){
@@ -654,8 +659,9 @@ async function loadData() {
         if(article){
             const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
             if(statutsInterdits.includes(article.statut)){
+                // Bloquer TOUT : remplacer body + empêcher retour arrière
                 document.body.innerHTML=`
-                    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;">
+                    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;">
                         <div style="background:white;border-radius:16px;padding:40px;max-width:480px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
                             <div style="font-size:64px;margin-bottom:20px;">🔒</div>
                             <h1 style="color:#dc2626;font-size:24px;margin:0 0 16px 0;font-weight:700;">QR Code Invalide</h1>
@@ -674,6 +680,12 @@ async function loadData() {
                         </div>
                     </div>
                 `;
+                // Empêcher TOUTE interaction et retour
+                window.history.pushState(null, '', window.location.href);
+                window.onpopstate = ()=> { window.history.pushState(null, '', window.location.href); };
+                // Bloquer clics, touches, tout
+                document.addEventListener('click', e=>e.stopPropagation(), true);
+                document.addEventListener('keydown', e=>e.preventDefault(), true);
                 return;
             }
         }
@@ -1080,9 +1092,16 @@ function renderStock() {
 // ─── TLE - ARTICLES VENDUS ────────
 function renderTLE() {
     const mag=document.getElementById('t_mag').value;
+    const statutFilter=document.getElementById('t_statut').value;
     const q=document.getElementById('t_search').value.toLowerCase();
     
-    const allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE');
+    // FIX2 : Filtrer selon statut sélectionné
+    let allVendus;
+    if(statutFilter){
+        allVendus=articles.filter(a=>a.statut===statutFilter);
+    }else{
+        allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE'||a.statut==='Sorti - Remis TLE');
+    }
     const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&smartSearch(a,q));
     
     const totalQty=filtered.reduce((s,a)=>s+(a.quantiteStock||0),0);
@@ -1181,7 +1200,7 @@ function renderPrets() {
     const encours=allPrets;
     const retards=encours.filter(p=>p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now);
     const bientot=encours.filter(p=>{if(!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;});
-    const dispoArticles=catalogue.filter(a=>a.quantiteStock>0);
+    const dispoArticles=catalogue;
 
     document.getElementById('pretsStats').innerHTML=`
         <div class="stat-card purple"><div class="num">${dispoArticles.length}</div><div class="lbl">Articles disponibles${mag?' '+mag:''}</div></div>
