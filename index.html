@@ -669,17 +669,32 @@ function setSeuil(id,val) {
 
 // ─── API ──────────────────────────
 function apiCall(p) {
-    return new Promise(resolve=>{
-        const cb='cb'+Date.now()+Math.random().toString(36).slice(2,6);
-        let done=false;
-        const clean=()=>{ done=true; delete window[cb]; document.getElementById(cb)?.remove(); };
-        window[cb]=data=>{ clean(); resolve(data||{}); };
-        const s=document.createElement('script');
-        s.id=cb; s.src=`${API_URL}?${new URLSearchParams({...p,callback:cb})}`;
-        s.onerror=()=>{ clean(); resolve({error:'Network error'}); };
-        setTimeout(()=>{ if(!done){clean();resolve({error:'Timeout'});} },20000);
-        document.body.appendChild(s);
-    });
+    // Actions qui nécessitent POST
+    const postActions = ['addArticle', 'updateArticle', 'deleteArticle', 'addHistorique', 'saveParams', 'saveSeuil', 'saveSeuilMAD', 'saveSeuilSAV'];
+    
+    if (postActions.includes(p.action)) {
+        // Utiliser fetch POST
+        return fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(p)
+        })
+        .then(r => r.json())
+        .catch(err => ({ error: err.toString() }));
+    } else {
+        // Utiliser JSONP pour GET (getArticles, getParams)
+        return new Promise(resolve=>{
+            const cb='cb'+Date.now()+Math.random().toString(36).slice(2,6);
+            let done=false;
+            const clean=()=>{ done=true; delete window[cb]; document.getElementById(cb)?.remove(); };
+            window[cb]=data=>{ clean(); resolve(data||{}); };
+            const s=document.createElement('script');
+            s.id=cb; s.src=`${API_URL}?${new URLSearchParams({...p,callback:cb})}`;
+            s.onerror=()=>{ clean(); resolve({error:'Network error'}); };
+            setTimeout(()=>{ if(!done){clean();resolve({error:'Timeout'});} },20000);
+            document.body.appendChild(s);
+        });
+    }
 }
 
 async function loadData() {
