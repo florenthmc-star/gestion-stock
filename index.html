@@ -229,6 +229,7 @@
     <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
     <button class="tab" onclick="switchTab('tle',this)">🚚 TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('recup',this)">🛍️ Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
@@ -277,6 +278,15 @@
                     <label>Alerte si SAV > X jours</label>
                     <input id="f_sav_delai" type="number" min="1" value="30" placeholder="Ex: 30">
                     <span class="hint">Alerte si le SAV reste plus de X jours en magasin</span>
+                </div>
+                <!-- V7.1 : Reprise article - visible si SAV sélectionné -->
+                <div class="fg" id="repriseGroup" style="display:none">
+                    <label>Reprise article *</label>
+                    <select id="f_reprise">
+                        <option value="Non">Non</option>
+                        <option value="Oui">Oui - Article à ramener en magasin</option>
+                    </select>
+                    <span class="hint">Si "Oui", alerte créée jusqu'à réception de l'ancien article</span>
                 </div>
                 <div class="fg" id="arGroup">
                     <label>N° AR</label>
@@ -413,11 +423,31 @@
         <select id="t_statut" onchange="renderTLE()">
             <option value="">Tout type</option>
             <option value="Vendu - Attente TLE">📦 En attente TLE</option>
+            <option value="Reprise - Attente TLE">🔧 Reprise SAV</option>
             <option value="Sorti - Remis TLE">✅ Remis à TLE</option>
         </select>
         <input id="t_search" placeholder="🔍 Article, référence..." oninput="renderTLE()" style="flex:1;min-width:180px;">
     </div>
     <div id="tleList"></div>
+</div>
+
+<!-- ═══ RÉCUPÉRATIONS CLIENTS ═══ -->
+<div id="recup" class="pane">
+    <div class="page-title">🛍️ Récupérations Clients</div>
+    <div class="stats-row" id="recupStats"></div>
+    <div class="filter-bar">
+        <select id="rc_mag" onchange="renderRecupClients()">
+            <option value="">Tous les magasins</option>
+            <option>Lattes</option><option>Vedène</option><option>Aix</option><option>Nîmes</option><option>Vitrolles</option>
+        </select>
+        <select id="rc_statut" onchange="renderRecupClients()">
+            <option value="">Tout</option>
+            <option value="En attente">⏳ En attente</option>
+            <option value="Récupéré">✅ Récupéré</option>
+        </select>
+        <input id="rc_search" placeholder="🔍 Article, client, référence..." oninput="renderRecupClients()" style="flex:1;min-width:180px;">
+    </div>
+    <div id="recupList"></div>
 </div>
 
 <!-- ═══ PRÊTS ═══ -->
@@ -484,6 +514,14 @@
             </div>
         </div>
         <div class="settings-section">
+            <h3>🛍️ Alertes Récupérations Clients — Délai</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Alerte si un client ne récupère pas son article dans les temps.</p>
+            <div class="setting-row">
+                <label>Alerte si récupération dans moins de</label>
+                <div class="si"><input type="number" id="param_recup_delai" min="0" max="10" value="2"><span>jours (J-X)</span></div>
+            </div>
+        </div>
+        <div class="settings-section">
             <h3>🗑️ Nettoyage automatique</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Supprimez les anciens articles sortis ou retournés pour alléger la base de données.</p>
             <div class="setting-row">
@@ -541,7 +579,7 @@ let pretsActifs = [];     // prêts individuels (sous-articles générés par ac
 let histoCache = {};
 let currentPretTab = 'dispo';
 let lastQRData = null;
-let params = { alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30 };
+let params = { alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30, recupClientDelai:2 };
 let seuilsPerso = {};     // seuils stock faible par article
 let seuilsMAD = {};       // V6.2 : seuils délai MAD par article
 let seuilsSAV = {};       // V6.2 : seuils délai SAV par article
@@ -571,6 +609,7 @@ function applyParamsToForm() {
     if(document.getElementById('param_archive')) document.getElementById('param_archive').value = params.archiveJours;
     if(document.getElementById('param_mad_delai')) document.getElementById('param_mad_delai').value = params.madDelaiDefaut||15;
     if(document.getElementById('param_sav_delai')) document.getElementById('param_sav_delai').value = params.savDelaiDefaut||30;
+    if(document.getElementById('param_recup_delai')) document.getElementById('param_recup_delai').value = params.recupClientDelai||2; // V7.1
 }
 
 async function loadParamsFromAPI() {
@@ -602,11 +641,12 @@ function saveParams() {
     params.archiveJours  = parseInt(document.getElementById('param_archive')?.value)||90;
     params.madDelaiDefaut = parseInt(document.getElementById('param_mad_delai')?.value)||15;
     params.savDelaiDefaut = parseInt(document.getElementById('param_sav_delai')?.value)||30;
+    params.recupClientDelai = parseInt(document.getElementById('param_recup_delai')?.value)||2; // V7.1
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
 function resetParams() {
-    params={alerteBientot:3,alerteUrgent:1,stockFaible:0,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30};
+    params={alerteBientot:3,alerteUrgent:1,stockFaible:0,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30,recupClientDelai:2};
     saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
 
@@ -629,6 +669,7 @@ function setSeuil(id,val) {
 
 // ─── API ──────────────────────────
 function apiCall(p) {
+    // Utiliser JSONP pour TOUTES les requêtes (GET et "POST")
     return new Promise(resolve=>{
         const cb='cb'+Date.now()+Math.random().toString(36).slice(2,6);
         let done=false;
@@ -645,11 +686,11 @@ function apiCall(p) {
 async function loadData() {
     setStatus('loading','🔄 Chargement...');
     const [dataArticles, dataParams] = await Promise.all([
-        apiCall({action:'getAllArticles',t:Date.now()}),
+        apiCall({action:'getArticles',t:Date.now()}),
         apiCall({action:'getParams'})
     ]);
     if (dataArticles.error) { setStatus('err','❌ Déconnecté'); return; }
-    articles = parseArticles(Array.isArray(dataArticles)?dataArticles:[]);
+    articles = parseArticles(dataArticles.articles||[]);
     
     // V7 : SÉCURITÉ QR - Bloquer COMPLÈTEMENT si QR article sorti
     const urlParams = new URLSearchParams(window.location.search);
@@ -724,6 +765,10 @@ function parseArticles(data) {
         // V6.2.1 champs vente
         recuperePar:r.RecuperePar||'',
         dateTLE:r.DateTLE||'',
+        dateRecupClient:r.DateRecupClient||'', // V7.1 NOUVEAU
+        // V7.1 NOUVEAU - Reprise SAV
+        repriseArticle:r.RepriseArticle||'Non',
+        repriseRecue:r.RepriseRecue||'',
         // V7 NOUVEAU - Array prêts avec parsing sécurisé
         prets:(()=>{
             try{
@@ -751,6 +796,7 @@ function refreshCurrentPane() {
     if (id==='mad') renderMAD();
     else if (id==='stock') renderStock();
     else if (id==='tle') renderTLE();
+    else if (id==='recup') renderRecupClients();
     else if (id==='prets') renderPrets();
     else if (id==='alertes') renderAlertes();
     else if (id==='parametres') renderSeuilsListe();
@@ -774,6 +820,10 @@ function refreshBadges() {
     
     const tleEnAttente=articles.filter(a=>a.statut==='Vendu - Attente TLE').length;
     const tb=document.getElementById('tleBadge'); tb.textContent=tleEnAttente; tb.style.display=tleEnAttente>0?'inline':'none';
+    
+    // V7.1 Badge Récupérations clients en attente
+    const recupEnAttente=articles.filter(a=>a.type==='Récupération client'&&a.statut==='En attente').length;
+    const rcb=document.getElementById('recupBadge'); if(rcb){rcb.textContent=recupEnAttente; rcb.style.display=recupEnAttente>0?'inline':'none';}
     
     const stockAlerts=articles.filter(a=>{
         if(a.type!=='Stock'||a.quantiteStock===null) return false;
@@ -854,8 +904,14 @@ function onStockSubtypeChange() {
 function onMadSubtypeChange() {
     const subtype = document.getElementById('f_mad_subtype')?.value;
     const savGroup = document.getElementById('savDelaiGroup');
+    const repriseGroup = document.getElementById('repriseGroup'); // V7.1
+    
     if(savGroup) {
         savGroup.style.display = subtype === 'SAV' ? 'flex' : 'none';
+    }
+    // V7.1 : Afficher reprise uniquement pour SAV
+    if(repriseGroup) {
+        repriseGroup.style.display = subtype === 'SAV' ? 'flex' : 'none';
     }
 }
 
@@ -889,6 +945,7 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
     const madSubtype=isMAD?document.getElementById('f_mad_subtype').value:'';
     const statutMAD=isMAD?'À prévenir':'';
     const savDelaiAlerte=isMAD&&madSubtype==='SAV'?document.getElementById('f_sav_delai').value:'';
+    const repriseArticle=isMAD&&madSubtype==='SAV'?document.getElementById('f_reprise').value:'Non'; // V7.1
     
     // V6.2 nouveaux champs Stock
     const stockSubtype=isStock?document.getElementById('f_stock_subtype').value:'';
@@ -921,7 +978,9 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         StatutMAD:statutMAD,
         SAVDelaiAlerte:savDelaiAlerte,
         // V6.2 nouveaux champs
-        StockSubtype:stockSubtype
+        StockSubtype:stockSubtype,
+        // V7.1 nouveau champ
+        RepriseArticle:repriseArticle
     });
 
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
@@ -1095,12 +1154,16 @@ function renderTLE() {
     const statutFilter=document.getElementById('t_statut').value;
     const q=(document.getElementById('t_search')?.value||'').toLowerCase();
     
-    // FIX2 : Filtrer selon statut sélectionné
+    // FIX2 : Filtrer selon statut sélectionné + V7.1 : Inclure reprises
     let allVendus;
     if(statutFilter){
         allVendus=articles.filter(a=>a.statut===statutFilter);
     }else{
-        allVendus=articles.filter(a=>a.statut==='Vendu - Attente TLE'||a.statut==='Sorti - Remis TLE');
+        allVendus=articles.filter(a=>
+            a.statut==='Vendu - Attente TLE'||
+            a.statut==='Sorti - Remis TLE'||
+            a.statut==='Reprise - Attente TLE' // V7.1
+        );
     }
     const filtered=allVendus.filter(a=>(!mag||a.magasin===mag)&&smartSearch(a,q));
     
@@ -1133,6 +1196,11 @@ function renderTLE() {
         const joursRestants=a.dateTLE?Math.ceil((new Date(a.dateTLE)-now)/86400000):null;
         const urgentTLE=joursRestants!==null&&joursRestants<=2&&joursRestants>=0;
         
+        // V7.1 : Détecter si c'est une reprise
+        const estReprise=a.statut==='Reprise - Attente TLE';
+        const badgeClass=estReprise?'b-purple':'b-pret';
+        const badgeText=estReprise?'🔧 Reprise SAV':'🚚 Attente TLE';
+        
         return`<div class="article-item" onclick="openModal('${a.id}')" style="${urgentTLE?'border-color:var(--orange-border);':''}">
             <div class="item-head">
                 <div>
@@ -1141,7 +1209,7 @@ function renderTLE() {
                     <div class="item-ref">${a.reference}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
-                    <span class="badge b-pret">🚚 Attente TLE</span>
+                    <span class="badge ${badgeClass}">${badgeText}</span>
                     ${urgentTLE?`<span class="badge b-warn">⚠️ J-${joursRestants}</span>`:''}
                     <span style="font-size:14px;font-weight:700;color:var(--orange);">${qty} unité(s)</span>
                     ${prix?`<span style="font-size:13px;color:var(--text3);">${prix}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>`:''}
@@ -1152,6 +1220,88 @@ function renderTLE() {
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
                 <span class="meta">📅 Vendu le <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
                 ${dateTLEStr?`<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">${urgentTLE?'⚠️':'📦'} TLE récup: <strong>${dateTLEStr}</strong></span>`:''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ─── RÉCUPÉRATIONS CLIENTS ─────────────────────────
+function renderRecupClients() {
+    const mag=(document.getElementById('rc_mag')?.value||'');
+    const statutFilter=(document.getElementById('rc_statut')?.value||'');
+    const q=(document.getElementById('rc_search')?.value||'').toLowerCase();
+    
+    // Articles type "Récupération client"
+    let allRecup=articles.filter(a=>a.type==='Récupération client'&&(!mag||a.magasin===mag));
+    
+    if(statutFilter) allRecup=allRecup.filter(a=>a.statut===statutFilter);
+    
+    const enAttente=allRecup.filter(a=>a.statut==='En attente');
+    const recupere=allRecup.filter(a=>a.statut==='Récupéré');
+    
+    // Stats
+    document.getElementById('recupStats').innerHTML=`
+        <div class="stat-card blue"><div class="num">${allRecup.length}</div><div class="lbl">Total${mag?' '+mag:''}</div></div>
+        <div class="stat-card orange"><div class="num">${enAttente.length}</div><div class="lbl">En attente</div></div>
+        <div class="stat-card green"><div class="num">${recupere.length}</div><div class="lbl">Récupéré</div></div>`;
+    
+    // Appliquer recherche
+    if(q) allRecup=allRecup.filter(a=>smartSearch(a,q));
+    
+    if(!allRecup.length){
+        document.getElementById('recupList').innerHTML='<div class="empty"><div class="ico">🛍️</div><p>Aucune récupération client</p></div>';
+        return;
+    }
+    
+    const now=new Date();
+    document.getElementById('recupList').innerHTML=allRecup.map(a=>{
+        const client=a.client||a.recuperePar||'?';
+        const prix=a.prixVente;
+        const qty=1;
+        const prixTotal=prix?prix*qty:0;
+        
+        // V7.1 TEMP : Extraire date depuis Notes en attendant colonne DateRecupClient
+        let dateRecupStr='';
+        let dateRecupISO=a.dateRecupClient||'';
+        
+        // Si pas de dateRecupClient, essayer d'extraire depuis Notes
+        if(!dateRecupISO&&a.notes){
+            const match=a.notes.match(/Récup prévue le (\d{2}\/\d{2}\/\d{4})/);
+            if(match){
+                dateRecupStr=match[1];
+                // Convertir en ISO pour calculs
+                const [j,m,y]=dateRecupStr.split('/');
+                dateRecupISO=new Date(y,m-1,j).toISOString();
+            }
+        } else if(dateRecupISO){
+            dateRecupStr=new Date(dateRecupISO).toLocaleDateString('fr-FR');
+        }
+        
+        const joursRestants=dateRecupISO?Math.ceil((new Date(dateRecupISO)-now)/86400000):null;
+        const urgentRecup=joursRestants!==null&&joursRestants<=(params.recupClientDelai||2)&&joursRestants>=0;
+        const enRetard=joursRestants!==null&&joursRestants<0;
+        
+        const badgeClass=a.statut==='Récupéré'?'b-success':enRetard?'b-retard':urgentRecup?'b-warn':'b-pret';
+        const badgeText=a.statut==='Récupéré'?'✅ Récupéré':enRetard?`⚠️ Retard +${Math.abs(joursRestants)}j`:urgentRecup?`⚠️ J-${joursRestants}`:'⏳ En attente';
+        
+        return`<div class="article-item" onclick="openModal('${a.id}')" style="${urgentRecup||enRetard?'border-color:var(--orange-border);':''}">
+            <div class="item-head">
+                <div>
+                    <div class="item-title">${a.article}</div>
+                    <div class="item-client">👤 ${client}</div>
+                    <div class="item-ref">${a.reference}</div>
+                </div>
+                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--blue);">${qty} unité(s)</span>
+                    ${prix?`<span style="font-size:13px;color:var(--text3);">${prix}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>`:''}
+                </div>
+            </div>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+                <span class="meta">📅 Vendu le <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                ${dateRecupStr?`<span class="meta" style="${urgentRecup||enRetard?'color:var(--orange);font-weight:700;':''}">${urgentRecup||enRetard?'⚠️':'🛍️'} Récup: <strong>${dateRecupStr}</strong></span>`:''}
             </div>
         </div>`;
     }).join('');
@@ -1299,6 +1449,55 @@ function renderAlertes() {
     allPrets.filter(p=>{if(!p.dateRetourPrevue)return false;const d=(new Date(p.dateRetourPrevue)-now)/86400000;return d>=0&&d<=params.alerteBientot;})
         .forEach(p=>{const j=Math.ceil((new Date(p.dateRetourPrevue)-now)/86400000);alertes.push({type:'warning',t:`Retour bientôt — ${p.article}`,m:`${p.magasin} · ${p.emprunteur} · dans ${j}j`,id:p.parentId});});
 
+    // V7.1 : Alertes récupérations clients
+    // TEMP : Helper pour extraire date (depuis dateRecupClient OU notes)
+    const getDateRecup=(a)=>{
+        if(a.dateRecupClient) return a.dateRecupClient;
+        if(a.notes){
+            const match=a.notes.match(/Récup prévue le (\d{2})\/(\d{2})\/(\d{4})/);
+            if(match) return new Date(match[3],match[2]-1,match[1]).toISOString();
+        }
+        return null;
+    };
+    
+    arts.filter(a=>{
+        if(a.type!=='Récupération client'||a.statut!=='En attente') return false;
+        const dateRecup=getDateRecup(a);
+        return dateRecup&&new Date(dateRecup)<now;
+    }).forEach(a=>{
+        const dateRecup=getDateRecup(a);
+        const j=Math.floor((now-new Date(dateRecup))/86400000);
+        alertes.push({type:'danger',t:`Récupération en retard — ${a.article}`,m:`${a.magasin} · ${a.client||a.recuperePar} · ${j}j de retard`,id:a.id});
+    });
+    
+    arts.filter(a=>{
+        if(a.type!=='Récupération client'||a.statut!=='En attente') return false;
+        const dateRecup=getDateRecup(a);
+        if(!dateRecup) return false;
+        const d=(new Date(dateRecup)-now)/86400000;
+        return d>=0&&d<=(params.recupClientDelai||2); // V7.1 : Utilise paramètre
+    }).forEach(a=>{
+        const dateRecup=getDateRecup(a);
+        const j=Math.ceil((new Date(dateRecup)-now)/86400000);
+        alertes.push({type:'warning',t:`Récupération bientôt — ${a.article}`,m:`${a.magasin} · ${a.client||a.recuperePar} · dans ${j}j`,id:a.id});
+    });
+
+    // V7.1 : Alerte reprise SAV à réceptionner
+    arts.filter(a=>
+        a.type==='Mise à disposition' &&
+        a.madSubtype==='SAV' &&
+        a.statut==='Sorti' &&
+        a.repriseArticle==='Oui' &&
+        a.repriseRecue!=='Oui'
+    ).forEach(a=>{
+        alertes.push({
+            type:'warning',
+            t:`🔧 SAV - Reprise à réceptionner`,
+            m:`${a.article} · Client: ${a.client} · ${a.magasin}`,
+            id:a.id
+        });
+    });
+
     arts.filter(a=>{if(a.type!=='Stock'||a.quantiteStock===null)return false;const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock>0&&a.quantiteStock<=s;})
         .forEach(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;alertes.push({type:'warning',t:`Stock faible — ${a.article}`,m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`,id:a.id});});
 
@@ -1418,6 +1617,8 @@ function renderModalContent(a, histo) {
         <div class="detail-field"><div class="k">Référence</div><div class="v">${a.reference}</div></div>
         <div class="detail-field"><div class="k">Emplacement</div><div class="v">${a.emplacement}</div></div>
         ${a.numeroAR?`<div class="detail-field"><div class="k">N° AR</div><div class="v">${a.numeroAR}</div></div>`:''}
+        ${isMAD&&a.madSubtype==='SAV'?`<div class="detail-field"><div class="k">Reprise article</div><div class="v" style="font-weight:700;color:${a.repriseArticle==='Oui'?'var(--orange)':'var(--text3)'}">${a.repriseArticle==='Oui'?'✅ OUI - À ramener':'❌ NON'}</div></div>`:''}
+        ${isMAD&&a.madSubtype==='SAV'&&a.repriseArticle==='Oui'&&a.repriseRecue==='Oui'?`<div class="detail-field"><div class="k">Statut reprise</div><div class="v" style="color:var(--green);font-weight:700;">✅ Reprise reçue</div></div>`:''}
         ${a.quantiteStock!==null&&!isPretIndividuel?`<div class="detail-field"><div class="k">Quantité</div><div class="v" style="font-size:17px;font-weight:800;color:${a.quantiteStock===0?'var(--red)':a.quantiteStock<=(seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible)?'var(--orange)':'var(--green)'}">${a.quantiteStock} <span style="font-size:12px;font-weight:400;color:var(--text3)">/ ${a.quantiteInitiale}</span></div></div>`:''}
         ${a.nombreColis>1&&isMAD?`<div class="detail-field"><div class="k">Colis</div><div class="v">${a.nombreColis}</div></div>`:''}
         ${!isPretIndividuel?`<div class="detail-field"><div class="k">Réceptionné par</div><div class="v">${a.kitchener}</div></div>`:''}
@@ -1466,15 +1667,30 @@ function renderModalContent(a, histo) {
         html+=`<button class="btn btn-success" onclick="actRetourPret('${a.id}')">↩️ Retour de prêt</button>
                <button class="btn btn-warning" onclick="actModifierDateRetour('${a.id}')">📅 Modifier retour</button>`;
     }
-    // V6.1 : Bouton "Remis à TLE" pour articles vendus
-    if(a.statut==='Vendu - Attente TLE'){
+    // V6.1 : Bouton "Remis à TLE" pour articles vendus ET reprises (V7.1)
+    if(a.statut==='Vendu - Attente TLE'||a.statut==='Reprise - Attente TLE'){
         html+=`<button class="btn btn-success" onclick="actRemisTLE('${a.id}')">✅ Remis à TLE</button>`;
         if(a.dateTLE){
             html+=`<button class="btn btn-outline" onclick="actModifierDateTLE('${a.id}')">📅 Modifier date TLE</button>`;
         }
     }
+    // V7.1 : Boutons pour Récupérations Clients
+    if(a.type==='Récupération client'&&a.statut==='En attente'){
+        html+=`<button class="btn btn-success" onclick="actRecupClientRecuperee('${a.id}')">✅ Client a récupéré</button>`;
+        if(a.dateRecupClient){
+            html+=`<button class="btn btn-outline" onclick="actModifierDateRecupClient('${a.id}')">📅 Modifier date récupération</button>`;
+        }
+    }
     html+=`</div>`;
     } // Fin if(!estSorti) - masquer actions
+
+    // V7.1 : Bouton "Reprise reçue" pour SAV sortis avec reprise=Oui
+    if(isMAD && a.madSubtype==='SAV' && a.statut==='Sorti' && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui'){
+        html+=`<div style="margin-top:16px;">
+            <div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom2" placeholder="Obligatoire"></div>
+            <button class="btn btn-success" onclick="actRepriseRecue('${a.id}')">📥 Reprise reçue en magasin</button>
+        </div>`;
+    }
 
     // V7 : Prêts en cours depuis array prets[] (masqué si sorti)
     if(isArticlePret&&!estSorti){
@@ -1499,6 +1715,18 @@ function renderModalContent(a, histo) {
                 </div>
             </div>`;
         }).join('');
+    }
+    
+    // V7.1 Actions Récupération client (si type = Récupération client)
+    const isRecup=a.type==='Récupération client';
+    if(isRecup&&a.statut==='En attente'){
+        html+=`<div class="divider"></div>
+        <div class="section-lbl">🛍️ Actions Récupération</div>
+        <div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
+        <div class="btn-row">
+            <button class="btn btn-success" onclick="actRecupClientRecuperee('${a.id}')">✅ Client a récupéré</button>
+            <button class="btn btn-outline" onclick="actModifierDateRecupClient('${a.id}')">📅 Modifier date récupération</button>
+        </div>`;
     }
 
     // Modifier (masqué si sorti)
@@ -1772,8 +2000,8 @@ async function actVendre(id){
     const a=articles.find(x=>x.id===id);
     
     // 1. Demander nom du client
-    const client=prompt('Nom du client :');
-    if(!client){alert('Le nom du client est obligatoire');return;}
+    const client=prompt('Nom client et N° commande :');
+    if(!client){alert('Le nom client et N° commande sont obligatoires');return;}
     
     // 2. Demander quantité
     const qStr=prompt(`Quantité à vendre (disponible: ${a.quantiteStock}) :`);
@@ -1804,19 +2032,92 @@ async function actVendre(id){
     if(!conf)return;
     
     if(recuperePar==='Client'){
-        // Client récupère → Marquer comme Sorti directement
-        if(qte===a.quantiteStock){
-            a.statut='Sorti - Récupéré client';
-            a.dateSortie=new Date().toISOString();
-            a.raisonSortie=`Vendu et récupéré par ${client} (${prixTotal}€)`;
-            await doUpdate(a);
-            doHisto(id,'Vente - Client récupère',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Article sorti`);
+        // V7.1 : Client récupère → Demander Maintenant ou Plus tard
+        const quand=prompt('Quand le client récupère-t-il l\'article ?\n\n1 = Maintenant\n2 = Plus tard (date à venir)','1');
+        
+        if(quand==='1'){
+            // MAINTENANT - Récupération immédiate
+            const now=new Date().toISOString();
+            const recupId='RECUP-'+Date.now();
+            
+            // Créer article dans Récupérations Clients
+            await apiCall({
+                action:'addArticle', ID:recupId,
+                Type:'Récupération client', Statut:'Récupéré',
+                Article:a.article, Reference:a.reference,
+                Magasin:a.magasin, Emplacement:a.emplacement,
+                QuantiteStock:qte, QuantiteInitiale:qte,
+                PrixVente:a.prixVente, ParentId:id,
+                Kitchener:p, DateReception:new Date().toISOString(),
+                Notes:`Vendu et récupéré le ${new Date().toLocaleDateString('fr-FR')}`,
+                Client:client,
+                RecuperePar:'Client',
+                DateRecupClient:now,
+                NumeroAR:'', NombreColis:'', DatePret:'',
+                PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
+                DateSortie:'', RaisonSortie:'', DateTLE:'',
+                MADSubtype:'', StatutMAD:'', StockSubtype:'Vendable', SAVDelaiAlerte:''
+            });
+            
+            // Mettre à jour article original
+            if(qte===a.quantiteStock){
+                // Toute la quantité vendue → SUPPRIMER l'article original
+                await apiCall({action:'deleteArticle',ID:id});
+                doHisto(id,'Vente complète - Client récup maintenant',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Récupéré immédiatement`);
+            } else {
+                // Vente partielle → Déduire quantité
+                a.quantiteStock-=qte;
+                await doUpdate(a);
+                doHisto(id,'Vente partielle - Client récup maintenant',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+            }
+            closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\nClient a récupéré l'article maintenant`);loadData();
+            
+        } else if(quand==='2'){
+            // PLUS TARD - Date à venir
+            const dateStr=prompt('📅 Date de récupération client (JJ/MM/AAAA) :');
+            if(!dateStr){alert('Date obligatoire');return;}
+            const [j,m,y]=dateStr.split('/');
+            if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+            const dateRecup=new Date(y,m-1,j).toISOString();
+            
+            const recupId='RECUP-'+Date.now();
+            
+            // Créer article dans Récupérations Clients
+            await apiCall({
+                action:'addArticle', ID:recupId,
+                Type:'Récupération client', Statut:'En attente',
+                Article:a.article, Reference:a.reference,
+                Magasin:a.magasin, Emplacement:a.emplacement,
+                QuantiteStock:qte, QuantiteInitiale:qte,
+                PrixVente:a.prixVente, ParentId:id,
+                Kitchener:p, DateReception:new Date().toISOString(),
+                Notes:`Vendu le ${new Date().toLocaleDateString('fr-FR')} - Récup prévue le ${dateStr}`,
+                Client:client,
+                RecuperePar:'Client',
+                DateRecupClient:dateRecup,
+                NumeroAR:'', NombreColis:'', DatePret:'',
+                PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
+                DateSortie:'', RaisonSortie:'', DateTLE:'',
+                MADSubtype:'', StatutMAD:'', StockSubtype:'Vendable', SAVDelaiAlerte:''
+            });
+            
+            // Mettre à jour article original
+            if(qte===a.quantiteStock){
+                // Toute la quantité vendue → SUPPRIMER l'article original
+                await apiCall({action:'deleteArticle',ID:id});
+                doHisto(id,'Vente complète - Client récup plus tard',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Récup prévue: ${dateStr}`);
+            } else {
+                // Vente partielle → Déduire quantité
+                a.quantiteStock-=qte;
+                await doUpdate(a);
+                doHisto(id,'Vente partielle - Client récup plus tard',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+            }
+            closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\nRécupération prévue le ${dateStr}`);loadData();
+            
         } else {
-            a.quantiteStock-=qte;
-            await doUpdate(a);
-            doHisto(id,'Vente partielle - Client récupère',p,`${qte} unité(s) vendues à ${client} (${prixTotal}€) — Reste: ${a.quantiteStock}`);
+            alert('Choix invalide');
+            return;
         }
-        closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\nClient a récupéré l'article`);loadData();
     } else {
         // TLE récupère → Créer article TLE
         const venteId='VENTE-'+Date.now();
@@ -1850,6 +2151,40 @@ async function actVendre(id){
         
         closeModal();alert(`✅ ${qte} unité(s) vendues à ${client}\n📦 TLE récupère le ${new Date(dateTLE).toLocaleDateString('fr-FR')}`);loadData();
     }
+}
+
+// V7.1 ─── NOUVELLES ACTIONS : RÉCUPÉRATION CLIENT ──────
+async function actRecupClientRecuperee(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    if(!a||a.type!=='Récupération client')return;
+    
+    const conf=confirm(`Confirmer que le client a récupéré :\n\n${a.article}\nClient : ${a.client||a.recuperePar}\n\nL'article sera marqué "Récupéré"`);
+    if(!conf)return;
+    
+    a.statut='Récupéré';
+    await doUpdate(a);
+    doHisto(id,'Récupéré par client',p,`Article récupéré par ${a.client||a.recuperePar}`);
+    
+    closeModal();alert('✅ Article marqué comme récupéré par le client');loadData();
+}
+
+async function actModifierDateRecupClient(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    if(!a||a.type!=='Récupération client')return;
+    
+    const actuelle=a.dateRecupClient?new Date(a.dateRecupClient).toLocaleDateString('fr-FR'):'?';
+    const dateStr=prompt(`Nouvelle date de récupération client\n\nActuelle : ${actuelle}\nFormat : JJ/MM/AAAA`);
+    if(!dateStr)return;
+    const [j,m,y]=dateStr.split('/');
+    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+    
+    a.dateRecupClient=new Date(y,m-1,j).toISOString();
+    await doUpdate(a);
+    doHisto(id,'Modification date récup client',p,`${actuelle} → ${dateStr}`);
+    
+    alert('✅ Date de récupération modifiée');loadData().then(()=>openModal(id));
 }
 
 // V6.1 ─── NOUVELLE ACTION : REMIS À TLE ──────
@@ -1888,6 +2223,94 @@ async function actModifierDateTLE(id){
     doHisto(id,'Modification date TLE',p,`${actuelle} → ${nouvelleDateStr}`);
     
     alert('✅ Date TLE modifiée');loadData().then(()=>openModal(id));
+}
+
+// V7.1 ─── NOUVELLES ACTIONS : RÉCUPÉRATIONS CLIENTS ──────
+async function actRecupClientRecuperee(id){
+    const p=getPrenom();if(!p)return;
+    const conf=confirm('Confirmer que le client a récupéré l\'article ?\n\nL\'article sera marqué comme "Récupéré".');
+    if(!conf)return;
+    
+    const a=articles.find(x=>x.id===id);
+    a.statut='Récupéré';
+    a.dateRecupClient=new Date().toISOString(); // Mettre à jour avec date réelle
+    
+    await doUpdate(a);
+    doHisto(id,'Client a récupéré',p,`${a.client} - ${a.quantiteStock} unité(s)`);
+    
+    closeModal();alert('✅ Article récupéré par le client');loadData();
+}
+
+async function actModifierDateRecupClient(id){
+    const p=getPrenom();if(!p)return;
+    const a=articles.find(x=>x.id===id);
+    
+    const actuelle=a.dateRecupClient?new Date(a.dateRecupClient).toLocaleDateString('fr-FR'):'Non définie';
+    const dateStr=prompt(`Modifier la date de récupération client\n\nDate actuelle : ${actuelle}\nNouvelle date (JJ/MM/AAAA) :`);
+    if(!dateStr)return;
+    
+    const [j,m,y]=dateStr.split('/');
+    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+    
+    const nouvelleDateStr=`${j}/${m}/${y}`;
+    a.dateRecupClient=new Date(y,m-1,j).toISOString();
+    
+    await doUpdate(a);
+    doHisto(id,'Modification date récup client',p,`${actuelle} → ${nouvelleDateStr}`);
+    
+    alert('✅ Date de récupération modifiée');loadData().then(()=>openModal(id));
+}
+
+// V7.1 ─── NOUVELLE ACTION : REPRISE SAV REÇUE ──────
+async function actRepriseRecue(id){
+    const p=document.getElementById('actPrenom2')?.value?.trim();
+    if(!p){alert('⚠️ Votre prénom est obligatoire');return;}
+    
+    const sav=articles.find(x=>x.id===id);
+    if(!sav){alert('Article non trouvé');return;}
+    
+    const dateStr=prompt('📅 Date de récupération TLE (JJ/MM/AAAA) :\n\n⏰ Info : Date à laquelle TLE doit venir récupérer la reprise');
+    if(!dateStr)return;
+    
+    const [j,m,y]=dateStr.split('/');
+    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
+    const dateTLE=new Date(y,m-1,j).toISOString();
+    
+    // Créer article reprise dans TLE
+    const repriseId='REPRISE-'+Date.now();
+    const r=await apiCall({
+        action:'addArticle', ID:repriseId,
+        Type:'Stock',
+        Magasin:sav.magasin,
+        Client:sav.client,
+        Article:'[REPRISE] '+sav.article,
+        Reference:sav.reference,
+        Emplacement:sav.emplacement,
+        Statut:'Reprise - Attente TLE',
+        QuantiteStock:1,
+        QuantiteInitiale:1,
+        DateTLE:dateTLE,
+        ParentId:id,
+        Kitchener:p,
+        DateReception:new Date().toISOString(),
+        Notes:`Reprise SAV - ${sav.client} - Récup TLE prévue le ${dateStr}`,
+        NumeroAR:'', NombreColis:'', DatePret:'',
+        PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
+        DateSortie:'', RaisonSortie:'', RecuperePar:'TLE',
+        MADSubtype:'', StatutMAD:'', StockSubtype:'Interne', SAVDelaiAlerte:'',
+        PrixVente:'', RepriseArticle:'', DateRecupClient:''
+    });
+    
+    if(r.error){alert('❌ Erreur : '+r.error);return;}
+    
+    // Marquer SAV comme reprise reçue
+    sav.repriseRecue='Oui';
+    await doUpdate(sav);
+    doHisto(id,'Reprise reçue',p,`Article TLE créé - Récup prévue: ${dateStr}`);
+    
+    closeModal();
+    alert('✅ Reprise enregistrée et article TLE créé');
+    loadData();
 }
 
 // V6.1 ─── NOUVELLE ACTION : PRÉVENIR CLIENT ──
@@ -2046,7 +2469,9 @@ async function doUpdate(a){
         // V6.2.1 champs
         RecuperePar:a.recuperePar||'',
         DateTLE:a.dateTLE||'',
-        // V7 NOUVEAU
+        // V7.1 NOUVEAU
+        DateRecupClient:a.dateRecupClient||'',
+        // V7 Array prêts
         Prets:a.prets?JSON.stringify(a.prets):''
     });
 }
