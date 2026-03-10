@@ -755,6 +755,7 @@ function parseArticles(data) {
         prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
         dateRetourPrevue:r.DateRetourPrevue||'', dateRetourReel:r.DateRetourReel||'',
         dateSortie:r.DateSortie||'', raisonSortie:r.RaisonSortie||'',
+        historique:r.Historique||'', // V7.1 HISTORIQUE
         // V6.1 champs avec valeurs par défaut
         madSubtype:r.MADSubtype||'Commande',
         prixVente:r.PrixVente?parseFloat(r.PrixVente):null,
@@ -2482,10 +2483,41 @@ function doHisto(id,action,user,details=''){
 }
 
 async function loadHisto(id){
-    if(histoCache[id])return histoCache[id];
-    const data=await apiCall({action:'getHistorique',articleId:id});
-    histoCache[id]=Array.isArray(data)?data:[];
-    return histoCache[id];
+    if(histoCache[id]) return histoCache[id];
+    
+    // V7.1 : Lire l'historique depuis la colonne Historique de l'article
+    const article = articles.find(a => a.id === id);
+    if (!article || !article.historique) {
+        histoCache[id] = [];
+        return [];
+    }
+    
+    // Parser l'historique (format: lignes séparées par \n)
+    const lines = article.historique.split('\n').filter(l => l.trim());
+    const histo = lines.map(line => {
+        // Format: [20/02/2026 11:58] Amandine - Réception · Type: Mise à disposition · Qté: 4 · Empl: Réserve
+        const match = line.match(/^\[(.+?)\]\s*(.+?)\s*-\s*(.+)$/);
+        if (match) {
+            const [, dateStr, utilisateur, details] = match;
+            // Parse date format DD/MM/YYYY HH:mm
+            const dateParts = dateStr.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+            let date = null;
+            if (dateParts) {
+                const [, day, month, year, hour, minute] = dateParts;
+                date = new Date(year, month - 1, day, hour, minute).toISOString();
+            }
+            return {
+                date: date,
+                action: details.split('·')[0].trim(),
+                utilisateur: utilisateur.trim(),
+                details: details
+            };
+        }
+        return null;
+    }).filter(h => h !== null);
+    
+    histoCache[id] = histo;
+    return histo;
 }
 
 // ─── NETTOYAGE / ARCHIVAGE ────────
