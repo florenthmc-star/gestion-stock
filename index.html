@@ -959,9 +959,16 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         return;
     }
 
+    // V7.1 : Créer entrée d'historique formatée
+    const prenom = document.getElementById('f_prenom').value;
+    const magasin = document.getElementById('f_magasin').value;
+    const dateNow = new Date();
+    const dateStr = `${String(dateNow.getDate()).padStart(2,'0')}/${String(dateNow.getMonth()+1).padStart(2,'0')}/${dateNow.getFullYear()} ${String(dateNow.getHours()).padStart(2,'0')}:${String(dateNow.getMinutes()).padStart(2,'0')}`;
+    const histoLine = `[${dateStr}] ${prenom} - Réception · Type: ${type} · Qté: ${qty||1} · Empl: ${emplacement}`;
+
     const r=await apiCall({
         action:'addArticle', ID:id,
-        Magasin:document.getElementById('f_magasin').value,
+        Magasin:magasin,
         Type:type,
         Client:isMAD?document.getElementById('f_client').value:'',
         NumeroAR:isMAD?document.getElementById('f_ar').value:'',
@@ -970,9 +977,9 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         QuantiteStock:qty!==null?qty:'',
         QuantiteInitiale:qty!==null?qty:'',
         Emplacement:emplacement,
-        Kitchener:document.getElementById('f_prenom').value,
+        Kitchener:prenom,
         Notes:document.getElementById('f_notes').value||'',
-        Statut:'Stock', DateReception:now, Historique:'true',
+        Statut:'Stock', DateReception:now, Historique:histoLine,
         // V6.1 champs
         MADSubtype:madSubtype,
         PrixVente:prixVente,
@@ -2460,6 +2467,7 @@ async function doUpdate(a){
         DateRetourPrevue:a.dateRetourPrevue||'', DateRetourReel:a.dateRetourReel||'',
         DateSortie:a.dateSortie||'', RaisonSortie:a.raisonSortie||'',
         ParentId:a.parentId||'',
+        Historique:a.historique||'', // V7.1 HISTORIQUE
         // V6.1 champs
         MADSubtype:a.madSubtype||'',
         PrixVente:a.prixVente||'',
@@ -2472,14 +2480,31 @@ async function doUpdate(a){
         DateTLE:a.dateTLE||'',
         // V7.1 NOUVEAU
         DateRecupClient:a.dateRecupClient||'',
+        RepriseArticle:a.repriseArticle||'Non',
+        RepriseRecue:a.repriseRecue||'',
         // V7 Array prêts
         Prets:a.prets?JSON.stringify(a.prets):''
     });
 }
 
-function doHisto(id,action,user,details=''){
+async function doHisto(id,action,user,details=''){
     delete histoCache[id];
-    apiCall({action:'addHistorique',ArticleID:id,Action:action,Date:new Date().toISOString(),Utilisateur:user,Details:details});
+    
+    // V7.1 : Ajouter ligne d'historique dans la colonne Historique
+    const article = articles.find(a => a.id === id);
+    if (!article) return;
+    
+    // Créer nouvelle ligne d'historique
+    const dateNow = new Date();
+    const dateStr = `${String(dateNow.getDate()).padStart(2,'0')}/${String(dateNow.getMonth()+1).padStart(2,'0')}/${dateNow.getFullYear()} ${String(dateNow.getHours()).padStart(2,'0')}:${String(dateNow.getMinutes()).padStart(2,'0')}`;
+    const newLine = `[${dateStr}] ${user} - ${action}${details?' · '+details:''}`;
+    
+    // Ajouter à l'historique existant
+    const currentHisto = article.historique || '';
+    article.historique = currentHisto ? currentHisto + '\n' + newLine : newLine;
+    
+    // Mettre à jour l'article
+    await doUpdate(article);
 }
 
 async function loadHisto(id){
