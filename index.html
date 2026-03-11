@@ -861,7 +861,10 @@ function toggleFormFields() {
     
     // Délai SAV : géré par onMadSubtypeChange()
     if(isMAD) onMadSubtypeChange();
-    else document.getElementById('savDelaiGroup').style.display='none';
+    else {
+        document.getElementById('savDelaiGroup').style.display='none';
+        document.getElementById('repriseGroup').style.display='none'; // V7.1 : Cacher reprise si pas MAD
+    }
     
     // Colis : seulement pour MAD
     document.getElementById('colisGroup').style.display=isMAD?'flex':'none';
