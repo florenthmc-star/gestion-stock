@@ -1229,7 +1229,7 @@ function renderTLE() {
             <div class="item-meta">
                 <span class="meta">🏪 <strong>${a.magasin}</strong></span>
                 <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-                <span class="meta">📅 Vendu le <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
+                <span class="meta">📅 ${estReprise?'Reprise effectuée le':'Vendu le'} <strong>${a.dateReception?new Date(a.dateReception).toLocaleDateString('fr-FR'):'?'}</strong></span>
                 ${dateTLEStr?`<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">${urgentTLE?'⚠️':'📦'} TLE récup: <strong>${dateTLEStr}</strong></span>`:''}
             </div>
         </div>`;
@@ -1650,46 +1650,58 @@ function renderModalContent(a, histo) {
 
     // Actions (masquées si sorti)
     if(!estSorti){
-        html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
-        <div class="btn-row">`;
+        // Vérifier s'il y a des actions à afficher
+        let hasActions = false;
+        let actionsHTML = '';
 
     if(isMAD&&a.statut==='Stock'){
+        hasActions = true;
         // V6.1 : Bouton "Prévenir client" si statutMAD = "À prévenir"
         if(a.statutMAD==='À prévenir'){
-            html+=`<button class="btn btn-warning" onclick="actPrevenirClient('${a.id}')">📞 Prévenir client</button>`;
+            actionsHTML+=`<button class="btn btn-warning" onclick="actPrevenirClient('${a.id}')">📞 Prévenir client</button>`;
         }
-        html+=`<button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>
+        actionsHTML+=`<button class="btn btn-success" onclick="actSortir('${a.id}')">📤 Sortir</button>
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
     }
     if(isStock&&a.statut==='Stock'){
+        hasActions = true;
         // V6.2 : Bouton "Vendre" UNIQUEMENT si stockSubtype = "Vendable"
         if(a.stockSubtype==='Vendable'&&a.quantiteStock>0){
-            html+=`<button class="btn btn-warning" onclick="actVendre('${a.id}')">💰 Vendre</button>`;
+            actionsHTML+=`<button class="btn btn-warning" onclick="actVendre('${a.id}')">💰 Vendre</button>`;
         }
-        html+=`<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
+        actionsHTML+=`<button class="btn btn-primary" onclick="actSortirQte('${a.id}')">📦 Sortir quantité</button>
                <button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter stock</button>
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>
                <button class="btn btn-outline" onclick="actSetSeuil('${a.id}')">⚙️ Seuil alerte</button>`;
     }
     if(isArticlePret&&a.statut==='Stock'){
+        hasActions = true;
         const dispo=a.quantiteStock||0;
-        if(dispo>0) html+=`<button class="btn btn-warning" onclick="actPreter('${a.id}')">🔄 Prêter</button>`;
-        html+=`<button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter au stock prêt</button>
+        if(dispo>0) actionsHTML+=`<button class="btn btn-warning" onclick="actPreter('${a.id}')">🔄 Prêter</button>`;
+        actionsHTML+=`<button class="btn btn-teal" onclick="actAjouterQte('${a.id}')">➕ Ajouter au stock prêt</button>
                <button class="btn btn-outline" onclick="actEmplacement('${a.id}')">📍 Emplacement</button>`;
     }
     if(isPretIndividuel&&a.statut==='En cours'){
-        html+=`<button class="btn btn-success" onclick="actRetourPret('${a.id}')">↩️ Retour de prêt</button>
+        hasActions = true;
+        actionsHTML+=`<button class="btn btn-success" onclick="actRetourPret('${a.id}')">↩️ Retour de prêt</button>
                <button class="btn btn-warning" onclick="actModifierDateRetour('${a.id}')">📅 Modifier retour</button>`;
     }
     // V6.1 : Bouton "Remis à TLE" pour articles vendus ET reprises (V7.1)
     if(a.statut==='Vendu - Attente TLE'||a.statut==='Reprise - Attente TLE'){
-        html+=`<button class="btn btn-success" onclick="actRemisTLE('${a.id}')">✅ Remis à TLE</button>`;
+        hasActions = true;
+        actionsHTML+=`<button class="btn btn-success" onclick="actRemisTLE('${a.id}')">✅ Remis à TLE</button>`;
         if(a.dateTLE){
-            html+=`<button class="btn btn-outline" onclick="actModifierDateTLE('${a.id}')">📅 Modifier date TLE</button>`;
+            actionsHTML+=`<button class="btn btn-outline" onclick="actModifierDateTLE('${a.id}')">📅 Modifier date TLE</button>`;
         }
     }
-    // V7.1 : Boutons Récupération clients - SUPPRIMÉ (doublon avec section dédiée ligne 1740)
-    html+=`</div>`;
+    
+    // Afficher le champ prénom et les boutons seulement s'il y a des actions
+    if(hasActions){
+        html+=`<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" placeholder="Obligatoire pour toute action"></div>
+        <div class="btn-row">`;
+        html+=actionsHTML;
+        html+=`</div>`;
+    }
     } // Fin if(!estSorti) - masquer actions
 
     // V7.1 : Bouton "Reprise reçue" pour SAV sortis avec reprise=Oui
