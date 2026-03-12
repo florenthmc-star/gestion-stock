@@ -1579,7 +1579,10 @@ function renderModalContent(a, histo) {
     
     // Détecter si article sorti
     const statutsInterdits=['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
-    const estSorti=statutsInterdits.includes(a.statut);
+    
+    // V7.1 : Exception pour SAV avec reprise non reçue
+    const isSAVAvecRepriseNonRecue = isMAD && a.madSubtype==='SAV' && a.statut==='Sorti' && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui';
+    const estSorti = statutsInterdits.includes(a.statut) && !isSAVAvecRepriseNonRecue;
 
     const typeClass={'Mise à disposition':'b-mad','Stock':'b-stock','Article de prêt':'b-purple','Prêt individuel':'b-pret'}[a.type]||'b-mad';
     const bClass={Stock:'b-stock',Prêt:'b-pret','En cours':'b-pret',Retourné:'b-sorti',Sorti:'b-sorti',SAV:'b-sav'}[a.statut]||'b-stock';
@@ -1685,13 +1688,7 @@ function renderModalContent(a, histo) {
             html+=`<button class="btn btn-outline" onclick="actModifierDateTLE('${a.id}')">📅 Modifier date TLE</button>`;
         }
     }
-    // V7.1 : Boutons pour Récupérations Clients
-    if(a.type==='Récupération client'&&a.statut==='En attente'){
-        html+=`<button class="btn btn-success" onclick="actRecupClientRecuperee('${a.id}')">✅ Client a récupéré</button>`;
-        if(a.dateRecupClient){
-            html+=`<button class="btn btn-outline" onclick="actModifierDateRecupClient('${a.id}')">📅 Modifier date récupération</button>`;
-        }
-    }
+    // V7.1 : Boutons Récupération clients - SUPPRIMÉ (doublon avec section dédiée ligne 1740)
     html+=`</div>`;
     } // Fin if(!estSorti) - masquer actions
 
@@ -2237,40 +2234,6 @@ async function actModifierDateTLE(id){
 }
 
 // V7.1 ─── NOUVELLES ACTIONS : RÉCUPÉRATIONS CLIENTS ──────
-async function actRecupClientRecuperee(id){
-    const p=getPrenom();if(!p)return;
-    const conf=confirm('Confirmer que le client a récupéré l\'article ?\n\nL\'article sera marqué comme "Récupéré".');
-    if(!conf)return;
-    
-    const a=articles.find(x=>x.id===id);
-    a.statut='Récupéré';
-    a.dateRecupClient=new Date().toISOString(); // Mettre à jour avec date réelle
-    
-    await doUpdate(a);
-    doHisto(id,'Client a récupéré',p,`${a.client} - ${a.quantiteStock} unité(s)`);
-    
-    closeModal();alert('✅ Article récupéré par le client');loadData();
-}
-
-async function actModifierDateRecupClient(id){
-    const p=getPrenom();if(!p)return;
-    const a=articles.find(x=>x.id===id);
-    
-    const actuelle=a.dateRecupClient?new Date(a.dateRecupClient).toLocaleDateString('fr-FR'):'Non définie';
-    const dateStr=prompt(`Modifier la date de récupération client\n\nDate actuelle : ${actuelle}\nNouvelle date (JJ/MM/AAAA) :`);
-    if(!dateStr)return;
-    
-    const [j,m,y]=dateStr.split('/');
-    if(!j||!m||!y){alert('Format invalide. Utilisez JJ/MM/AAAA');return;}
-    
-    const nouvelleDateStr=`${j}/${m}/${y}`;
-    a.dateRecupClient=new Date(y,m-1,j).toISOString();
-    
-    await doUpdate(a);
-    doHisto(id,'Modification date récup client',p,`${actuelle} → ${nouvelleDateStr}`);
-    
-    alert('✅ Date de récupération modifiée');loadData().then(()=>openModal(id));
-}
 
 // V7.1 ─── NOUVELLE ACTION : REPRISE SAV REÇUE ──────
 async function actRepriseRecue(id){
@@ -2289,6 +2252,12 @@ async function actRepriseRecue(id){
     
     // Créer article reprise dans TLE
     const repriseId='REPRISE-'+Date.now();
+    
+    // V7.1 : Créer historique pour le nouvel article reprise
+    const dateNow = new Date();
+    const dateHistoStr = `${String(dateNow.getDate()).padStart(2,'0')}/${String(dateNow.getMonth()+1).padStart(2,'0')}/${dateNow.getFullYear()} ${String(dateNow.getHours()).padStart(2,'0')}:${String(dateNow.getMinutes()).padStart(2,'0')}`;
+    const histoLine = `[${dateHistoStr}] ${p} - Réception · Type: Reprise SAV · Empl: ${sav.emplacement}`;
+    
     const r=await apiCall({
         action:'addArticle', ID:repriseId,
         Type:'Stock',
@@ -2305,11 +2274,12 @@ async function actRepriseRecue(id){
         Kitchener:p,
         DateReception:new Date().toISOString(),
         Notes:`Reprise SAV - ${sav.client} - Récup TLE prévue le ${dateStr}`,
+        Historique:histoLine,
         NumeroAR:'', NombreColis:'', DatePret:'',
         PrenomEmprunteur:'', DateRetourPrevue:'', DateRetourReel:'',
         DateSortie:'', RaisonSortie:'', RecuperePar:'TLE',
         MADSubtype:'', StatutMAD:'', StockSubtype:'Interne', SAVDelaiAlerte:'',
-        PrixVente:'', RepriseArticle:'', DateRecupClient:''
+        PrixVente:'', RepriseArticle:'', DateRecupClient:'', RepriseRecue:''
     });
     
     if(r.error){alert('❌ Erreur : '+r.error);return;}
