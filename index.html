@@ -1207,10 +1207,11 @@ function renderTLE() {
         const joursRestants=a.dateTLE?Math.ceil((new Date(a.dateTLE)-now)/86400000):null;
         const urgentTLE=joursRestants!==null&&joursRestants<=2&&joursRestants>=0;
         
-        // V7.1 : Détecter si c'est une reprise
+        // V7.1 : Détecter si c'est une reprise ou déjà remis
         const estReprise=a.statut==='Reprise - Attente TLE';
-        const badgeClass=estReprise?'b-purple':'b-pret';
-        const badgeText=estReprise?'🔧 Reprise SAV':'🚚 Attente TLE';
+        const estRemisTLE=a.statut==='Sorti - Remis TLE';
+        const badgeClass=estReprise?'b-purple':(estRemisTLE?'b-success':'b-pret');
+        const badgeText=estReprise?'🔧 Reprise SAV':(estRemisTLE?'✅ Remis à TLE':'🚚 Attente TLE');
         
         return`<div class="article-item" onclick="openModal('${a.id}')" style="${urgentTLE?'border-color:var(--orange-border);':''}">
             <div class="item-head">
@@ -2210,7 +2211,7 @@ async function actModifierDateRecupClient(id){
 // V6.1 ─── NOUVELLE ACTION : REMIS À TLE ──────
 async function actRemisTLE(id){
     const p=getPrenom();if(!p)return;
-    const conf=confirm('Confirmer la remise à TLE ?\n\nL\'article sera marqué comme "Sorti - Remis TLE" et disparaîtra de l\'onglet TLE.');
+    const conf=confirm('Confirmer la remise à TLE ?\n\nL\'article sera marqué comme "Remis à TLE" avec un badge vert dans l\'onglet TLE.');
     if(!conf)return;
     
     const a=articles.find(x=>x.id===id);
