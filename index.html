@@ -784,12 +784,31 @@ function parseArticles(data) {
 function setStatus(cls,msg){ const e=document.getElementById('statusPill'); e.className='pill '+cls; e.textContent=msg; }
 
 // ─── NAVIGATION ───────────────────
-function switchTab(name,el) {
+async function switchTab(name,el) {
+    // Vérification admin pour onglet Paramètres
+    if(name === 'parametres') {
+        const isAdmin = await checkIfAdmin();
+        if(!isAdmin) {
+            alert('🔒 Accès refusé\n\nCet onglet est réservé à l\'administrateur.\nConnectez-vous avec le compte autorisé.');
+            return;
+        }
+    }
+    
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
     el.classList.add('active');
     document.getElementById(name).classList.add('active');
     refreshCurrentPane();
+}
+
+async function checkIfAdmin() {
+    try {
+        const r = await apiCall({ action: 'checkAdmin' });
+        return r.isAdmin === true;
+    } catch(e) {
+        console.error('Erreur vérification admin:', e);
+        return false;
+    }
 }
 
 function refreshCurrentPane() {
