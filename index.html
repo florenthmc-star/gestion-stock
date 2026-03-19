@@ -205,6 +205,15 @@
             .stats-row{grid-template-columns:repeat(2,1fr);}
             .modal-body{padding:14px 16px;}
         }
+        
+        /* Toggle Switch */
+        .switch { position:relative;display:inline-block;width:60px;height:32px; }
+        .switch input { opacity:0;width:0;height:0; }
+        .slider { position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#D1D5DB;border-radius:32px;transition:.3s;box-shadow:inset 0 1px 3px rgba(0,0,0,0.1); }
+        .slider:before { position:absolute;content:"";height:26px;width:26px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;box-shadow:0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background:#4F46E5; }
+        input:checked + .slider:before { transform:translateX(28px); }
+        input:focus + .slider { box-shadow:0 0 0 3px rgba(79,70,229,0.2); }
     </style>
 </head>
 <body>
@@ -533,6 +542,95 @@
                 <button class="btn btn-danger" onclick="actArchiveOld()">🗑️ Nettoyer maintenant</button>
             </div>
         </div>
+        
+        <div class="settings-section">
+            <h3>📧 Emails automatiques hebdomadaires</h3>
+            <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Envoyez automatiquement un récapitulatif hebdomadaire aux directeurs de chaque magasin.</p>
+            
+            <div class="setting-row" style="background:var(--bg);padding:16px;border-radius:8px;border:1.5px solid var(--border);">
+                <div>
+                    <label style="font-weight:600;font-size:15px;color:var(--text1);display:block;margin-bottom:4px;">📧 Activer les emails automatiques</label>
+                    <p style="font-size:12px;color:var(--text3);margin:0;">Envoi automatique chaque semaine aux directeurs</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="param_emails_actifs">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-row">
+                <label>Jour d'envoi</label>
+                <select id="param_email_jour" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border);width:150px;">
+                    <option value="1">Lundi</option>
+                    <option value="2">Mardi</option>
+                    <option value="3">Mercredi</option>
+                    <option value="4">Jeudi</option>
+                    <option value="5">Vendredi</option>
+                    <option value="6">Samedi</option>
+                    <option value="0">Dimanche</option>
+                </select>
+            </div>
+            
+            <div class="setting-row">
+                <label>Heure d'envoi</label>
+                <input type="time" id="param_email_heure" value="08:00" style="padding:8px 12px;border-radius:6px;border:1px solid var(--border);width:120px;">
+            </div>
+            
+            <div style="margin-top:20px;margin-bottom:8px;font-weight:600;font-size:14px;color:var(--text1);">📬 Destinataires par magasin</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+                <div class="setting-row">
+                    <label>Lattes</label>
+                    <input type="email" id="param_email_lattes" placeholder="directeur.lattes@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
+                </div>
+                <div class="setting-row">
+                    <label>Vedene</label>
+                    <input type="email" id="param_email_vedene" placeholder="directeur.vedene@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
+                </div>
+                <div class="setting-row">
+                    <label>Vitrolles</label>
+                    <input type="email" id="param_email_vitrolles" placeholder="directeur.vitrolles@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
+                </div>
+            </div>
+            
+            <div style="margin-top:20px;margin-bottom:8px;font-weight:600;font-size:14px;color:var(--text1);">📊 Sections à inclure dans le récap</div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_tle" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">🚚 TLE cette semaine</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_prets" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">🔄 Prêts à rendre</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_reprises" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">🔧 Reprises SAV en attente</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_recup" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">🛍️ Récupérations clients</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_alertes_sav" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">⚠️ Alertes SAV</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" id="param_email_section_stock_faible" checked style="width:18px;height:18px;">
+                    <span style="font-size:14px;">📦 Stock faible</span>
+                </label>
+            </div>
+            
+            <div style="background:var(--blue-soft);border:1px solid var(--blue-border);border-radius:8px;padding:12px;margin-top:14px;">
+                <div style="font-size:13px;color:var(--blue);line-height:1.5;">
+                    💡 <strong>Info :</strong> Les emails seront envoyés automatiquement chaque semaine. Le système analyse les données et génère un récap personnalisé pour chaque magasin.
+                </div>
+            </div>
+            
+            <div class="btn-row" style="margin-top:16px;">
+                <button class="btn btn-outline" onclick="alert('⏳ Fonction en cours de développement\n\nL\'envoi d\'emails sera disponible dans la prochaine étape !')" style="opacity:0.6;cursor:not-allowed;">📧 Envoyer un email test (bientôt)</button>
+            </div>
+        </div>
+        
         <div class="btn-row">
             <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer — synchronisé sur tous les appareils</button>
             <button class="btn btn-outline" onclick="resetParams()">↺ Réinitialiser</button>
@@ -610,6 +708,20 @@ function applyParamsToForm() {
     if(document.getElementById('param_mad_delai')) document.getElementById('param_mad_delai').value = params.madDelaiDefaut||15;
     if(document.getElementById('param_sav_delai')) document.getElementById('param_sav_delai').value = params.savDelaiDefaut||30;
     if(document.getElementById('param_recup_delai')) document.getElementById('param_recup_delai').value = params.recupClientDelai||2; // V7.1
+    
+    // V7.2 : Paramètres emails
+    if(document.getElementById('param_emails_actifs')) document.getElementById('param_emails_actifs').checked = params.emailsActifs || false;
+    if(document.getElementById('param_email_jour')) document.getElementById('param_email_jour').value = params.emailJour || 1;
+    if(document.getElementById('param_email_heure')) document.getElementById('param_email_heure').value = params.emailHeure || '08:00';
+    if(document.getElementById('param_email_lattes')) document.getElementById('param_email_lattes').value = params.emailLattes || '';
+    if(document.getElementById('param_email_vedene')) document.getElementById('param_email_vedene').value = params.emailVedene || '';
+    if(document.getElementById('param_email_vitrolles')) document.getElementById('param_email_vitrolles').value = params.emailVitrolles || '';
+    if(document.getElementById('param_email_section_tle')) document.getElementById('param_email_section_tle').checked = params.emailSectionTLE !== false;
+    if(document.getElementById('param_email_section_prets')) document.getElementById('param_email_section_prets').checked = params.emailSectionPrets !== false;
+    if(document.getElementById('param_email_section_reprises')) document.getElementById('param_email_section_reprises').checked = params.emailSectionReprises !== false;
+    if(document.getElementById('param_email_section_recup')) document.getElementById('param_email_section_recup').checked = params.emailSectionRecup !== false;
+    if(document.getElementById('param_email_section_alertes_sav')) document.getElementById('param_email_section_alertes_sav').checked = params.emailSectionAlertesSAV !== false;
+    if(document.getElementById('param_email_section_stock_faible')) document.getElementById('param_email_section_stock_faible').checked = params.emailSectionStockFaible !== false;
 }
 
 async function loadParamsFromAPI() {
@@ -642,6 +754,21 @@ function saveParams() {
     params.madDelaiDefaut = parseInt(document.getElementById('param_mad_delai')?.value)||15;
     params.savDelaiDefaut = parseInt(document.getElementById('param_sav_delai')?.value)||30;
     params.recupClientDelai = parseInt(document.getElementById('param_recup_delai')?.value)||2; // V7.1
+    
+    // V7.2 : Paramètres emails automatiques
+    params.emailsActifs = document.getElementById('param_emails_actifs')?.checked || false;
+    params.emailJour = parseInt(document.getElementById('param_email_jour')?.value) || 1;
+    params.emailHeure = document.getElementById('param_email_heure')?.value || '08:00';
+    params.emailLattes = document.getElementById('param_email_lattes')?.value || '';
+    params.emailVedene = document.getElementById('param_email_vedene')?.value || '';
+    params.emailVitrolles = document.getElementById('param_email_vitrolles')?.value || '';
+    params.emailSectionTLE = document.getElementById('param_email_section_tle')?.checked || true;
+    params.emailSectionPrets = document.getElementById('param_email_section_prets')?.checked || true;
+    params.emailSectionReprises = document.getElementById('param_email_section_reprises')?.checked || true;
+    params.emailSectionRecup = document.getElementById('param_email_section_recup')?.checked || true;
+    params.emailSectionAlertesSAV = document.getElementById('param_email_section_alertes_sav')?.checked || true;
+    params.emailSectionStockFaible = document.getElementById('param_email_section_stock_faible')?.checked || true;
+    
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
 
@@ -649,6 +776,41 @@ function resetParams() {
     params={alerteBientot:3,alerteUrgent:1,stockFaible:0,archiveJours:90,madDelaiDefaut:15,savDelaiDefaut:30,recupClientDelai:2};
     saveParamsToAPI().then(()=>{ applyParamsToForm(); alert('✅ Réinitialisé'); });
 }
+
+async function testEmail() {
+    const magasin = prompt('Quel magasin pour le test ?\n\nEntrez : Lattes, Vedene ou Vitrolles');
+    if(!magasin) return;
+    
+    const magasinNorm = magasin.charAt(0).toUpperCase() + magasin.slice(1).toLowerCase();
+    if(!['Lattes','Vedene','Vitrolles'].includes(magasinNorm)) {
+        alert('❌ Magasin invalide');
+        return;
+    }
+    
+    const email = params[`email${magasinNorm}`];
+    if(!email) {
+        alert(`❌ Aucun email configuré pour ${magasinNorm}\n\nVeuillez d'abord enregistrer un email dans les paramètres.`);
+        return;
+    }
+    
+    if(!confirm(`Envoyer un email test à :\n${email}\n\nPour le magasin : ${magasinNorm}`)) return;
+    
+    setStatus('loading', 'Envoi email test...');
+    const r = await apiCall({ 
+        action: 'sendTestEmail', 
+        magasin: magasinNorm,
+        email: email
+    });
+    
+    if(r.error) {
+        alert('❌ Erreur : ' + r.error);
+        setStatus('error', 'Erreur envoi');
+    } else {
+        alert('✅ Email test envoyé avec succès !');
+        setStatus('success', 'Email envoyé');
+    }
+}
+
 
 function renderSeuilsListe() {
     const stocks = articles.filter(a=>a.type==='Stock');
