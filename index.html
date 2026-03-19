@@ -583,8 +583,16 @@
                     <input type="email" id="param_email_lattes" placeholder="directeur.lattes@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
                 </div>
                 <div class="setting-row">
-                    <label>Vedene</label>
+                    <label>Vedène</label>
                     <input type="email" id="param_email_vedene" placeholder="directeur.vedene@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
+                </div>
+                <div class="setting-row">
+                    <label>Aix</label>
+                    <input type="email" id="param_email_aix" placeholder="directeur.aix@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
+                </div>
+                <div class="setting-row">
+                    <label>Nîmes</label>
+                    <input type="email" id="param_email_nimes" placeholder="directeur.nimes@hmc.fr" style="flex:1;padding:8px 12px;border-radius:6px;border:1px solid var(--border);">
                 </div>
                 <div class="setting-row">
                     <label>Vitrolles</label>
@@ -715,6 +723,8 @@ function applyParamsToForm() {
     if(document.getElementById('param_email_heure')) document.getElementById('param_email_heure').value = params.emailHeure || '08:00';
     if(document.getElementById('param_email_lattes')) document.getElementById('param_email_lattes').value = params.emailLattes || '';
     if(document.getElementById('param_email_vedene')) document.getElementById('param_email_vedene').value = params.emailVedene || '';
+    if(document.getElementById('param_email_aix')) document.getElementById('param_email_aix').value = params.emailAix || '';
+    if(document.getElementById('param_email_nimes')) document.getElementById('param_email_nimes').value = params.emailNimes || '';
     if(document.getElementById('param_email_vitrolles')) document.getElementById('param_email_vitrolles').value = params.emailVitrolles || '';
     if(document.getElementById('param_email_section_tle')) document.getElementById('param_email_section_tle').checked = params.emailSectionTLE !== false;
     if(document.getElementById('param_email_section_prets')) document.getElementById('param_email_section_prets').checked = params.emailSectionPrets !== false;
@@ -761,6 +771,8 @@ function saveParams() {
     params.emailHeure = document.getElementById('param_email_heure')?.value || '08:00';
     params.emailLattes = document.getElementById('param_email_lattes')?.value || '';
     params.emailVedene = document.getElementById('param_email_vedene')?.value || '';
+    params.emailAix = document.getElementById('param_email_aix')?.value || '';
+    params.emailNimes = document.getElementById('param_email_nimes')?.value || '';
     params.emailVitrolles = document.getElementById('param_email_vitrolles')?.value || '';
     params.emailSectionTLE = document.getElementById('param_email_section_tle')?.checked || true;
     params.emailSectionPrets = document.getElementById('param_email_section_prets')?.checked || true;
@@ -778,11 +790,11 @@ function resetParams() {
 }
 
 async function testEmail() {
-    const magasin = prompt('Quel magasin pour le test ?\n\nEntrez : Lattes, Vedene ou Vitrolles');
+    const magasin = prompt('Quel magasin pour le test ?\n\nEntrez : Lattes, Vedene, Aix, Nimes ou Vitrolles');
     if(!magasin) return;
     
     const magasinNorm = magasin.charAt(0).toUpperCase() + magasin.slice(1).toLowerCase();
-    if(!['Lattes','Vedene','Vitrolles'].includes(magasinNorm)) {
+    if(!['Lattes','Vedene','Aix','Nimes','Vitrolles'].includes(magasinNorm)) {
         alert('❌ Magasin invalide');
         return;
     }
