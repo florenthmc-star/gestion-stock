@@ -1211,7 +1211,17 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
         saveParamsToAPI();
     }
 
-    lastQRData={id,article,reference,client:isMAD?document.getElementById('f_client').value:'',magasin:document.getElementById('f_magasin').value,type,colis:isMAD?document.getElementById('f_colis').value:1};
+lastQRData = {
+        id: id, article: article, reference: reference,
+        client: isMAD ? document.getElementById('f_client').value : '',
+        magasin: document.getElementById('f_magasin').value,
+        type: type,
+        colis: isMAD ? document.getElementById('f_colis').value : 1,
+        madSubtype: madSubtype, 
+        stockSubtype: stockSubtype, 
+        repriseArticle: repriseArticle, 
+        emplacement: emplacement
+    };
 
     const url=`${APP_URL}?article=${id}`;
     document.getElementById('qrcode').innerHTML='';
@@ -1227,257 +1237,172 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
     setTimeout(()=>loadData(),1500);
 });
 
-// ─── IMPRESSION QR ─────────────────
+// ─── IMPRESSION QR (4 PAR PAGE A4) ─────────────────
 function buildLabel(data) {
-    // Nouveau système : 2 QR codes max par page A4 (148.5mm de hauteur chacun)
     const url = `${APP_URL}?article=${data.id}`;
     const nombreColis = parseInt(data.colis) || 1;
     
-    // Déterminer la couleur selon le type
-    const typeColors = {
-        'Stock': { bg: '#2563EB', text: '#ffffff', light: '#EFF6FF' },
-        'Mise à disposition': data.madSubtype === 'SAV' ? 
-            (data.repriseArticle === 'Oui' ? { bg: '#7C3AED', text: '#ffffff', light: '#F5F3FF' } : { bg: '#DC2626', text: '#ffffff', light: '#FEF2F2' }) : 
-            { bg: '#EA580C', text: '#ffffff', light: '#FFF7ED' },
-        'Article de prêt': { bg: '#16A34A', text: '#ffffff', light: '#F0FDF4' },
-        'TLE': { bg: '#4F46E5', text: '#ffffff', light: '#F5F3FF' },
-        'Récupération client': { bg: '#EAB308', text: '#111827', light: '#FEFCE8' }
-    };
+    // Déterminer la couleur et le texte exact selon le type et sous-type
+    let bgColor = '#6B7280'; // Gris par défaut
+    let textColor = '#ffffff';
+    let typeLabelText = data.type || 'INCONNU';
+    let isReprise = (data.type === 'Mise à disposition' && data.madSubtype === 'SAV' && data.repriseArticle === 'Oui');
     
-    let typeLabel = data.type === 'Mise à disposition' ? 
-        (data.madSubtype === 'SAV' ? 'MAD - SAV' : 'MAD - COMMANDE') : 
-        data.type;
-
-    if (data.type === 'Stock') {
-        typeLabel = data.stockSubtype === 'Vendable' ? 'STOCK VENDABLE' : 'STOCK INTERNE';
-        if(data.stockSubtype === 'Vendable') typeColors['Stock'].bg = '#16A34A'; // Vert pour vendable
+    if (data.type === 'Mise à disposition') {
+        if (data.madSubtype === 'SAV') {
+            bgColor = isReprise ? '#7C3AED' : '#DC2626'; // Violet pour Reprise, Rouge pour SAV normal
+            typeLabelText = isReprise ? 'MAD - SAV (AVEC REPRISE)' : 'MAD - SAV';
+        } else {
+            bgColor = '#EA580C'; // Orange
+            typeLabelText = 'MAD - COMMANDE';
+        }
+    } else if (data.type === 'Stock') {
+        if (data.stockSubtype === 'Vendable') {
+            bgColor = '#16A34A'; // Vert
+            typeLabelText = 'STOCK VENDABLE';
+        } else {
+            bgColor = '#2563EB'; // Bleu
+            typeLabelText = 'STOCK INTERNE';
+        }
+    } else if (data.type === 'Article de prêt') {
+        bgColor = '#0891B2'; // Cyan
+        typeLabelText = 'ARTICLE DE PRÊT';
+    } else if (data.type === 'Récupération client') {
+        bgColor = '#EAB308'; // Jaune
+        textColor = '#111827'; // Texte noir sur fond jaune
     }
-    
-    const colors = typeColors[data.type] || { bg: '#6B7280', text: '#ffffff', light: '#F9FAFB' };
-    
-    // Générer le HTML pour tous les QR codes
+
     let labelsHTML = '';
-    
-    for (let i = 1; i <= nombreColis; i++) {
-        const qrId = `qr-${i}`;
-        const isLast = i === nombreColis;
-        
-        labelsHTML += `
-        <div class="print-page-half" ${isLast ? '' : 'style="page-break-after: avoid;"'}>
-            <div class="label-card">
-                <div class="label-header" style="background: ${colors.bg}; color: ${colors.text};">
-                    <div class="magasin-name">🏬 ${data.magasin}</div>
-                    <div class="colis-count">COLIS ${i}/${nombreColis}</div>
-                </div>
-                
-                <div class="label-content">
-                    <div class="qr-section">
-                        <div id="${qrId}" class="qr-code"></div>
-                        <div class="article-id">ID: ${data.id}</div>
+    let pageCount = Math.ceil(nombreColis / 4); // 4 étiquettes max par page A4
+
+    for (let p = 0; p < pageCount; p++) {
+        labelsHTML += `<div class="page-a4">`;
+        for (let i = 1; i <= 4; i++) {
+            const colisIndex = p * 4 + i;
+            if (colisIndex > nombreColis) {
+                // Remplir avec une case vide pour maintenir la grille
+                labelsHTML += `<div class="label-wrapper empty"></div>`;
+                continue;
+            }
+            const qrId = `qr-${colisIndex}`;
+            labelsHTML += `
+            <div class="label-wrapper">
+                <div class="label-card">
+                    <div class="header-band" style="background: ${bgColor}; color: ${textColor};">
+                        <div class="magasin-badge">🏬 ${data.magasin}</div>
+                        <div class="colis-badge">📦 ${nombreColis > 1 ? `${colisIndex}/${nombreColis}` : '1 Colis'}</div>
                     </div>
                     
-                    <div class="info-section">
-                        ${data.client ? `<div class="client-box">👤 ${data.client}</div>` : ''}
-                        <div class="article-name">${data.article}</div>
-                        <div class="article-ref">REF: ${data.reference}</div>
-                        
-                        <div class="meta-grid">
-                            <div class="meta-item"><span>📍 EMPLACEMENT</span><strong>${data.emplacement || 'NON DÉFINI'}</strong></div>
-                            <div class="meta-item"><span>📋 TYPE</span><strong>${typeLabel}${data.repriseArticle === 'Oui' ? ' <span style="color:#ffffff;background:#000;padding:2px 5px;border-radius:4px;margin-left:5px;">⚠️ REPRISE</span>' : ''}</strong></div>
-                        </div>
+                    <div class="qr-container">
+                        <div id="${qrId}" class="qr-code"></div>
                     </div>
+                    
+                    <div class="info-main">
+                        ${data.client ? `<div class="client-name">👤 ${data.client}</div>` : ''}
+                        <div class="article-name">${data.article}</div>
+                        <div class="article-ref">Réf: ${data.reference}</div>
+                        ${isReprise ? `<div class="reprise-banner">⚠️ REPRISE À EFFECTUER</div>` : ''}
+                    </div>
+                    
+                    <div class="info-meta">
+                        <div class="meta-item">📍 Empl: <strong>${data.emplacement || '—'}</strong></div>
+                        <div class="meta-item">📋 Type: <strong>${typeLabelText}</strong></div>
+                    </div>
+                    
+                    <div class="tech-id">ID: ${data.id}</div>
                 </div>
-                
-                <div class="label-footer">
-                    <span>Imprimé le ${new Date().toLocaleDateString('fr-FR')}</span>
-                    <span style="font-weight:bold">HMC STOCK SYSTEM</span>
-                </div>
-            </div>
-        </div>`;
+            </div>`;
+        }
+        labelsHTML += `</div>`;
     }
-    
-    // Script de génération des QR codes
+
+    // Script pour générer les QR Codes
     let qrScript = '';
     for (let i = 1; i <= nombreColis; i++) {
         qrScript += `new QRCode(document.getElementById('qr-${i}'), {
-            text: '${url}',
-            width: 200,
-            height: 200,
-            correctLevel: QRCode.CorrectLevel.H
+            text: '${url}', width: 110, height: 110, correctLevel: QRCode.CorrectLevel.H
         });\n`;
     }
-    
+
     return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Étiquette QR - ` + data.article + `</title>
+    <title>Étiquettes QR - ` + data.article + `</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
     <style>
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
+        @page { size: A4 portrait; margin: 0; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: white; margin: 0; padding: 0; }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: white;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .print-page-half {
-            height: 148.5mm; /* Moitié exacte d'un A4 */
-            width: 210mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px dashed #ccc; /* Ligne de découpe visible à l'écran */
-            box-sizing: border-box;
-            page-break-inside: avoid;
-        }
-
-        .label-card {
-            width: 190mm;
-            height: 130mm;
-            background: white;
-            border: 2px solid #333;
-            border-radius: 15px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .label-header {
-            padding: 15px 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 22px;
-            font-weight: 800;
-            text-transform: uppercase;
-        }
-
-        .label-content {
-            flex: 1;
-            display: flex;
-            padding: 20px;
-            gap: 25px;
-        }
-
-        .qr-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .qr-code {
-            padding: 10px;
-            border: 1px solid #eee;
-            background: white;
-        }
-
-        .article-id {
-            font-size: 10px;
-            color: #666;
-            font-family: monospace;
-        }
-
-        .info-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .client-box {
-            font-size: 28px;
-            font-weight: 900;
-            color: #000;
-            border-bottom: 3px solid #000;
-            padding-bottom: 5px;
-            margin-bottom: 5px;
-        }
-
-        .article-name {
-            font-size: 24px;
-            font-weight: 700;
-            line-height: 1.2;
-            color: #000;
-        }
-
-        .article-ref {
-            font-size: 18px;
-            color: #444;
-            font-weight: 600;
-        }
-
-        .meta-grid {
-            margin-top: auto;
+        .page-a4 {
+            width: 210mm; height: 296mm;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .meta-item span {
-            display: block;
-            font-size: 10px;
-            color: #666;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-
-        .meta-item strong {
-            font-size: 16px;
-            color: #000;
-        }
-
-        .label-footer {
-            padding: 10px 25px;
-            background: #eee;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            color: #555;
+            grid-template-rows: 1fr 1fr;
+            page-break-after: always;
         }
         
-        /* Forcer l'impression des couleurs et la mise en page */
-        @media print {
-            .print-page-half:nth-child(2n) {
-                page-break-after: always;
-            }
-            .print-page-half {
-                border-bottom: none;
-            }
+        .label-wrapper {
+            width: 100%; height: 100%;
+            padding: 5mm;
+            border-right: 1px dashed #ccc;
+            border-bottom: 1px dashed #ccc;
+            display: flex; justify-content: center; align-items: center;
         }
-    <\/style>
+        .label-wrapper.empty { border: none; }
+        
+        .label-card {
+            width: 100%; height: 100%;
+            border: 2px solid #111; border-radius: 12px;
+            display: flex; flex-direction: column; overflow: hidden; background: white;
+        }
+        
+        .header-band {
+            padding: 8px 12px; display: flex; justify-content: space-between;
+            align-items: center; font-weight: 800; font-size: 14px; border-bottom: 2px solid #111;
+        }
+        
+        .qr-container { display: flex; justify-content: center; padding: 8px; background: white; }
+        .qr-code { padding: 6px; background: white; border: 2px solid #E5E7EB; border-radius: 8px; }
+        
+        .info-main {
+            padding: 8px 12px; flex: 1; display: flex; flex-direction: column;
+            background: #F9FAFB; border-bottom: 1px solid #E5E7EB; border-top: 1px solid #E5E7EB;
+        }
+        
+        .client-name {
+            font-size: 16px; font-weight: 900; color: #0F172A;
+            margin-bottom: 6px; border-bottom: 2px solid #000; padding-bottom: 4px; line-height: 1.1;
+        }
+        
+        .article-name { font-size: 14px; font-weight: 800; color: #1F2937; margin-bottom: 4px; line-height: 1.2; }
+        .article-ref { font-size: 12px; color: #4B5563; font-weight: 700; }
+        
+        .reprise-banner {
+            background: #000; color: #fff; text-align: center; font-weight: 900; padding: 6px;
+            font-size: 12px; border-radius: 6px; margin-top: auto; border: 2px solid #7C3AED;
+        }
+        
+        .info-meta { padding: 8px 12px; background: white; }
+        .meta-item { font-size: 10px; color: #374151; margin-bottom: 3px; text-transform: uppercase; font-weight: 700; }
+        .meta-item strong { color: #0F172A; font-size: 12px; margin-left: 4px; }
+        
+        .tech-id { padding: 6px; text-align: center; font-size: 9px; color: #9CA3AF; font-family: monospace; background: #F9FAFB; border-top: 1px solid #E5E7EB; }
+        
+        @media print {
+            body { margin: 0; padding: 0; }
+            .label-card { box-shadow: none; }
+            .page-a4 { margin: 0; }
+            .header-band, .info-main, .tech-id, .reprise-banner { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
 </head>
 <body>
     ` + labelsHTML + `
-    
     <script>
-        window.onload = function() {
-            ` + qrScript + `
-            // Auto-print après génération des QR codes (délai allongé pour la sécurité)
-            setTimeout(() => {
-                window.print();
-                window.close();
-            }, 1000);
-        };
+        ` + qrScript + `
+        setTimeout(() => { window.print(); window.close(); }, 1000);
     <\/script>
 </body>
 </html>`;
@@ -1488,19 +1413,16 @@ function printQR() { if(!lastQRData)return; const w=window.open('','_blank'); w.
 function printArticleQR(id) {
     const a=articles.find(x=>x.id===id); 
     if(!a) return;
-    
     const data = {
-        id: id,
-        article: a.article,
-        reference: a.reference,
+        id: id, article: a.article, reference: a.reference,
         client: a.client && a.client !== 'Stock interne' ? a.client : '',
-        magasin: a.magasin,
-        type: a.type,
+        magasin: a.magasin, type: a.type, 
         madSubtype: a.madSubtype || '',
-        colis: a.nombreColis || 1,
-        emplacement: a.emplacement || ''
+        colis: a.nombreColis || 1, 
+        emplacement: a.emplacement || '',
+        repriseArticle: a.repriseArticle || 'Non',
+        stockSubtype: a.stockSubtype || 'Interne'
     };
-    
     const w = window.open('', '_blank');
     w.document.write(buildLabel(data));
     w.document.close();
