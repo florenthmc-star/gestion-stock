@@ -1229,41 +1229,281 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
 
 // ─── IMPRESSION QR ─────────────────
 function buildLabel(data) {
-    const url=`${APP_URL}?article=${data.id}`;
-    return`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Étiquette</title>
+    // Nouveau système : 2 QR codes max par page A4 (148.5mm de hauteur chacun)
+    const url = `${APP_URL}?article=${data.id}`;
+    const nombreColis = parseInt(data.colis) || 1;
+    
+    // Déterminer la couleur selon le type
+    const typeColors = {
+        'Stock': { bg: '#2563EB', text: '#ffffff', light: '#EFF6FF' },
+        'Mise à disposition': data.madSubtype === 'SAV' ? 
+            (data.repriseArticle === 'Oui' ? { bg: '#7C3AED', text: '#ffffff', light: '#F5F3FF' } : { bg: '#DC2626', text: '#ffffff', light: '#FEF2F2' }) : 
+            { bg: '#EA580C', text: '#ffffff', light: '#FFF7ED' },
+        'Article de prêt': { bg: '#16A34A', text: '#ffffff', light: '#F0FDF4' },
+        'TLE': { bg: '#4F46E5', text: '#ffffff', light: '#F5F3FF' },
+        'Récupération client': { bg: '#EAB308', text: '#111827', light: '#FEFCE8' }
+    };
+    
+    let typeLabel = data.type === 'Mise à disposition' ? 
+        (data.madSubtype === 'SAV' ? 'MAD - SAV' : 'MAD - COMMANDE') : 
+        data.type;
+
+    if (data.type === 'Stock') {
+        typeLabel = data.stockSubtype === 'Vendable' ? 'STOCK VENDABLE' : 'STOCK INTERNE';
+        if(data.stockSubtype === 'Vendable') typeColors['Stock'].bg = '#16A34A'; // Vert pour vendable
+    }
+    
+    const colors = typeColors[data.type] || { bg: '#6B7280', text: '#ffffff', light: '#F9FAFB' };
+    
+    // Générer le HTML pour tous les QR codes
+    let labelsHTML = '';
+    
+    for (let i = 1; i <= nombreColis; i++) {
+        const qrId = `qr-${i}`;
+        const isLast = i === nombreColis;
+        
+        labelsHTML += `
+        <div class="print-page-half" ${isLast ? '' : 'style="page-break-after: avoid;"'}>
+            <div class="label-card">
+                <div class="label-header" style="background: ${colors.bg}; color: ${colors.text};">
+                    <div class="magasin-name">🏬 ${data.magasin}</div>
+                    <div class="colis-count">COLIS ${i}/${nombreColis}</div>
+                </div>
+                
+                <div class="label-content">
+                    <div class="qr-section">
+                        <div id="${qrId}" class="qr-code"></div>
+                        <div class="article-id">ID: ${data.id}</div>
+                    </div>
+                    
+                    <div class="info-section">
+                        ${data.client ? `<div class="client-box">👤 ${data.client}</div>` : ''}
+                        <div class="article-name">${data.article}</div>
+                        <div class="article-ref">REF: ${data.reference}</div>
+                        
+                        <div class="meta-grid">
+                            <div class="meta-item"><span>📍 EMPLACEMENT</span><strong>${data.emplacement || 'NON DÉFINI'}</strong></div>
+                            <div class="meta-item"><span>📋 TYPE</span><strong>${typeLabel}${data.repriseArticle === 'Oui' ? ' <span style="color:#ffffff;background:#000;padding:2px 5px;border-radius:4px;margin-left:5px;">⚠️ REPRISE</span>' : ''}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="label-footer">
+                    <span>Imprimé le ${new Date().toLocaleDateString('fr-FR')}</span>
+                    <span style="font-weight:bold">HMC STOCK SYSTEM</span>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    // Script de génération des QR codes
+    let qrScript = '';
+    for (let i = 1; i <= nombreColis; i++) {
+        qrScript += `new QRCode(document.getElementById('qr-${i}'), {
+            text: '${url}',
+            width: 200,
+            height: 200,
+            correctLevel: QRCode.CorrectLevel.H
+        });\n`;
+    }
+    
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Étiquette QR - ` + data.article + `</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
     <style>
-        @page{size:10cm 14cm;margin:0;}
-        body{font-family:'Segoe UI',Arial,sans-serif;background:white;margin:0;padding:18px;width:10cm;box-sizing:border-box;}
-        .top{border-bottom:2px solid #1e40af;padding-bottom:8px;margin-bottom:10px;}
-        .brand{font-size:10px;font-weight:700;color:#1e40af;letter-spacing:1px;text-transform:uppercase;}
-        .type{display:inline-block;background:#1e40af;color:white;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;margin-top:3px;}
-        .name{font-size:16px;font-weight:800;color:#111827;margin:10px 0 4px;line-height:1.2;}
-        .info{font-size:11px;color:#374151;margin:3px 0;}
-        .info strong{color:#111827;}
-        #qr{text-align:center;margin:12px 0;}
-        .id{font-size:8px;color:#9ca3af;font-family:monospace;text-align:center;}
-        .footer{border-top:1px solid #e5e7eb;padding-top:7px;margin-top:8px;font-size:9px;color:#6b7280;text-align:center;}
-    </style></head><body>
-    <div class="top"><div class="brand">HMC — Gestion de Stock</div><span class="type">${data.type}</span></div>
-    <div class="name">${data.article}</div>
-    ${data.client?`<div class="info">👤 Client : <strong>${data.client}</strong></div>`:''}
-    ${data.type==='Mise à disposition'&&parseInt(data.colis)>1?`<div class="info">📦 Colis : <strong>${data.colis}</strong></div>`:''}
-    <div class="info">🏷️ Réf : <strong>${data.reference}</strong></div>
-    <div class="info">🏪 Magasin : <strong>${data.magasin}</strong></div>
-    <div id="qr"></div>
-    <div class="id">${data.id}</div>
-    <div class="footer">Scannez avec l'appareil photo · © 2026 Florent Amendola</div>
-    <script>new QRCode(document.getElementById('qr'),{text:'${url}',width:170,height:170});setTimeout(()=>window.print(),700);<\/script>
-    </body></html>`;
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: white;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .print-page-half {
+            height: 148.5mm; /* Moitié exacte d'un A4 */
+            width: 210mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px dashed #ccc; /* Ligne de découpe visible à l'écran */
+            box-sizing: border-box;
+            page-break-inside: avoid;
+        }
+
+        .label-card {
+            width: 190mm;
+            height: 130mm;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label-header {
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .label-content {
+            flex: 1;
+            display: flex;
+            padding: 20px;
+            gap: 25px;
+        }
+
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .qr-code {
+            padding: 10px;
+            border: 1px solid #eee;
+            background: white;
+        }
+
+        .article-id {
+            font-size: 10px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .info-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .client-box {
+            font-size: 28px;
+            font-weight: 900;
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .article-name {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #000;
+        }
+
+        .article-ref {
+            font-size: 18px;
+            color: #444;
+            font-weight: 600;
+        }
+
+        .meta-grid {
+            margin-top: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .meta-item span {
+            display: block;
+            font-size: 10px;
+            color: #666;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .meta-item strong {
+            font-size: 16px;
+            color: #000;
+        }
+
+        .label-footer {
+            padding: 10px 25px;
+            background: #eee;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            color: #555;
+        }
+        
+        /* Forcer l'impression des couleurs et la mise en page */
+        @media print {
+            .print-page-half:nth-child(2n) {
+                page-break-after: always;
+            }
+            .print-page-half {
+                border-bottom: none;
+            }
+        }
+    <\/style>
+</head>
+<body>
+    ` + labelsHTML + `
+    
+    <script>
+        window.onload = function() {
+            ` + qrScript + `
+            // Auto-print après génération des QR codes (délai allongé pour la sécurité)
+            setTimeout(() => {
+                window.print();
+                window.close();
+            }, 1000);
+        };
+    <\/script>
+</body>
+</html>`;
 }
 
-function printQR() { if(!lastQRData)return; const w=window.open('','_blank','width=380,height=520'); w.document.write(buildLabel(lastQRData)); w.document.close(); }
+function printQR() { if(!lastQRData)return; const w=window.open('','_blank'); w.document.write(buildLabel(lastQRData)); w.document.close(); }
 
 function printArticleQR(id) {
-    const a=articles.find(x=>x.id===id); if(!a)return;
-    const data={id,article:a.article,reference:a.reference,client:a.client&&a.client!=='Stock interne'?a.client:'',magasin:a.magasin,type:a.type,colis:a.nombreColis};
-    const w=window.open('','_blank','width=380,height=520'); w.document.write(buildLabel(data)); w.document.close();
+    const a=articles.find(x=>x.id===id); 
+    if(!a) return;
+    
+    const data = {
+        id: id,
+        article: a.article,
+        reference: a.reference,
+        client: a.client && a.client !== 'Stock interne' ? a.client : '',
+        magasin: a.magasin,
+        type: a.type,
+        madSubtype: a.madSubtype || '',
+        colis: a.nombreColis || 1,
+        emplacement: a.emplacement || ''
+    };
+    
+    const w = window.open('', '_blank');
+    w.document.write(buildLabel(data));
+    w.document.close();
 }
 
 // ─── MISES À DISPO ─────────────────
