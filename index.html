@@ -20,6 +20,8 @@
             --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
             --shadow-md:0 4px 16px rgba(0,0,0,.09);
             --shadow-lg:0 12px 32px rgba(0,0,0,.12);
+            --text1:#111827;
+            --blue-border:#c7d7fd;
         }
         *{margin:0;padding:0;box-sizing:border-box;}
         body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
@@ -112,6 +114,8 @@
         .b-retard{background:var(--red);color:white;}
         .b-purple{background:var(--purple-soft);color:var(--purple);border:1px solid var(--purple-border);}
         .b-dispo{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);}
+        .b-success{background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);}
+        .b-warn{background:var(--orange-soft);color:var(--orange);border:1px solid var(--orange-border);}
 
         /* Prêt individuel */
         .loan-item{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:13px 15px;margin-bottom:8px;}
@@ -810,12 +814,12 @@ function saveParams() {
     params.emailAix = document.getElementById('param_email_aix')?.value || '';
     params.emailNimes = document.getElementById('param_email_nimes')?.value || '';
     params.emailVitrolles = document.getElementById('param_email_vitrolles')?.value || '';
-    params.emailSectionTLE = document.getElementById('param_email_section_tle')?.checked || true;
-    params.emailSectionPrets = document.getElementById('param_email_section_prets')?.checked || true;
-    params.emailSectionReprises = document.getElementById('param_email_section_reprises')?.checked || true;
-    params.emailSectionRecup = document.getElementById('param_email_section_recup')?.checked || true;
-    params.emailSectionAlertesSAV = document.getElementById('param_email_section_alertes_sav')?.checked || true;
-    params.emailSectionStockFaible = document.getElementById('param_email_section_stock_faible')?.checked || true;
+    params.emailSectionTLE = !!document.getElementById('param_email_section_tle')?.checked;
+    params.emailSectionPrets = !!document.getElementById('param_email_section_prets')?.checked;
+    params.emailSectionReprises = !!document.getElementById('param_email_section_reprises')?.checked;
+    params.emailSectionRecup = !!document.getElementById('param_email_section_recup')?.checked;
+    params.emailSectionAlertesSAV = !!document.getElementById('param_email_section_alertes_sav')?.checked;
+    params.emailSectionStockFaible = !!document.getElementById('param_email_section_stock_faible')?.checked;
     
     saveParamsToAPI().then(()=>{ alert('✅ Paramètres enregistrés sur tous les appareils !'); renderAlertes(); });
 }
@@ -861,7 +865,7 @@ async function testEmail() {
 
 
 function renderSeuilsListe() {
-    const stocks = articles.filter(a=>a.type==='Stock');
+    const stocks = articles.filter(a=>a.type==='Stock' && a.stockSubtype!=='Vendable');
     if (!stocks.length) { document.getElementById('seuilsListe').innerHTML='<p style="color:var(--text3);font-size:13px;">Aucun article en stock.</p>'; return; }
     document.getElementById('seuilsListe').innerHTML = stocks.map(a=>{
         const s = seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
@@ -904,7 +908,7 @@ async function loadData() {
     
     // V7 : SÉCURITÉ QR - Bloquer COMPLÈTEMENT si QR article sorti
     const urlParams = new URLSearchParams(window.location.search);
-    const qrId = urlParams.get('id');
+    const qrId = urlParams.get('article');
     if(qrId){
         const article = articles.find(a=>a.id===qrId);
         if(article){
@@ -1033,34 +1037,47 @@ function refreshCurrentPane() {
 }
 
 function refreshBadges() {
-    // V7 : Compter retards depuis arrays prets[]
     const now = new Date();
     let retards = 0;
-    articles.filter(a=>a.type==='Article de prêt'&&a.prets&&a.prets.length>0).forEach(art=>{
-        art.prets.forEach(p=>{
-            if(p.statut==='En cours'&&p.dateRetourPrevue&&new Date(p.dateRetourPrevue)<now){
+
+    articles.filter(a => a.type === 'Article de prêt' && a.prets && a.prets.length > 0).forEach(art => {
+        art.prets.forEach(p => {
+            if (p.statut === 'En cours' && p.dateRetourPrevue && new Date(p.dateRetourPrevue) < now) {
                 retards++;
             }
         });
     });
-    const rb=document.getElementById('retardBadge'); rb.textContent=retards; rb.style.display=retards>0?'inline':'none';
-    
-    const madSAV=articles.filter(a=>a.type==='Mise à disposition'&&a.madSubtype==='SAV').length;
-    const mb=document.getElementById('madBadge'); mb.textContent=madSAV; mb.style.display=madSAV>0?'inline':'none';
-    
-    const tleEnAttente=articles.filter(a=>a.statut==='Vendu - Attente TLE').length;
-    const tb=document.getElementById('tleBadge'); tb.textContent=tleEnAttente; tb.style.display=tleEnAttente>0?'inline':'none';
-    
-    // V7.1 Badge Récupérations clients en attente
-    const recupEnAttente=articles.filter(a=>a.type==='Récupération client'&&a.statut==='En attente').length;
-    const rcb=document.getElementById('recupBadge'); if(rcb){rcb.textContent=recupEnAttente; rcb.style.display=recupEnAttente>0?'inline':'none';}
-    
-    const stockAlerts=articles.filter(a=>{
-        if(a.type!=='Stock'||a.quantiteStock===null) return false;
-        const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
-        return a.quantiteStock<=s;
+
+    const rb = document.getElementById('retardBadge');
+    rb.textContent = retards;
+    rb.style.display = retards > 0 ? 'inline' : 'none';
+
+    const madSAV = articles.filter(a => a.type === 'Mise à disposition' && a.madSubtype === 'SAV').length;
+    const mb = document.getElementById('madBadge');
+    mb.textContent = madSAV;
+    mb.style.display = madSAV > 0 ? 'inline' : 'none';
+
+    const tleEnAttente = articles.filter(a => a.statut === 'Vendu - Attente TLE' || a.statut === 'Reprise - Attente TLE').length;
+    const tb = document.getElementById('tleBadge');
+    tb.textContent = tleEnAttente;
+    tb.style.display = tleEnAttente > 0 ? 'inline' : 'none';
+
+    const recupEnAttente = articles.filter(a => a.type === 'Récupération client' && a.statut === 'En attente').length;
+    const rcb = document.getElementById('recupBadge');
+    if (rcb) {
+        rcb.textContent = recupEnAttente;
+        rcb.style.display = recupEnAttente > 0 ? 'inline' : 'none';
+    }
+
+    const stockAlerts = articles.filter(a => {
+        if (a.type !== 'Stock' || a.stockSubtype === 'Vendable' || a.quantiteStock === null) return false;
+        const s = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : params.stockFaible;
+        return a.quantiteStock <= s;
     }).length;
-    const ab=document.getElementById('alertBadge'); ab.textContent=retards+stockAlerts; ab.style.display=(retards+stockAlerts)>0?'inline':'none';
+
+    const ab = document.getElementById('alertBadge');
+    ab.textContent = retards + stockAlerts;
+    ab.style.display = (retards + stockAlerts) > 0 ? 'inline' : 'none';
 }
 
 // ─── FORMULAIRE RÉCEPTION ─────────
@@ -1081,40 +1098,35 @@ function getEmplacement(){
 function toggleFormFields() {
     const t=document.getElementById('f_type').value;
     const isStock=t==='Stock', isPret=t==='Article de prêt', isMAD=t==='Mise à disposition';
-    
-    // Client + AR + Sous-type MAD : seulement pour MAD
+
     document.getElementById('clientGroup').style.display=isMAD?'flex':'none';
     document.getElementById('f_client').required=isMAD;
     document.getElementById('arGroup').style.display=isMAD?'flex':'none';
     document.getElementById('madSubtypeGroup').style.display=isMAD?'flex':'none';
-    
-    // Délai SAV : géré par onMadSubtypeChange()
+
     if(isMAD) onMadSubtypeChange();
     else {
         document.getElementById('savDelaiGroup').style.display='none';
-        document.getElementById('repriseGroup').style.display='none'; // V7.1 : Cacher reprise si pas MAD
+        document.getElementById('repriseGroup').style.display='none';
     }
-    
-    // Colis : seulement pour MAD
+
     document.getElementById('colisGroup').style.display=isMAD?'flex':'none';
     document.getElementById('f_colis').required=isMAD;
-    
-    // Quantité : pour Stock et Article de prêt
+
     document.getElementById('qtyGroup').style.display=(isStock||isPret)?'flex':'none';
     document.getElementById('f_qty').required=isStock||isPret;
     document.getElementById('qtyLabel').textContent=isPret?'Quantité disponible à prêter *':'Quantité en Stock *';
     document.getElementById('qtyHint').textContent=isPret?'Nombre d\'articles disponibles (ex: 6 mitigeurs)':'';
-    
-    // V6.2 : Sous-type Stock + Prix
+
     document.getElementById('stockSubtypeGroup').style.display=isStock?'flex':'none';
-    if(isStock) onStockSubtypeChange(); // Gérer affichage prix
-    else {
+    if(isStock){
+        onStockSubtypeChange();
+    } else {
         document.getElementById('priceGroup').style.display='none';
+        document.getElementById('seuilGroup').style.display='none';
+        document.getElementById('f_price').required=false;
     }
-    
-    // Seuil : seulement pour Stock
-    document.getElementById('seuilGroup').style.display=isStock?'flex':'none';
-    
+
     if(isMAD) document.getElementById('f_colis').value='1';
 }
 
@@ -1122,14 +1134,21 @@ function onStockSubtypeChange() {
     const subtype = document.getElementById('f_stock_subtype')?.value;
     const priceGroup = document.getElementById('priceGroup');
     const priceInput = document.getElementById('f_price');
-    if(priceGroup && priceInput) {
+    const seuilGroup = document.getElementById('seuilGroup');
+
+    if(priceGroup && priceInput && seuilGroup) {
         if(subtype === 'Vendable') {
             priceGroup.style.display = 'flex';
             priceInput.required = true;
+
+            seuilGroup.style.display = 'none';
+            document.getElementById('f_seuil').value = '0';
         } else {
             priceGroup.style.display = 'none';
             priceInput.required = false;
             priceInput.value = '';
+
+            seuilGroup.style.display = 'flex';
         }
     }
 }
@@ -1226,11 +1245,11 @@ document.getElementById('receptionForm').addEventListener('submit', async e=>{
     btn.disabled=false; btn.textContent='✅ Générer le QR Code';
     if(r.error){ alert('❌ Erreur : '+r.error); return; }
 
-    if(isStock){
-        const seuilVal=parseInt(document.getElementById('f_seuil').value)||params.stockFaible;
-        seuilsPerso[id]=seuilVal;
-        saveParamsToAPI();
-    }
+    if(isStock && stockSubtype !== 'Vendable'){
+    const seuilVal=parseInt(document.getElementById('f_seuil').value)||params.stockFaible;
+    seuilsPerso[id]=seuilVal;
+    saveParamsToAPI();
+}
 
 lastQRData = {
         id: id, article: article, reference: reference,
@@ -1521,33 +1540,39 @@ function renderStock() {
     document.getElementById('stockStats').innerHTML=`
         <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">Références${mag?' '+mag:''}</div></div>
         <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Quantité totale</div></div>
-        <div class="stat-card orange"><div class="num">${allF.filter(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
+        <div class="stat-card orange"><div class="num">${allF.filter(a=>{if(a.stockSubtype==='Vendable') return false; const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible; return a.quantiteStock!==null&&a.quantiteStock>0&&a.quantiteStock<=s;}).length}</div><div class="lbl">Stocks faibles</div></div>
         <div class="stat-card red"><div class="num">${allF.filter(a=>a.quantiteStock===0).length}</div><div class="lbl">Épuisés</div></div>`;
     let list=allF.slice();
     if(q) list=list.filter(a=>smartSearch(a,q));
     if(!list.length){document.getElementById('stockList').innerHTML='<div class="empty"><div class="ico">📦</div><p>Aucun article</p></div>';return;}
     document.getElementById('stockList').innerHTML=list.map(a=>{
-        const qty=a.quantiteStock, seuil=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;
-        const qCls=qty===null?'':(qty===0?'empty':qty<=seuil?'low':'ok');
-        const isVendable=a.stockSubtype==='Vendable';
-        const prix=a.prixVente;
-        
-        return`<div class="article-item" onclick="openModal('${a.id}')">
-            <div class="item-head">
-                <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
-                <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
-                    <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
-                    ${isVendable&&prix?`<span class="badge" style="background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);font-size:13px;font-weight:700;">💰 ${prix}€</span>`:''}
-                    ${qty!==null?`<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>`:''}
-                </div>
+    const qty = a.quantiteStock;
+    const seuil = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : params.stockFaible;
+    const isVendable = a.stockSubtype === 'Vendable';
+    const prix = a.prixVente;
+
+    const qCls = qty === null
+        ? ''
+        : isVendable
+            ? (qty === 0 ? 'empty' : 'ok')
+            : (qty === 0 ? 'empty' : qty <= seuil ? 'low' : 'ok');
+
+    return`<div class="article-item" onclick="openModal('${a.id}')">
+        <div class="item-head">
+            <div><div class="item-title">${a.article}</div><div class="item-ref">${a.reference}</div></div>
+            <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
+                <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
+                ${isVendable&&prix?`<span class="badge" style="background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);font-size:13px;font-weight:700;">💰 ${prix}€</span>`:''}
+                ${qty!==null?`<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>`:''}
             </div>
-            <div class="item-meta">
-                <span class="meta">🏪 <strong>${a.magasin}</strong></span>
-                <span class="meta">📍 <strong>${a.emplacement}</strong></span>
-                ${isVendable?`<span class="meta" style="color:var(--green);font-weight:600;">💰 Article vendable</span>`:''}
-            </div>
-        </div>`;
-    }).join('');
+        </div>
+        <div class="item-meta">
+            <span class="meta">🏪 <strong>${a.magasin}</strong></span>
+            <span class="meta">📍 <strong>${a.emplacement}</strong></span>
+            ${isVendable?`<span class="meta" style="color:var(--green);font-weight:600;">💰 Article vendable</span>`:''}
+        </div>
+    </div>`;
+}).join('');
 }
 
 // ─── TLE - ARTICLES VENDUS ────────
@@ -1734,7 +1759,11 @@ function renderPrets() {
     const q=(document.getElementById('p_search')?.value||'').toLowerCase();
     const now=new Date();
 
-    const catalogue=articles.filter(a=>a.type==='Article de prêt'&&(!mag||a.magasin===mag));
+    const catalogue = articles.filter(a =>
+    a.type === 'Article de prêt' &&
+    !['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(a.statut) &&
+    (!mag || a.magasin === mag)
+);
 
     let allPrets=[];
     catalogue.forEach(art=>{
@@ -1922,10 +1951,10 @@ function renderAlertes() {
         });
     });
 
-    arts.filter(a=>{if(a.type!=='Stock'||a.quantiteStock===null)return false;const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock>0&&a.quantiteStock<=s;})
+    arts.filter(a=>{if(a.type!=='Stock'||a.stockSubtype==='Vendable'||a.quantiteStock===null)return false;const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;return a.quantiteStock>0&&a.quantiteStock<=s;})
         .forEach(a=>{const s=seuilsPerso[a.id]!==undefined?seuilsPerso[a.id]:params.stockFaible;alertes.push({type:'warning',t:`Stock faible — ${a.article}`,m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`,id:a.id});});
 
-    arts.filter(a=>a.type==='Stock'&&a.quantiteStock===0)
+    arts.filter(a=>a.type==='Stock'&&a.stockSubtype!=='Vendable'&&a.quantiteStock===0)
         .forEach(a=>alertes.push({type:'danger',t:`Stock épuisé — ${a.article}`,m:`${a.magasin} · À réapprovisionner`,id:a.id}));
 
     // V6.2 : Alertes MAD qui traînent
@@ -1986,7 +2015,9 @@ async function openModal(id) {
 
 function renderModalContent(a, histo) {
     const isPretIndividuel=a.type==='Prêt individuel';
-    const isArticlePret=a.type==='Article de prêt';
+    const isArticlePret =
+    a.type === 'Article de prêt' &&
+    !['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(a.statut);
     const isStock=a.type==='Stock';
     const isMAD=a.type==='Mise à disposition';
     const isRecup=a.type==='Récupération client';
@@ -2196,9 +2227,10 @@ function showChoiceDialog(title, message, choices = [], sub=''){
         document.getElementById('choiceTitle').textContent = title || 'Choix';
         document.getElementById('choiceSub').textContent = sub || '';
         document.getElementById('choiceMessage').innerHTML = message || '';
-        document.getElementById('choiceButtons').innerHTML = choices.map(c=>`
-            <button class="${c.className || 'btn btn-outline'}" onclick="closeChoiceDialog('${String(c.value).replace(/'/g,'\\\'')}')">${c.label}</button>
-        `).join('');
+        document.getElementById('choiceButtons').innerHTML = choices.map(c => {
+    const safeValue = c.value === null ? 'null' : String(c.value).replaceAll("'", "\\'");
+    return `<button class="${c.className || 'btn btn-outline'}" onclick="closeChoiceDialog('${safeValue}')">${c.label}</button>`;
+    }).join('');
         document.getElementById('choiceOverlay').classList.add('active');
     });
 }
@@ -2223,20 +2255,16 @@ function getEditStatusOptionsHTML(type, stockSubtype, currentStatus=''){
     if(type === 'Mise à disposition'){
         options = ['Stock','Sorti'];
     } else if(type === 'Stock'){
-        if(stockSubtype === 'Vendable'){
-            options = ['Stock','Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'];
-        } else {
-            options = ['Stock','Sorti'];
-        }
+        options = ['Stock','Sorti'];
     } else if(type === 'Article de prêt'){
         options = ['Stock','Sorti'];
     } else if(type === 'Récupération client'){
         options = ['En attente','Récupéré'];
+    } else if(type === 'TLE'){
+        options = [];
     }
 
-    // On ne réinjecte PAS aveuglément currentStatus
-    // On ne garde que les statuts compatibles avec le type choisi
-    return options.map(s => 
+    return options.map(s =>
         `<option value="${s}" ${s===currentStatus?'selected':''}>${s}</option>`
     ).join('');
 }
@@ -2260,6 +2288,8 @@ function fillEditStatusOptions(id){
         statusEl.value = available.includes(current) ? current : 'Stock';
     } else if(type === 'Article de prêt'){
         statusEl.value = available.includes(current) ? current : 'Stock';
+    } else if(type === 'TLE'){
+        statusEl.value = '';
     }
 
     statusEl.dataset.current = statusEl.value;
@@ -2272,23 +2302,32 @@ function updateEditFormVisibility(id){
     const madSubtype = document.getElementById('e_mad_subtype')?.value || '';
     const stockSubtype = document.getElementById('e_stock_subtype')?.value || '';
     const statut = document.getElementById('e_statut')?.value || '';
+    const tleStatut = document.getElementById('e_tle_statut')?.value || 'Vendu - Attente TLE';
+
+    const isTLE = type === 'TLE';
+    const isTLERemis = tleStatut === 'Sorti - Remis TLE';
+
+    setWrapDisplay('edit_tle_status_wrap', isTLE);
 
     const showClient =
         type === 'Mise à disposition' ||
         type === 'Récupération client' ||
-        (type === 'Stock' && ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(statut));
+        isTLE;
 
     setWrapDisplay('edit_client_wrap', showClient);
     setWrapDisplay('edit_ar_wrap', type === 'Mise à disposition');
-    setWrapDisplay('edit_qty_wrap', ['Stock','Article de prêt','Récupération client'].includes(type));
+    setWrapDisplay('edit_qty_wrap', ['Stock','Article de prêt','Récupération client','TLE'].includes(type));
     setWrapDisplay('edit_colis_wrap', type === 'Mise à disposition');
     setWrapDisplay('edit_madSubtype_wrap', type === 'Mise à disposition');
     setWrapDisplay('edit_savDelai_wrap', type === 'Mise à disposition' && madSubtype === 'SAV');
     setWrapDisplay('edit_reprise_wrap', type === 'Mise à disposition' && madSubtype === 'SAV');
     setWrapDisplay('edit_stockSubtype_wrap', type === 'Stock');
     setWrapDisplay('edit_price_wrap', (type === 'Stock' && stockSubtype === 'Vendable') || type === 'Récupération client');
-    setWrapDisplay('edit_dateTLE_wrap', type === 'Stock' && stockSubtype === 'Vendable' && ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(statut));
+    setWrapDisplay('edit_dateTLE_wrap', isTLE);
     setWrapDisplay('edit_dateRecup_wrap', type === 'Récupération client');
+
+    // masquer le statut normal si TLE
+    setWrapDisplay('edit_statut_wrap', !isTLE);
 }
 
 function buildEditSection(a, estSorti){
@@ -2310,11 +2349,12 @@ function buildEditSection(a, estSorti){
                 <div class="fg">
                     <label>Type</label>
                     <select id="e_type" onchange="updateEditFormVisibility('${a.id}')">
-                        <option value="Mise à disposition" ${a.type==='Mise à disposition'?'selected':''}>🚚 Mise à disposition</option>
-                        <option value="Stock" ${a.type==='Stock'?'selected':''}>📦 Stock</option>
-                        <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
-                        <option value="Récupération client" ${a.type==='Récupération client'?'selected':''}>🛍️ Récupération client</option>
-                    </select>
+    <option value="Mise à disposition" ${a.type==='Mise à disposition'?'selected':''}>🚚 Mise à disposition</option>
+    <option value="Stock" ${a.type==='Stock' && !['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(a.statut)?'selected':''}>📦 Stock</option>
+    <option value="Article de prêt" ${a.type==='Article de prêt'?'selected':''}>🔄 Article de prêt</option>
+    <option value="Récupération client" ${a.type==='Récupération client'?'selected':''}>🛍️ Récupération client</option>
+    <option value="TLE" ${['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(a.statut)?'selected':''}>🚚 TLE</option>
+</select>
                 </div>
 
                 <div class="fg" id="edit_stockSubtype_wrap">
@@ -2339,6 +2379,15 @@ function buildEditSection(a, estSorti){
                         ${getEditStatusOptionsHTML(a.type, a.stockSubtype||'Interne', a.statut||'Stock')}
                     </select>
                 </div>
+
+                <div class="fg" id="edit_tle_status_wrap">
+    <label>Statut TLE</label>
+    <select id="e_tle_statut">
+        <option value="Vendu - Attente TLE" ${a.statut==='Vendu - Attente TLE'?'selected':''}>📦 Vendu - Attente TLE</option>
+        <option value="Reprise - Attente TLE" ${a.statut==='Reprise - Attente TLE'?'selected':''}>🔧 Reprise - Attente TLE</option>
+        <option value="Sorti - Remis TLE" ${a.statut==='Sorti - Remis TLE'?'selected':''}>✅ Sorti - Remis TLE</option>
+    </select>
+</div>
 
                 <div class="fg" id="edit_client_wrap">
                     <label>Client</label>
@@ -3008,84 +3057,48 @@ async function actSaveEdit(id){
     if(!a) return;
 
     const old = JSON.parse(JSON.stringify(a));
-    const activeLoans = (old.prets||[]).filter(pr=>pr.statut==='En cours');
+const activeLoans = (old.prets||[]).filter(pr=>pr.statut==='En cours');
 
-    const newType = document.getElementById('e_type')?.value || old.type;
+const selectedType = document.getElementById('e_type')?.value || old.type;
+const newType = selectedType === 'TLE' ? old.type : selectedType;
+const tleStatus = document.getElementById('e_tle_statut')?.value || 'Vendu - Attente TLE';
+const newStatus = selectedType === 'TLE'
+    ? tleStatus
+    : (document.getElementById('e_statut')?.value || old.statut);
+
     const newArticle = (document.getElementById('e_article')?.value || '').trim();
-    const newReference = (document.getElementById('e_reference')?.value || '').trim();
-    const newEmplacement = (document.getElementById('e_emplacement')?.value || '').trim();
-    const newNotes = (document.getElementById('e_notes')?.value || '').trim();
+const newReference = (document.getElementById('e_reference')?.value || '').trim();
+const newEmplacement = (document.getElementById('e_emplacement')?.value || '').trim();
+const newNotes = (document.getElementById('e_notes')?.value || '').trim();
 
-    const newClient = (document.getElementById('e_client')?.value || '').trim();
-    const newAR = (document.getElementById('e_ar')?.value || '').trim();
-    const newQtyRaw = document.getElementById('e_qty')?.value;
-    const newQty = newQtyRaw!==undefined && newQtyRaw!=='' ? parseInt(newQtyRaw,10) : null;
-    const newColis = parseInt(document.getElementById('e_colis')?.value || '1',10) || 1;
+const newClient = (document.getElementById('e_client')?.value || '').trim();
+const newAR = (document.getElementById('e_ar')?.value || '').trim();
+const newQtyRaw = document.getElementById('e_qty')?.value;
+const newQty = newQtyRaw!==undefined && newQtyRaw!=='' ? parseInt(newQtyRaw,10) : null;
+const newColis = parseInt(document.getElementById('e_colis')?.value || '1',10) || 1;
 
-    const newStockSubtype = document.getElementById('e_stock_subtype')?.value || 'Interne';
-    const newMadSubtype = document.getElementById('e_mad_subtype')?.value || 'Commande';
-    const newStatus = document.getElementById('e_statut')?.value || old.statut;
-    const newPriceRaw = document.getElementById('e_price')?.value;
-    const newPrice = newPriceRaw!==undefined && newPriceRaw!=='' ? parseFloat(newPriceRaw) : null;
-    const newSavDelai = parseInt(document.getElementById('e_sav_delai')?.value || (params.savDelaiDefaut||30),10) || (params.savDelaiDefaut||30);
-    const newReprise = document.getElementById('e_reprise')?.value || 'Non';
-    const newDateTLE = parseDateInputToISO(document.getElementById('e_date_tle')?.value || '');
-    const newDateRecup = parseDateInputToISO(document.getElementById('e_date_recup')?.value || '');
+const newStockSubtype = document.getElementById('e_stock_subtype')?.value || 'Interne';
+const newMadSubtype = document.getElementById('e_mad_subtype')?.value || 'Commande';
 
-    if(!newArticle || !newReference || !newEmplacement){
-        alert('⚠️ Article, référence et emplacement sont obligatoires');
+const newPriceRaw = document.getElementById('e_price')?.value;
+const newPrice = newPriceRaw!==undefined && newPriceRaw!=='' ? parseFloat(newPriceRaw) : null;
+const newSavDelai = parseInt(document.getElementById('e_sav_delai')?.value || (params.savDelaiDefaut||30),10) || (params.savDelaiDefaut||30);
+const newReprise = document.getElementById('e_reprise')?.value || 'Non';
+const newDateTLE = parseDateInputToISO(document.getElementById('e_date_tle')?.value || '');
+const newDateRecup = parseDateInputToISO(document.getElementById('e_date_recup')?.value || '');
+
+const isTLEStatus = selectedType === 'TLE' || ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(newStatus);
+
+if(isTLEStatus){
+    if(!newClient){
+        alert('⚠️ Le client est obligatoire pour un article TLE');
         return;
     }
-
-    if(old.type==='Article de prêt' && activeLoans.length>0 && newType!=='Article de prêt'){
-        alert('⚠️ Impossible de changer le type de cet article tant que des prêts sont en cours.');
+    if(!newDateTLE){
+        alert('⚠️ La date TLE est obligatoire pour un article TLE');
         return;
     }
-
-    if(newType==='Mise à disposition' && !newClient){
-        alert('⚠️ Le client est obligatoire pour une mise à disposition');
-        return;
-    }
-
-    if(['Stock','Article de prêt','Récupération client'].includes(newType)){
-        if(newQty===null || isNaN(newQty) || newQty<0){
-            alert('⚠️ La quantité est obligatoire et doit être supérieure ou égale à 0');
-            return;
-        }
-    }
-
-    if(newType==='Stock' && newStockSubtype==='Vendable'){
-        if(newPrice===null || isNaN(newPrice)){
-            alert('⚠️ Le prix de vente est obligatoire pour un stock vendable');
-            return;
-        }
-    }
-
-    if(newType==='Récupération client'){
-        if(!newClient){
-            alert('⚠️ Le client est obligatoire pour une récupération client');
-            return;
-        }
-        if(!newDateRecup){
-            alert('⚠️ La date de récupération client est obligatoire');
-            return;
-        }
-        if(newPrice===null || isNaN(newPrice)){
-            alert('⚠️ Le prix de vente est obligatoire pour une récupération client');
-            return;
-        }
-    }
-
-    if(newType==='Stock' && newStockSubtype==='Vendable' && ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(newStatus)){
-        if(!newClient){
-            alert('⚠️ Le client est obligatoire pour un article TLE');
-            return;
-        }
-        if(!newDateTLE){
-            alert('⚠️ La date TLE est obligatoire pour un article TLE');
-            return;
-        }
-    }
+}
 
     a.article = newArticle;
     a.reference = newReference;
@@ -3093,6 +3106,23 @@ async function actSaveEdit(id){
     a.notes = newNotes;
     a.type = newType;
     a.statut = newStatus;
+
+if(isTLEStatus){
+    a.client = newClient;
+    a.recuperePar = 'TLE';
+    a.dateTLE = newDateTLE;
+    a.dateRecupClient = '';
+    a.numeroAR = newType === 'Mise à disposition' ? newAR : '';
+    a.nombreColis = newType === 'Mise à disposition' ? newColis : (a.nombreColis || 1);
+
+    if(newStatus === 'Sorti - Remis TLE'){
+        if(!a.dateSortie) a.dateSortie = new Date().toISOString();
+        a.raisonSortie = 'Remis à TLE';
+    } else {
+        a.dateSortie = '';
+        a.raisonSortie = '';
+    }
+}
 
     if(newType === 'Mise à disposition'){
         a.client = newClient;
@@ -3108,9 +3138,11 @@ async function actSaveEdit(id){
 
         a.stockSubtype = '';
         a.prixVente = '';
-        a.recuperePar = '';
-        a.dateTLE = '';
-        a.dateRecupClient = '';
+                if(!isTLEStatus){
+            a.recuperePar = '';
+            a.dateTLE = '';
+            a.dateRecupClient = '';
+        }
         a.prets = [];
 
         if(newStatus==='Sorti' && !a.dateSortie) a.dateSortie = new Date().toISOString();
@@ -3123,7 +3155,7 @@ async function actSaveEdit(id){
 
         a.stockSubtype = newStockSubtype;
         a.prixVente = newStockSubtype==='Vendable' ? Number(newPrice).toFixed(2) : '';
-        a.client = ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(newStatus) ? newClient : '';
+        a.client = isTLEStatus ? newClient : '';
         a.numeroAR = '';
         a.nombreColis = 1;
 
@@ -3134,59 +3166,78 @@ async function actSaveEdit(id){
         a.repriseRecue = '';
         a.prets = [];
 
-        if(newStockSubtype==='Vendable'){
-            delete seuilsPerso[id];
-            await saveParamsToAPI();
-        }
+
+        if(newStockSubtype === 'Vendable'){
+    delete seuilsPerso[id];
+} else {
+    if(seuilsPerso[id] === undefined){
+        seuilsPerso[id] = params.stockFaible || 0;
+    }
+}
 
         if(newStatus==='Stock'){
-            a.recuperePar = '';
-            a.dateTLE = '';
-            a.dateRecupClient = '';
-            a.dateSortie = '';
-            a.raisonSortie = '';
-        } else if(newStatus==='Vendu - Attente TLE' || newStatus==='Reprise - Attente TLE'){
-            a.recuperePar = 'TLE';
-            a.dateTLE = newDateTLE;
-            a.dateRecupClient = '';
-            a.dateSortie = '';
-            a.raisonSortie = '';
-        } else if(newStatus==='Sorti - Remis TLE'){
-            a.recuperePar = 'TLE';
-            a.dateTLE = newDateTLE;
-            a.dateRecupClient = '';
-            if(!a.dateSortie) a.dateSortie = new Date().toISOString();
-            a.raisonSortie = 'Remis à TLE';
-        } else if(newStatus==='Sorti'){
-            a.recuperePar = '';
-            a.dateTLE = '';
-            a.dateRecupClient = '';
-            if(!a.dateSortie) a.dateSortie = new Date().toISOString();
-        }
+    a.recuperePar = '';
+    a.dateTLE = '';
+    a.dateRecupClient = '';
+    a.dateSortie = '';
+    a.raisonSortie = '';
+} else if(newStatus==='Sorti'){
+    a.recuperePar = '';
+    a.dateTLE = '';
+    a.dateRecupClient = '';
+    if(!a.dateSortie) a.dateSortie = new Date().toISOString();
+    if(!a.raisonSortie) a.raisonSortie = 'Sorti';
+}
     }
 
     if(newType === 'Article de prêt'){
-        a.client = '';
-        a.numeroAR = '';
-        a.nombreColis = 1;
-        a.quantiteStock = newQty;
-        a.quantiteInitiale = Math.max(parseInt(old.quantiteInitiale)||0, newQty);
+    a.numeroAR = '';
+    a.nombreColis = 1;
 
-        a.stockSubtype = '';
-        a.prixVente = '';
-        a.madSubtype = '';
-        a.statutMAD = '';
-        a.savDelaiAlerte = '';
-        a.repriseArticle = 'Non';
-        a.repriseRecue = '';
+    a.stockSubtype = '';
+    a.prixVente = '';
+    a.madSubtype = '';
+    a.statutMAD = '';
+    a.savDelaiAlerte = '';
+    a.repriseArticle = 'Non';
+    a.repriseRecue = '';
+
+    if(isTLEStatus){
+        a.client = newClient;
+        a.recuperePar = 'TLE';
+        a.dateTLE = newDateTLE;
+        a.dateRecupClient = '';
+
+        // article de prêt envoyé en TLE = il ne doit plus être vu comme dispo
+        a.quantiteStock = 0;
+
+        if(newStatus === 'Sorti - Remis TLE'){
+            if(!a.dateSortie) a.dateSortie = new Date().toISOString();
+            a.raisonSortie = 'Remis à TLE';
+        } else {
+            a.dateSortie = '';
+            a.raisonSortie = '';
+        }
+    } else {
+        a.client = '';
         a.recuperePar = '';
         a.dateTLE = '';
         a.dateRecupClient = '';
+        a.quantiteStock = newQty;
 
-        if(old.type!=='Article de prêt') a.prets = [];
-        if(newStatus==='Stock'){ a.dateSortie=''; a.raisonSortie=''; }
-        if(newStatus==='Sorti' && !a.dateSortie) a.dateSortie = new Date().toISOString();
+        if(newStatus==='Stock'){
+            a.dateSortie = '';
+            a.raisonSortie = '';
+        }
+        if(newStatus==='Sorti' && !a.dateSortie){
+            a.dateSortie = new Date().toISOString();
+        }
     }
+
+    a.quantiteInitiale = Math.max(parseInt(old.quantiteInitiale)||0, a.quantiteStock||0);
+
+    if(old.type!=='Article de prêt') a.prets = [];
+}
 
     if(newType === 'Récupération client'){
         a.client = newClient;
@@ -3197,9 +3248,15 @@ async function actSaveEdit(id){
 
         a.stockSubtype = 'Vendable';
         a.prixVente = Number(newPrice).toFixed(2);
-        a.recuperePar = 'Client';
-        a.dateRecupClient = newDateRecup;
-        a.dateTLE = '';
+                if(isTLEStatus){
+            a.recuperePar = 'TLE';
+            a.dateTLE = newDateTLE;
+            a.dateRecupClient = '';
+        } else {
+            a.recuperePar = 'Client';
+            a.dateRecupClient = newDateRecup;
+            a.dateTLE = '';
+        }
 
         a.madSubtype = '';
         a.statutMAD = '';
@@ -3209,12 +3266,11 @@ async function actSaveEdit(id){
         a.prets = [];
 
         delete seuilsPerso[id];
-        await saveParamsToAPI();
 
-        if(newStatus==='Récupéré'){
+                if(newStatus==='Récupéré'){
             if(!a.dateSortie) a.dateSortie = new Date().toISOString();
             a.raisonSortie = 'Récupéré par client';
-        } else {
+        } else if(!isTLEStatus) {
             a.dateSortie = '';
             a.raisonSortie = '';
         }
@@ -3246,7 +3302,16 @@ async function actSaveEdit(id){
             changes.push(`${label}: ${oldVal||'—'} → ${newVal||'—'}`);
         }
     });
+// Gestion spécifique du type (avec TLE)
+const oldDisplayedType = ['Vendu - Attente TLE','Reprise - Attente TLE','Sorti - Remis TLE'].includes(old.statut)
+    ? 'TLE'
+    : old.type;
 
+const newDisplayedType = selectedType;
+
+if(String(oldDisplayedType) !== String(newDisplayedType)){
+    changes.push(`Type: ${oldDisplayedType || '—'} → ${newDisplayedType || '—'}`);
+}
     if(String(old.quantiteStock ?? '') !== String(a.quantiteStock ?? '')){
         changes.push(`Qté: ${old.quantiteStock ?? '—'} → ${a.quantiteStock ?? '—'}`);
     }
@@ -3254,6 +3319,7 @@ async function actSaveEdit(id){
         changes.push(`Colis: ${old.nombreColis ?? '—'} → ${a.nombreColis ?? '—'}`);
     }
 
+    await saveParamsToAPI();
     await doUpdate(a);
     await doHisto(id,'Modification',p,changes.length?changes.join(' · '):'Modification article');
 
