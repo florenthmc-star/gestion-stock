@@ -1,0 +1,51 @@
+# Vérifie l'appli à chaque proposition de modification (PR),
+# puis la met en ligne sur https://hmc-stock.web.app à chaque mise à jour de main.
+# Connexion à Google SANS clé (Workload Identity Federation) : la création de clés
+# est interdite par l'organisation Google Cloud, et c'est plus sûr ainsi.
+name: Vérifier et déployer
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Java est nécessaire à l'émulateur Firestore (tests des règles de sécurité)
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:regles
+      - run: npm run build
+
+  deployer:
+    needs: verifier
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # permet à GitHub de prouver son identité à Google, sans clé
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/725403694804/locations/global/workloadIdentityPools/github/providers/github
+          service_account: github-deploy@hmc-stock.iam.gserviceaccount.com
+      - run: npx firebase deploy --only firestore:rules,hosting --project hmc-stock --non-interactive
