@@ -53,3 +53,13 @@ export function estAdmin(moi) {
 export function magasinsModifiables(moi, magasins) {
   return magasins.filter(m => peutModifier(moi, m));
 }
+
+/* Nom du rôle affiché sous le nom de la personne */
+const LIBELLES_ROLES = {
+  ADMIN: 'Administrateur', DIRECTION: 'Direction', ADV: 'ADV', DIRECTEUR: 'Directeur',
+  RESP_TECH: 'Responsable technique', PLANIFICATEUR: 'Planification', VENDEUR: 'Vendeur',
+  SAV: 'SAV', LECTURE: 'Consultation',
+};
+export function libelleRole(role) {
+  return LIBELLES_ROLES[role] || String(role || '');
+}

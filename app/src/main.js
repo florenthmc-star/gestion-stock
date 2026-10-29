@@ -46,6 +46,23 @@ const boutonConnexion = () => bouton('Se connecter avec Google', 'btn-primary', 
 });
 const boutonDeconnexion = () => bouton('Changer de compte', 'btn-outline', () => signOut(auth));
 
+/* Thème clair / sombre, comme dans l'appli HMC : choix gardé sur l'appareil,
+   sinon celui du téléphone ou de l'ordinateur (appliqué dès le chargement dans index.html) */
+function majBoutonTheme() {
+  const b = document.getElementById('btnTheme');
+  if (!b) return;
+  const sombre = document.documentElement.getAttribute('data-theme') === 'dark';
+  b.textContent = sombre ? '☀️' : '🌙';
+  b.title = sombre ? 'Passer en mode clair' : 'Passer en mode sombre';
+}
+window.changerTheme = () => {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('hmc.theme', t); } catch (e) { /* stockage indisponible */ }
+  majBoutonTheme();
+};
+majBoutonTheme();
+
 window.seDeconnecter = async () => {
   if (!confirm('Se déconnecter de HMC Stock ?')) return;
   await signOut(auth);

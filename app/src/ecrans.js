@@ -6,7 +6,7 @@
 // du compte Google de la personne connectée (src/metier/droits.js).
 // ══════════════════════════════════════════════════════════
 import { appel, articles as lireArticles, lireConfig, etatConnexion } from './donnees.js';
-import { peutModifier, peutArchiver, estAdmin, magasinsModifiables } from './metier/droits.js';
+import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole } from './metier/droits.js';
 // Outils admin (lecture Excel, recopie des utilisateurs) chargés seulement quand l'admin s'en sert
 const outilsAdmin = () => import('./admin.js');
 
@@ -101,6 +101,8 @@ function skeleton(n){
 export function demarrerEcrans(utilisateur) {
     moi = utilisateur;
     document.getElementById('userChip').textContent = moi.nom || moi.email;
+    document.getElementById('userAvatar').textContent = String(moi.nom || moi.email).trim().charAt(0).toUpperCase() || '?';
+    document.getElementById('userRole').textContent = libelleRole(moi.role) + ' · ' + (moi.magasin === 'ALL' ? 'Tous les magasins' : moi.magasin);
     document.getElementById('tabParametres').style.display = estAdmin(moi) ? '' : 'none';
     // Prénom pré-rempli avec celui du compte (modifiable, comme avant)
     const prenomCompte = String(moi.nom || '').trim().split(/\s+/)[0] || '';
@@ -332,7 +334,6 @@ async function checkIfAdmin() {
     return false;
 }
 
-function getAdminPin(){ return ''; }
 
 function refreshCurrentPane() {
     const id = document.querySelector('.pane.active')?.id;
@@ -342,7 +343,7 @@ function refreshCurrentPane() {
     else if (id==='recup') renderRecupClients();
     else if (id==='prets') renderPrets();
     else if (id==='alertes') renderAlertes();
-    else if (id==='parametres') renderSeuilsListe();
+    else if (id==='parametres') { renderSeuilsListe(); afficherAdmins(); }
 }
 
 function refreshBadges() {
@@ -2239,7 +2240,7 @@ async function actArchiveOld(){
         '🗑️ Archiver', true)) return;
 
     busy(true, `Archivage de ${candidats.length} article(s)...`);
-    const r = await apiCall({ action:'archiveArticles', ids:JSON.stringify(candidats.map(a => a.id)), pin:getAdminPin() });
+    const r = await apiCall({ action:'archiveArticles', ids:JSON.stringify(candidats.map(a => a.id)) });
     busy(false);
     if(r.error){ toast('❌ ' + r.error, 'err'); return; }
     toast(`🗑️ ${r.archived !== undefined ? r.archived : candidats.length} article(s) archivé(s)`);
@@ -2271,56 +2272,15 @@ async function lancerRecopieUtilisateurs(){
     } finally { busy(false); }
 }
 
-let _lectureAncienne = null;
-function tableauControle(c){
-    const lignes = obj => Object.entries(obj).sort().map(([k,v]) => `${esc(k)} : <strong>${v}</strong>`).join(' · ');
-    return `Articles : <strong>${c.total}</strong> · Quantité en stock : <strong>${c.quantite}</strong> · Prêts en cours : <strong>${c.pretsEnCours}</strong><br>
-        Par magasin : ${lignes(c.parMagasin)}<br>Par statut : ${lignes(c.parStatut)}`;
-}
-async function lancerLectureAncienne(){
-    const zone = document.getElementById('resultatImport');
+/* Liste des administrateurs, affichée en haut des paramètres */
+async function afficherAdmins(){
+    const zone = document.getElementById('listeAdmins');
     try {
-        busy(true, 'Lecture de l\'ancienne appli...');
-        _lectureAncienne = await (await outilsAdmin()).lireAncienneAppli();
-        const d = _lectureAncienne.doublons;
-        zone.innerHTML = `<strong>Ancienne appli :</strong><br>${tableauControle(_lectureAncienne.controle)}<br>
-            Seuils d'alerte : <strong>${Object.keys(_lectureAncienne.seuils).length}</strong>
-            ${d.length ? `<br>⚠️ ${d.length} ligne(s) en double dans le Sheet (même identifiant) : ${[...new Set(d.map(x => x.IDOrigine))].map(esc).join(', ')}. La première ligne est gardée (c'est celle que l'ancienne appli mettait à jour), les copies partent dans les archives.` : ''}`;
-        document.getElementById('btnImporter').disabled = false;
+        const noms = await (await outilsAdmin()).listerAdmins();
+        zone.innerHTML = noms.length ? noms.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Aucun</span>';
     } catch(e) {
         zone.textContent = '❌ ' + (e.message || e);
-    } finally { busy(false); }
-}
-async function lancerImport(){
-    if(!_lectureAncienne) return;
-    if(!await showConfirmDialog('Importer', `Écrire <strong>${_lectureAncienne.fiches.length}</strong> article(s) et les paramètres dans la nouvelle appli ?<br><br>Les articles déjà importés sont remplacés par la version de l'ancienne appli.`, '📥 Importer')) return;
-    const zone = document.getElementById('resultatImport');
-    try {
-        busy(true, 'Import...');
-        await (await outilsAdmin()).ecrireImport(_lectureAncienne, (n, total) => busy(true, `Import... ${n} / ${total}`));
-        busy(false);
-        construireDonnees();
-        const v = (await outilsAdmin()).verifierImport(_lectureAncienne);
-        zone.innerHTML += `<br><br><strong>Nouvelle appli :</strong><br>${tableauControle(v.apres)}<br>` +
-            (v.ecarts.length ? `⚠️ Écarts :<br>${v.ecarts.map(esc).join('<br>')}` : '✅ Contrôle OK : les chiffres sont identiques.');
-        toast('✅ Import terminé');
-        loadData();
-    } catch(e) {
-        busy(false);
-        zone.innerHTML += '<br>❌ ' + esc(e.message || e);
     }
-}
-async function lancerImportArchives(input){
-    const fichier = input.files && input.files[0];
-    if(!fichier) return;
-    const zone = document.getElementById('resultatArchives');
-    try {
-        busy(true, 'Import des archives...');
-        const r = await (await outilsAdmin()).importerArchivesXlsx(fichier);
-        zone.textContent = `✅ ${r.lues} ligne(s) d'archives importée(s) (${r.distinctes} article(s) distinct(s)).`;
-    } catch(e) {
-        zone.textContent = '❌ ' + (e.message || e);
-    } finally { busy(false); input.value = ''; }
 }
 async function lancerExportArchives(){
     try {
@@ -2377,7 +2337,6 @@ Object.assign(window, {
     enregistrerMagasins,
     esc,
     fmtDateInputLocal,
-    getAdminPin,
     getDateRecup,
     getEditStatusOptions,
     getEmplacement,
@@ -2387,9 +2346,6 @@ Object.assign(window, {
     labelColors,
     labelDocument,
     lancerExportArchives,
-    lancerImport,
-    lancerImportArchives,
-    lancerLectureAncienne,
     lancerRecopieUtilisateurs,
     loadData,
     loadHisto,
@@ -2434,7 +2390,6 @@ Object.assign(window, {
     skeleton,
     smartSearch,
     switchTab,
-    tableauControle,
     toast,
     toggleEdit,
     toggleFormFields,
