@@ -10,7 +10,7 @@ import { db, auth, googleProvider, configHMC, URL_ANCIENNE_APPLI } from './fireb
 import { articles, lireConfig, lireArchives } from './donnees.js';
 import {
   ficheDepuisLigne, archiveDepuisLigne, objetsDepuisTableau, configDepuisAncienne,
-  seuilsDepuisAncienne, controle, ecarts, ficheUtilisateur, separerDoublons,
+  seuilsDepuisAncienne, controle, ecarts, ficheUtilisateur, separerDoublons, numeroterArchives,
 } from './metier/import.js';
 import { COLS } from './metier/actions.js';
 
@@ -88,19 +88,19 @@ export async function importerArchivesXlsx(fichier) {
   const feuille = classeur.Sheets.Archives;
   if (!feuille) throw new Error('Onglet « Archives » introuvable dans ce fichier');
   const lignes = objetsDepuisTableau(XLSX.utils.sheet_to_json(feuille, { header: 1, raw: true, defval: null }));
-  const archives = lignes.map(archiveDepuisLigne);
+  const archives = numeroterArchives(lignes.map(archiveDepuisLigne));
   for (let i = 0; i < archives.length; i += 400) {
     const lot = writeBatch(db);
     for (const a of archives.slice(i, i + 400)) lot.set(doc(db, 'archives', a.ID), a);
     await lot.commit();
   }
-  return { lues: archives.length, distinctes: new Set(archives.map(a => a.ID)).size };
+  return { lues: archives.length, distinctes: new Set(archives.map(a => a.IDOrigine || a.ID)).size };
 }
 
 /** Téléchargement des archives en Excel */
 export async function telechargerArchives() {
   const archives = await lireArchives();
-  const titres = [...COLS, 'DateArchivage', 'RaisonArchivage'];
+  const titres = [...COLS, 'DateArchivage', 'RaisonArchivage', 'IDOrigine'];
   const feuille = XLSX.utils.aoa_to_sheet([titres, ...archives.map(a => titres.map(t => a[t] ?? ''))]);
   const classeur = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(classeur, feuille, 'Archives');

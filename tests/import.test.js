@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   ficheDepuisLigne, archiveDepuisLigne, objetsDepuisTableau, configDepuisAncienne,
   seuilsDepuisAncienne, controle, ecarts, ficheUtilisateur, MAGASINS_DEPART, separerDoublons,
+  numeroterArchives,
 } from '../app/src/metier/import.js';
 import { COLS } from '../app/src/metier/actions.js';
 
@@ -66,4 +67,16 @@ test('doublons du Sheet : la première ligne (celle que l\'ancienne appli modifi
   assert.deepEqual(r.doublons.map(f => f.ID), ['A-doublon-1', 'A-doublon-2']);
   assert.equal(r.doublons[0].IDOrigine, 'A');
   assert.match(r.doublons[0].RaisonArchivage, /Doublon/);
+});
+
+test('archives : plusieurs lignes au même ID sont toutes gardées, sans écrasement', () => {
+  const a = numeroterArchives([
+    { ID: 'A', Article: 'Soda' }, { ID: 'B' }, { ID: 'A', Article: 'Soda' }, { ID: 'A' },
+  ]);
+  assert.deepEqual(a.map(x => x.ID), ['A', 'B', 'A-archive-2', 'A-archive-3']);
+  assert.equal(new Set(a.map(x => x.ID)).size, 4);
+  assert.equal(a[2].IDOrigine, 'A');
+  assert.equal(a[0].IDOrigine, undefined);
+  // Même fichier importé deux fois → mêmes identifiants (pas de doublon en base)
+  assert.deepEqual(numeroterArchives([{ ID: 'A' }, { ID: 'A' }]).map(x => x.ID), ['A', 'A-archive-2']);
 });
