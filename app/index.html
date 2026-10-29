@@ -306,6 +306,23 @@
         .connexion-box p{font-size:14px;color:var(--texte2);line-height:1.6;margin-bottom:18px;}
         .lecture-seule{background:var(--surface2);border:1px solid var(--bord2);color:var(--texte2);padding:12px;border-radius:10px;margin-bottom:16px;text-align:center;font-size:13px;}
 
+        /* Listes déroulantes « maison » (ordinateur) : bouton et liste arrondis, voir src/listes.js */
+        .liste-native{position:absolute!important;opacity:0;pointer-events:none;width:1px!important;height:1px;min-width:0!important;padding:0!important;border:0!important;}
+        .liste-bouton{display:block;width:auto;min-width:0;text-align:left;cursor:pointer;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+            border:1px solid var(--bord2);border-radius:10px;padding:10px 36px 10px 12px;color:var(--texte);font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s,box-shadow .15s;}
+        .liste-bouton:hover{border-color:var(--texte3);}
+        .liste-bouton:focus-visible,.liste-bouton.ouverte{outline:none;border-color:var(--bleu);box-shadow:0 0 0 3px var(--bleuDoux);}
+        .liste-bouton:disabled{opacity:.5;cursor:default;}
+        .liste-bouton.liste-erreur{border-color:var(--rouge);box-shadow:0 0 0 3px var(--rougeDoux);}
+        .filter-bar .liste-bouton{padding-top:8px;padding-bottom:8px;}
+        .edit-form .liste-bouton{padding-top:8px;padding-bottom:8px;width:100%;}
+        .liste-pop{position:fixed;z-index:1000;max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:2px;padding:6px;background:var(--surface);border:1px solid var(--bord);border-radius:12px;box-shadow:var(--ombrePop);animation:listeIn .12s ease;}
+        @keyframes listeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+        .liste-option{border:0;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--texte);cursor:pointer;white-space:nowrap;}
+        .liste-option:hover,.liste-option:focus{background:var(--survol);outline:none;}
+        .liste-option.choisie{background:var(--bleuDoux);color:var(--bleu);font-weight:600;}
+        .liste-option:disabled{opacity:.45;cursor:default;}
+
         /* ── Téléphone et tablette : le menu passe en haut ── */
         @media(max-width:900px){
             .app{display:block;}
@@ -359,6 +376,7 @@
     <button class="tab" onclick="switchTab('recup',this)">🛍️ Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
     <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
+    <button class="tab" id="tabHistorique" style="display:none" onclick="switchTab('historique',this)">🕘 Historique</button>
     <button class="tab" id="tabParametres" style="display:none" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
     </nav>
     <div class="basLateral">
@@ -509,11 +527,6 @@
             <option value="Commande">📦 Commandes uniquement</option>
             <option value="SAV">🔧 SAV uniquement</option>
         </select>
-        <select id="m_stat" onchange="renderMAD()">
-            <option value="Stock" selected>En stock</option>
-            <option value="">Tous les statuts</option>
-            <option value="Sorti">Sorti</option>
-        </select>
         <input id="m_search" placeholder="🔍 Client, article, réf, AR..." oninput="debounceRender(renderMAD)" style="flex:1;min-width:180px;">
     </div>
     <div id="madList"></div>
@@ -608,6 +621,25 @@
         </select>
     </div>
     <div id="alertList"></div>
+</div>
+
+<!-- ═══ HISTORIQUE (admin seulement) ═══ -->
+<div id="historique" class="pane">
+    <div class="page-title">🕘 Historique</div>
+    <div class="filter-bar">
+        <select id="h_mag" onchange="renderHistorique()">
+            <option value="">Tous les magasins</option>
+        </select>
+        <select id="h_etat" onchange="renderHistorique()">
+            <option value="">Tout</option>
+            <option value="encours">En cours (en stock, en attente)</option>
+            <option value="clos">Sortis, remis à TLE, récupérés</option>
+            <option value="archives">Archivés</option>
+        </select>
+        <input id="h_search" placeholder="🔍 Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
+    </div>
+    <div id="histoStats" style="font-size:13px;color:var(--text3);margin:0 0 10px 4px;"></div>
+    <div id="histoList"></div>
 </div>
 
 <!-- ═══ PARAMÈTRES (admin seulement) ═══ -->

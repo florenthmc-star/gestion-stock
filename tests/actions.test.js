@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {
   ligneHisto, ajouterHisto, nouvelleFiche, champsModifies, ajusterQuantite,
   preter, retourPret, modifierDateRetour, ficheArchive, traceArchive, articlesAArchiver, COLS,
+  changerCategorie, categorieDe,
 } from '../app/src/metier/actions.js';
 
 const QUAND = new Date('2026-10-29T13:05:00Z');   // 14:05 à Paris (heure d'hiver)
@@ -124,4 +125,30 @@ test('nettoyage : seuls les articles clos depuis plus de X jours', () => {
     { ID: 'e', Statut: 'Sorti' },
   ];
   assert.deepEqual(articlesAArchiver(fiches, 90, maintenant).map(f => f.ID), ['a', 'd']);
+});
+
+test('changer de catégorie : stock interne → vendable (prix obligatoire) → prêt', () => {
+  const f = { Type: 'Stock', StockSubtype: 'Interne', Statut: 'Stock', QuantiteStock: 4, QuantiteInitiale: 5, PrixVente: '' };
+  assert.equal(categorieDe(f), 'interne');
+  assert.match(changerCategorie(f, 'vendable').error, /prix/);
+  assert.deepEqual(changerCategorie(f, 'vendable', { prix: '45' }).champs,
+    { Type: 'Stock', StockSubtype: 'Vendable', QuantiteStock: 4, PrixVente: '45' });
+  assert.deepEqual(changerCategorie(f, 'pret').champs, { Type: 'Article de prêt', StockSubtype: '', QuantiteStock: 4 });
+  assert.deepEqual(changerCategorie(f, 'interne').champs, {});
+});
+
+test('changer de catégorie : mise à dispo ↔ stock, client obligatoire', () => {
+  const mad = { Type: 'Mise à disposition', Statut: 'Stock', NombreColis: '2', QuantiteStock: '', QuantiteInitiale: '', Client: 'DUPONT', StatutMAD: 'À prévenir' };
+  assert.deepEqual(changerCategorie(mad, 'interne').champs,
+    { Type: 'Stock', StockSubtype: 'Interne', QuantiteStock: 2, QuantiteInitiale: 2, StatutMAD: '' });
+  const stock = { Type: 'Stock', StockSubtype: 'Interne', Statut: 'Stock', QuantiteStock: 1, QuantiteInitiale: 1 };
+  assert.match(changerCategorie(stock, 'mad').error, /client/);
+  assert.equal(changerCategorie(stock, 'mad', { client: 'MARTIN' }).champs.Client, 'MARTIN');
+});
+
+test('changer de catégorie : refusé si sorti, vendu ou prêts en cours', () => {
+  assert.match(changerCategorie({ Type: 'Stock', Statut: 'Sorti' }, 'pret').error, /en stock/);
+  assert.match(changerCategorie({ Type: 'Récupération client', Statut: 'Stock' }, 'pret').error, /ne peut pas/);
+  const pret = { Type: 'Article de prêt', Statut: 'Stock', QuantiteStock: 1, Prets: JSON.stringify([{ statut: 'En cours' }]) };
+  assert.match(changerCategorie(pret, 'interne').error, /prêts sont en cours/);
 });

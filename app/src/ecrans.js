@@ -5,8 +5,9 @@
 // (Firestore) au lieu du serveur Apps Script, et les droits viennent
 // du compte Google de la personne connectée (src/metier/droits.js).
 // ══════════════════════════════════════════════════════════
-import { appel, articles as lireArticles, lireConfig, etatConnexion } from './donnees.js';
-import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole } from './metier/droits.js';
+import { appel, articles as lireArticles, lireConfig, etatConnexion, lireArchives } from './donnees.js';
+import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes } from './metier/droits.js';
+import { CATEGORIES, categorieDe, changerCategorie } from './metier/actions.js';
 // Outils admin (lecture Excel, recopie des utilisateurs) chargés seulement quand l'admin s'en sert
 const outilsAdmin = () => import('./admin.js');
 
@@ -38,6 +39,7 @@ let _paramsAppliques = '';
 
 // ─── État global ──────────────────────────────────────────
 let articles = [];
+const lesArticles = () => articles;   // accès à la liste complète depuis une fonction qui la filtre
 let pretsActifs = [];
 let histoCache = {};
 let currentPretTab = 'dispo';
@@ -104,6 +106,7 @@ export function demarrerEcrans(utilisateur) {
     document.getElementById('userAvatar').textContent = String(moi.nom || moi.email).trim().charAt(0).toUpperCase() || '?';
     document.getElementById('userRole').textContent = libelleRole(moi.role) + ' · ' + (moi.magasin === 'ALL' ? 'Tous les magasins' : moi.magasin);
     document.getElementById('tabParametres').style.display = estAdmin(moi) ? '' : 'none';
+    document.getElementById('tabHistorique').style.display = estAdmin(moi) ? '' : 'none';
     // Prénom pré-rempli avec celui du compte (modifiable, comme avant)
     const prenomCompte = String(moi.nom || '').trim().split(/\s+/)[0] || '';
     if (!localStorage.getItem('hmc_prenom') && prenomCompte) localStorage.setItem('hmc_prenom', prenomCompte);
@@ -246,12 +249,13 @@ async function loadData() {
 
 // Listes de magasins (réception : seulement ceux que la personne peut modifier)
 function remplirMagasins(magasins) {
-    const remplir = (id, liste, premier) => {
+    const remplir = (id, liste, premier, defaut = '') => {
         const sel = document.getElementById(id);
         if(!sel) return;
         const cle = liste.join('|');
         if(sel.dataset.liste === cle) return;
-        const valeur = sel.value;
+        // Première fois : on part sur le magasin de la personne (elle peut choisir « Tous »)
+        const valeur = sel.dataset.liste === undefined ? defaut : sel.value;
         sel.innerHTML = `<option value="">${premier}</option>` + liste.map(m => `<option>${esc(m)}</option>`).join('');
         sel.dataset.liste = cle;
         if(liste.includes(valeur)) sel.value = valeur;
@@ -260,7 +264,13 @@ function remplirMagasins(magasins) {
     remplir('f_magasin', miens, 'Sélectionner...');
     const fm = document.getElementById('f_magasin');
     if(fm && !fm.value && miens.length === 1){ fm.value = miens[0]; onMagasinChange(); }
-    ['m_mag','s_mag','t_mag','rc_mag','p_mag','a_mag'].forEach(id => remplir(id, magasins, 'Tous les magasins'));
+    const monMag = magasinDesAlertes(moi);
+    remplir('s_mag', magasins, 'Tous les magasins');
+    ['m_mag','t_mag','rc_mag','p_mag','a_mag'].forEach(id => remplir(id, magasins, 'Tous les magasins', monMag));
+    remplir('h_mag', magasins, 'Tous les magasins');
+    // Alertes : pas de choix du magasin pour ceux qui ne voient que le leur
+    const am = document.getElementById('a_mag');
+    if(am) am.closest('.filter-bar').style.display = monMag ? 'none' : '';
     const ta = document.getElementById('param_magasins');
     if(ta && document.activeElement !== ta) ta.value = magasins.join('\n');
 }
@@ -319,7 +329,8 @@ function getPrenom(){
 
 // ─── NAVIGATION ───────────────────────────────────────────
 async function switchTab(name, el) {
-    if(name === 'parametres' && !await checkIfAdmin()) return;
+    if((name === 'parametres' || name === 'historique') && !await checkIfAdmin()) return;
+    if(name === 'historique') archivesHisto = null;   // archives relues à chaque ouverture (un archivage a pu avoir lieu)
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
@@ -344,10 +355,14 @@ function refreshCurrentPane() {
     else if (id==='prets') renderPrets();
     else if (id==='alertes') renderAlertes();
     else if (id==='parametres') { renderSeuilsListe(); afficherAdmins(); }
+    else if (id==='historique') renderHistorique();
 }
 
 function refreshBadges() {
     const now = new Date();
+    // Vendeurs, directeurs… : pastilles de leur magasin seulement
+    const monMag = magasinDesAlertes(moi);
+    const articles = monMag ? lesArticles().filter(a => a.magasin === monMag) : lesArticles();
     let retards = 0;
     articles.filter(a => a.type==='Article de prêt' && a.prets && a.prets.length).forEach(art => {
         art.prets.forEach(p => {
@@ -798,19 +813,18 @@ function printArticleQRSmall(id){
 function renderMAD() {
     const mag = document.getElementById('m_mag').value;
     const subtype = document.getElementById('m_subtype').value;
-    const stat = document.getElementById('m_stat').value;
     const q = (document.getElementById('m_search')?.value || '').toLowerCase();
-    const allF = articles.filter(a => a.type==='Mise à disposition' && (!mag || a.magasin===mag));
+    // Une mise à dispo sortie quitte la rubrique (elle reste dans l'Historique de l'admin)
+    const allF = articles.filter(a => a.type==='Mise à disposition' && a.statut!=='Sorti' && (!mag || a.magasin===mag));
 
     document.getElementById('madStats').innerHTML = `
         <div class="stat-card blue"><div class="num">${allF.length}</div><div class="lbl">Total${mag ? ' ' + esc(mag) : ''}</div></div>
-        <div class="stat-card green"><div class="num">${allF.filter(a=>a.statut==='Stock').length}</div><div class="lbl">En stock</div></div>
-        <div class="stat-card orange"><div class="num">${allF.filter(a=>a.statut==='Sorti').length}</div><div class="lbl">Sortis</div></div>
+        <div class="stat-card orange"><div class="num">${allF.filter(a=>a.statutMAD==='À prévenir').length}</div><div class="lbl">Client à prévenir</div></div>
+        <div class="stat-card green"><div class="num">${allF.filter(a=>a.statutMAD==='Client prévenu').length}</div><div class="lbl">Client prévenu</div></div>
         <div class="stat-card purple"><div class="num">${allF.filter(a=>a.madSubtype==='SAV').length}</div><div class="lbl">SAV</div></div>`;
 
     let list = allF.slice();
     if(subtype) list = list.filter(a => a.madSubtype===subtype);
-    if(stat) list = list.filter(a => a.statut===stat);
     if(q) list = list.filter(a => smartSearch(a,q));
 
     if(!list.length){ document.getElementById('madList').innerHTML = '<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>'; return; }
@@ -1134,7 +1148,8 @@ function renderPrets() {
 
 // ─── RENDU : ALERTES ──────────────────────────────────────
 function renderAlertes() {
-    const mag = document.getElementById('a_mag').value;
+    // Vendeurs, directeurs… : uniquement les alertes de leur magasin
+    const mag = magasinDesAlertes(moi) || document.getElementById('a_mag').value;
     const arts = mag ? articles.filter(a => a.magasin === mag) : articles;
     const { encours } = collectPretsEnCours(mag);
     const now = new Date();
@@ -1540,6 +1555,10 @@ function buildEditSection(a, estSorti){
     const isTLEStatus = ['Vendu - Attente TLE','Reprise - Attente TLE'].includes(a.statut);
 
     const statutOptions = getEditStatusOptions(a);
+    // Un article en stock peut changer de catégorie (interne, vendable, prêt, mise à dispo)
+    const ficheBrute = lireArticles().find(f => f.ID === a.id);
+    const categorie = ficheBrute ? categorieDe(ficheBrute) : '';
+    const changeCat = !!categorie && a.statut === 'Stock';
     const memo = localStorage.getItem('hmc_prenom') || '';
 
     return `<div class="divider"></div>
@@ -1557,7 +1576,11 @@ function buildEditSection(a, estSorti){
                 </select>
             </div>
             <div class="fg"><label>Emplacement</label><input id="e_emplacement" value="${esc(a.emplacement)}"></div>
-            ${(isMAD || isRecup || isTLEStatus) ? `<div class="fg"><label>Client</label><input id="e_client" value="${esc(a.client)}"></div>` : ''}
+            ${changeCat ? `<div class="fg"><label>Catégorie</label>
+                <select id="e_categorie" onchange="updateEditFormVisibility('${esc(a.id)}')">
+                    ${Object.entries(CATEGORIES).map(([k, l]) => `<option value="${k}" ${categorie===k?'selected':''}>${esc(l)}</option>`).join('')}
+                </select></div>` : ''}
+            ${(isMAD || isRecup || isTLEStatus || changeCat) ? `<div class="fg" id="e_wrap_client"><label>Client</label><input id="e_client" value="${esc(a.client)}"></div>` : ''}
             ${isMAD ? `<div class="fg"><label>N° AR</label><input id="e_numeroAR" value="${esc(a.numeroAR)}"></div>` : ''}
             ${isMAD ? `<div class="fg"><label>Nombre de colis</label><input id="e_nombreColis" type="number" min="1" value="${a.nombreColis||1}"></div>` : ''}
             ${isMAD ? `<div class="fg"><label>Sous-type</label>
@@ -1571,12 +1594,7 @@ function buildEditSection(a, estSorti){
                     <option value="Non" ${a.repriseArticle!=='Oui'?'selected':''}>Non</option>
                     <option value="Oui" ${a.repriseArticle==='Oui'?'selected':''}>Oui - à ramener</option>
                 </select></div>` : ''}
-            ${isStock ? `<div class="fg"><label>Type de stock</label>
-                <select id="e_stockSubtype" onchange="updateEditFormVisibility('${esc(a.id)}')">
-                    <option value="Interne" ${a.stockSubtype!=='Vendable'?'selected':''}>📦 Stock interne</option>
-                    <option value="Vendable" ${a.stockSubtype==='Vendable'?'selected':''}>💰 Stock vendable</option>
-                </select></div>` : ''}
-            ${(isStock || isRecup || isTLEStatus) ? `<div class="fg" id="e_wrap_prix"><label>Prix de vente (€)</label><input id="e_prixVente" type="number" min="0" step="0.01" value="${a.prixVente !== null ? a.prixVente : ''}"></div>` : ''}
+            ${(isStock || isRecup || isTLEStatus || changeCat) ? `<div class="fg" id="e_wrap_prix"><label>Prix de vente (€)</label><input id="e_prixVente" type="number" min="0" step="0.01" value="${a.prixVente !== null ? a.prixVente : ''}"></div>` : ''}
             ${(isStock || isPret) ? `<div class="fg"><label>Quantité initiale</label><input id="e_quantiteInitiale" type="number" min="0" value="${a.quantiteInitiale !== null ? a.quantiteInitiale : ''}"></div>` : ''}
             ${isTLEStatus ? `<div class="fg"><label>Date TLE</label><input id="e_dateTLE" type="date" value="${fmtDateInputLocal(a.dateTLE)}"></div>` : ''}
             ${isRecup ? `<div class="fg"><label>Date récupération client</label><input id="e_dateRecupClient" type="date" value="${fmtDateInputLocal(a.dateRecupClient)}"></div>` : ''}
@@ -1620,9 +1638,10 @@ function updateEditFormVisibility(id){
         setWrapDisplay('e_wrap_savDelai', sav);
         setWrapDisplay('e_wrap_reprise', sav);
     }
-    if(a.type === 'Stock'){
-        const vendable = document.getElementById('e_stockSubtype')?.value === 'Vendable';
-        setWrapDisplay('e_wrap_prix', vendable || a.prixVente !== null);
+    const cat = document.getElementById('e_categorie')?.value;
+    if(cat){
+        setWrapDisplay('e_wrap_prix', cat === 'vendable' || (a.type === 'Stock' && a.prixVente !== null));
+        setWrapDisplay('e_wrap_client', cat === 'mad');
     }
 }
 
@@ -1658,6 +1677,19 @@ async function actPrevenirClient(id){
     openModal(id);
 }
 
+/* Choix obligatoire de la façon dont l'article sort (le texte part dans l'historique).
+   « Autre » permet d'écrire librement. Renvoie null si la personne annule. */
+async function demanderModeSortie(question, modes){
+    const choix = await showChoiceDialog('📤 Sortie', question, [
+        ...modes.map(m => ({ label:esc(m), value:m, className:'btn btn-outline' })),
+        { label:'✏️ Autre…', value:'autre', className:'btn btn-outline' }
+    ]);
+    if(!choix) return null;
+    if(choix !== 'autre') return choix.replace(/^\S+\s/, '');   // sans l'emoji dans l'historique
+    const libre = await showInputDialog('📤 Sortie', 'Précisez comment l\'article est sorti.', '');
+    return libre && libre.trim() ? libre.trim() : null;
+}
+
 // ─── MAD : sortie complète ────────────────────────────────
 async function actSortir(id){
     const p = getPrenom(); if(!p) return;
@@ -1665,7 +1697,8 @@ async function actSortir(id){
     if(!await showConfirmDialog('Sortir l\'article',
         `Confirmer la sortie de <strong>${esc(a.article)}</strong>${a.client ? ` pour <strong>${esc(a.client)}</strong>` : ''} ?`)) return;
 
-    const raison = await showInputDialog('Motif de sortie', 'Précisez le motif (livré au client, retiré en magasin...).', 'Remis au client');
+    const raison = await demanderModeSortie('Comment l\'article est-il sorti ?', [
+        '🛍️ Récupéré par le client', '🚚 Remis à TLE (navette)', '🔧 Récupéré par le poseur']);
     if(raison === null) return;
 
     busy(true, 'Sortie en cours...');
@@ -1685,7 +1718,8 @@ async function actSortirQte(id){
 
     const qte = await askQuantite('📦 Sortir une quantité', `Disponible : <strong>${a.quantiteStock}</strong> unité(s).`, a.quantiteStock, 1);
     if(qte === null) return;
-    const raison = await showInputDialog('Motif', 'Pourquoi cette sortie ?', 'Utilisation chantier');
+    const raison = await demanderModeSortie('Comment sort cette quantité ?', [
+        '🔨 Utilisation chantier', '🛍️ Récupéré par le client', '🚚 Remis à TLE (navette)', '🔧 Récupéré par le poseur']);
     if(raison === null) return;
 
     busy(true, 'Mise à jour du stock...');
@@ -1862,16 +1896,16 @@ async function actVendre(id){
     const qte = await askQuantite('💰 Quantité vendue', `Disponible : <strong>${dispo}</strong> unité(s) à ${a.prixVente || '?'}€.`, dispo, 1);
     if(qte === null) return;
 
-    const destination = await showChoiceDialog('🚚 Livraison', 'Comment le client récupère-t-il l\'article ?', [
+    const destination = await showChoiceDialog('🚚 Qui récupère l\'article ?', 'Le client vient-il le chercher en magasin, ou est-ce TLE qui passe le prendre (navette) ?', [
         {label:'🛍️ Le client vient le chercher', value:'client', className:'btn btn-primary'},
-        {label:'🚚 Passe par TLE', value:'tle', className:'btn btn-teal'}
+        {label:'🚚 TLE vient le chercher (navette)', value:'tle', className:'btn btn-teal'}
     ]);
     if(!destination) return;
 
     let dateTLE = '', dateRecup = '', statutNouveau, typeNouveau, prefixe;
 
     if(destination === 'tle'){
-        dateTLE = await showDateDialog('📅 Date de passage TLE', 'Quand l\'article part-il chez TLE ?', new Date(Date.now() + 7*86400000).toISOString());
+        dateTLE = await showDateDialog('📅 Passage de la navette TLE', 'Date prévue du passage de TLE pour récupérer l\'article. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 7*86400000).toISOString());
         if(!dateTLE) return;
         typeNouveau = 'Stock';
         statutNouveau = 'Vendu - Attente TLE';
@@ -1883,7 +1917,7 @@ async function actVendre(id){
         ]);
         if(!quand) return;
         if(quand === 'plus_tard'){
-            dateRecup = await showDateDialog('📅 Date de récupération', 'Quand le client vient-il chercher l\'article ?', new Date(Date.now() + 3*86400000).toISOString());
+            dateRecup = await showDateDialog('📅 Récupération par le client', 'Date prévue de passage du client. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 3*86400000).toISOString());
             if(!dateRecup) return;
         }
         typeNouveau = 'Récupération client';
@@ -2103,7 +2137,6 @@ async function actSaveEdit(id){
     compare('madSubtype', 'MADSubtype', val('e_madSubtype'), a.madSubtype, 'Sous-type MAD');
     compare('savDelai', 'SAVDelaiAlerte', val('e_savDelaiAlerte'), a.savDelaiAlerte, 'Délai alerte SAV');
     compare('reprise', 'RepriseArticle', val('e_repriseArticle'), a.repriseArticle, 'Reprise article');
-    compare('stockSubtype', 'StockSubtype', val('e_stockSubtype'), a.stockSubtype, 'Type de stock');
     compare('prix', 'PrixVente', val('e_prixVente'), a.prixVente, 'Prix de vente');
     compare('qteInit', 'QuantiteInitiale', val('e_quantiteInitiale'), a.quantiteInitiale, 'Quantité initiale');
     compare('notes', 'Notes', val('e_notes'), a.notes, 'Notes');
@@ -2118,6 +2151,16 @@ async function actSaveEdit(id){
     if(dRecup !== null && dRecup !== fmtDateInputLocal(a.dateRecupClient)){
         updates.DateRecupClient = dRecup ? parseDateInputToISO(dRecup) : '';
         changes.push(`Date récupération : ${a.dateRecupClient ? new Date(a.dateRecupClient).toLocaleDateString('fr-FR') : '—'} → ${dRecup ? new Date(parseDateInputToISO(dRecup)).toLocaleDateString('fr-FR') : '—'}`);
+    }
+
+    // Catégorie (stock interne, vendable, prêt, mise à dispo) : calculée par les règles métier
+    const cat = val('e_categorie');
+    const ficheBrute = lireArticles().find(f => f.ID === id);
+    if(cat && ficheBrute && cat !== categorieDe(ficheBrute)){
+        const r = changerCategorie(ficheBrute, cat, { client: val('e_client') || '', prix: val('e_prixVente') ?? '' });
+        if(r.error){ toast('⚠️ ' + r.error, 'err'); return; }
+        Object.assign(updates, r.champs);
+        changes.push(`Catégorie : ${CATEGORIES[categorieDe(ficheBrute)]} → ${CATEGORIES[cat]}`);
     }
 
     // Statut : traité à part car il déclenche des effets de bord
@@ -2193,8 +2236,13 @@ async function loadHisto(id){
     if(histoCache[id]) return histoCache[id];
     const a = articles.find(x => x.id === id) || pretsActifs.find(x => x.id === id);
     if(!a || !a.historique) return [];
+    histoCache[id] = lireLignesHisto(a.historique);
+    return histoCache[id];
+}
 
-    const lignes = String(a.historique).split('\n').map(l => l.trim()).filter(Boolean);
+/* Texte de la colonne Historique → lignes { dateStr, utilisateur, action, details }, la plus récente en premier */
+function lireLignesHisto(texte){
+    const lignes = String(texte || '').split('\n').map(l => l.trim()).filter(Boolean);
     const parsed = lignes.map(l => {
         // Format : [JJ/MM/AAAA HH:MM] Utilisateur - Action · Détails
         const m = l.match(/^\[([^\]]+)\]\s*(.*)$/);
@@ -2212,9 +2260,104 @@ async function loadHisto(id){
             details: dot > -1 ? suite.slice(dot + 3) : ''
         };
     }).reverse();   // le plus récent en premier
-
-    histoCache[id] = parsed;
     return parsed;
+}
+
+// ─── HISTORIQUE (admin) ───────────────────────────────────
+// Recherche dans tous les articles, y compris sortis, remis à TLE,
+// récupérés, et dans les archives (lues une fois, à la première ouverture).
+let archivesHisto = null;
+let _archivesEnCours = false;
+const STATUTS_EN_COURS = ['Stock', 'En attente', 'Vendu - Attente TLE', 'Reprise - Attente TLE'];
+
+async function chargerArchivesHisto(){
+    if(archivesHisto || _archivesEnCours) return;
+    _archivesEnCours = true;
+    try {
+        archivesHisto = (await lireArchives()).map(f => ({
+            ...parseArticles([f])[0], archive:true,
+            dateArchivage:f.DateArchivage || '', raisonArchivage:f.RaisonArchivage || '',
+        }));
+    } catch(e) {
+        toast('❌ Archives illisibles : ' + (e.message || e), 'err');
+        archivesHisto = [];
+    } finally { _archivesEnCours = false; }
+    renderHistorique();
+}
+
+function dateHisto(a){ return a.dateArchivage || a.dateSortie || a.dateRetourReel || a.dateReception || ''; }
+function fmtJour(d){ const t = new Date(d); return d && !isNaN(t) ? t.toLocaleDateString('fr-FR') : ''; }
+
+function renderHistorique(){
+    const zone = document.getElementById('histoList');
+    if(!zone) return;
+    if(!archivesHisto){ chargerArchivesHisto(); zone.innerHTML = skeleton(4); return; }
+    const mag = document.getElementById('h_mag').value;
+    const etat = document.getElementById('h_etat').value;
+    const q = (document.getElementById('h_search').value || '').toLowerCase().trim();
+
+    let liste = [...articles, ...archivesHisto];
+    if(mag) liste = liste.filter(a => a.magasin === mag);
+    if(etat === 'encours') liste = liste.filter(a => !a.archive && STATUTS_EN_COURS.includes(a.statut));
+    else if(etat === 'clos') liste = liste.filter(a => !a.archive && !STATUTS_EN_COURS.includes(a.statut));
+    else if(etat === 'archives') liste = liste.filter(a => a.archive);
+    // La recherche porte aussi sur l'historique (qui a fait quoi)
+    if(q) liste = liste.filter(a => smartSearch(a, q) || String(a.historique || '').toLowerCase().includes(q));
+    liste.sort((a, b) => String(dateHisto(b)).localeCompare(String(dateHisto(a))));
+
+    const MAX = 150;
+    document.getElementById('histoStats').textContent = `${liste.length} résultat(s)` + (liste.length > MAX ? ` · les ${MAX} plus récents affichés, précisez la recherche` : '');
+    if(!liste.length){ zone.innerHTML = '<div class="empty"><div class="ico">🔍</div><p>Aucun résultat</p></div>'; return; }
+
+    zone.innerHTML = liste.slice(0, MAX).map(a => {
+        const badges = [`<span class="badge ${STATUTS_EN_COURS.includes(a.statut) ? 'b-stock' : 'b-sorti'}">${esc(a.statut)}</span>`];
+        if(a.archive) badges.push('<span class="badge b-purple">🗄️ Archivé</span>');
+        const quand = a.archive ? `🗄️ Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
+            : a.dateSortie ? `📤 Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
+            : `📥 Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
+        return `<div class="article-item" onclick="${a.archive ? 'ouvrirArchive' : 'openModal'}('${esc(a.id)}')">
+            <div class="item-head">
+                <div>
+                    <div class="item-title">${esc(a.article)}</div>
+                    ${a.client && a.client !== 'Stock interne' ? `<div class="item-client">👤 ${esc(a.client)}</div>` : ''}
+                    <div class="item-ref">${esc(a.reference)} · ${esc(a.type)}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
+            </div>
+            <div class="item-meta">
+                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta">${quand}</span>
+                ${a.raisonSortie ? `<span class="meta">↪ <strong>${esc(a.raisonSortie)}</strong></span>` : ''}
+                ${a.numeroAR ? `<span class="meta">AR: <strong>${esc(a.numeroAR)}</strong></span>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* Fiche d'un article archivé : consultation seule */
+function ouvrirArchive(id){
+    const a = (archivesHisto || []).find(x => x.id === id);
+    if(!a) return;
+    const champ = (k, v, full) => v ? `<div class="detail-field${full ? ' full' : ''}"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+    const histo = lireLignesHisto(a.historique);
+    document.getElementById('mTitle').textContent = a.article;
+    document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
+    document.getElementById('mBody').innerHTML = `
+        <div class="lecture-seule">🗄️ Article archivé le <strong>${fmtJour(a.dateArchivage)}</strong>${a.raisonArchivage ? ' — ' + esc(a.raisonArchivage) : ''}</div>
+        <div class="detail-grid">
+            ${champ('Magasin', a.magasin)}${champ('Statut', a.statut)}
+            ${champ('Client', a.client && a.client !== 'Stock interne' ? a.client : '')}${champ('N° AR', a.numeroAR)}
+            ${champ('Emplacement', a.emplacement)}${champ('Réceptionné par', a.kitchener)}
+            ${champ('Date réception', fmtJour(a.dateReception))}${champ('Date sortie', fmtJour(a.dateSortie))}
+            ${champ('Comment il est sorti', a.raisonSortie, true)}${champ('Notes', a.notes, true)}
+        </div>
+        <div class="divider"></div><div class="section-lbl">📜 Historique</div>
+        ${histo.length ? histo.map(h => `<div class="histo">
+            <div class="histo-date">${esc(h.dateStr || '')}</div>
+            <div class="histo-action">${esc(h.action)}${h.utilisateur ? ' — ' + esc(h.utilisateur) : ''}</div>
+            ${h.details ? `<div class="histo-detail">${esc(h.details)}</div>` : ''}
+        </div>`).join('') : '<p style="color:var(--text3);font-size:13px;">Aucun historique</p>'}`;
+    document.getElementById('overlay').classList.add('active');
 }
 
 // ─── NETTOYAGE / ARCHIVAGE EN MASSE ───────────────────────
@@ -2294,6 +2437,8 @@ async function lancerExportArchives(){
 
 // Fonctions appelées par les boutons de la page (onclick="…")
 Object.assign(window, {
+    renderHistorique,
+    ouvrirArchive,
     actAjouterQte,
     actArchiveOld,
     actEmplacement,
