@@ -1,0 +1,89 @@
+rules_version = '2';
+
+// Règles d'accès de HMC Stock (projet Firebase séparé de l'appli HMC).
+// Même logique que app/src/metier/droits.js, mais appliquée par la base :
+// un écran ne peut pas écrire ce que le rôle de la personne n'autorise pas.
+//
+// Collections :
+//   users/{email}       copie des utilisateurs de l'appli HMC (rôle, magasin), écrite par l'admin
+//   config/parametres   délais d'alerte, liste des magasins (admin)
+//   articles/{ID}       une fiche par article, mêmes colonnes que l'ancien Google Sheet
+//                       + majLe / majPar (date et auteur de la dernière écriture)
+//                       + supprime: true quand l'article est parti dans les archives
+//   archives/{ID}       fiche complète des articles archivés (lue par l'admin)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function email() { return request.auth.token.email.lower(); }
+    function userPath() { return /databases/$(database)/documents/users/$(email()); }
+    function connecte() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(userPath());
+    }
+    function moi() { return get(userPath()).data; }
+    function role() { return moi().role; }
+    // Compta et RH n'ont pas accès à l'appli (Flo, 29/10/2026)
+    function lecteur() { return connecte() && moi().actif == true && !(role() in ['COMPTA', 'RH', 'NONE']); }
+    function admin() { return lecteur() && role() == 'ADMIN'; }
+
+    function surSonMagasin(m) { return moi().magasin == 'ALL' || moi().magasin == m; }
+    // ADV, direction et admin : tous les magasins ; les autres : leur magasin seulement
+    function modifie(m) {
+      return lecteur() && (role() in ['ADMIN', 'DIRECTION', 'ADV']
+        || (role() in ['DIRECTEUR', 'RESP_TECH', 'PLANIFICATEUR', 'VENDEUR', 'SAV'] && surSonMagasin(m)));
+    }
+    // Archiver un article : pas les vendeurs, sauf une ligne épuisée (vente complète)
+    function archive(d) {
+      return lecteur() && (role() in ['ADMIN', 'DIRECTION', 'ADV']
+        || (role() in ['DIRECTEUR', 'RESP_TECH', 'PLANIFICATEUR'] && surSonMagasin(d.Magasin))
+        || (modifie(d.Magasin) && d.get('QuantiteStock', '') == 0));
+    }
+    // Chaque écriture dit quand et par qui : c'est ce qui permet aux téléphones
+    // de ne relire que ce qui a changé (moins de lectures, appli gratuite).
+    function horodatee() {
+      return request.resource.data.majLe == request.time && request.resource.data.majPar == email();
+    }
+    function supprime(d) { return d.get('supprime', false) == true; }
+
+    match /users/{userEmail} {
+      allow read: if connecte() && (userEmail == email() || admin());
+      allow write: if admin();
+    }
+
+    match /config/{id} {
+      allow read: if lecteur();
+      allow write: if admin();
+    }
+
+    match /articles/{id} {
+      allow read: if lecteur();
+      allow create: if horodatee() && request.resource.data.ID == id
+        && !supprime(request.resource.data)
+        && (admin() || modifie(request.resource.data.Magasin));
+      allow update: if horodatee() && request.resource.data.ID == id && (
+        // l'admin peut tout réécrire (reprise des données de l'ancienne appli)
+        admin()
+        // modification normale : magasin d'origine et magasin d'arrivée autorisés
+        || (!supprime(resource.data) && !supprime(request.resource.data)
+            && modifie(resource.data.Magasin) && modifie(request.resource.data.Magasin))
+        // archivage : la fiche est remplacée par une simple trace
+        || (!supprime(resource.data) && supprime(request.resource.data)
+            && request.resource.data.Magasin == resource.data.Magasin && archive(resource.data))
+      );
+      // On ne supprime jamais : un article archivé laisse une trace (voir ci-dessus)
+      allow delete: if false;
+    }
+
+    match /archives/{id} {
+      allow read: if admin();
+      allow create: if request.resource.data.ID == id && archive(request.resource.data);
+      allow update, delete: if admin();
+    }
+
+    // Tout le reste est fermé.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
