@@ -3,15 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HMC Stock</title>
-<!-- La gestion des stocks a déménagé sur Firebase : on renvoie tout de suite vers la nouvelle adresse.
+<title>HMC Stock — nouvelle adresse</title>
+<!-- La gestion des stocks a déménagé sur Firebase. Les favoris des magasins pointent encore ici :
+     on affiche un message clair avec un gros bouton vers la nouvelle appli.
      L'ancienne appli reste consultable en secours dans ancienne-appli.html. -->
-<meta http-equiv="refresh" content="0; url=https://hmc-stock.web.app/">
-<script>location.replace('https://hmc-stock.web.app/');</script>
-<style>body{font-family:system-ui,sans-serif;text-align:center;padding:48px 16px;color:#1e293b}a{color:#2563eb;font-weight:600}</style>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       font-family:system-ui,-apple-system,sans-serif;background:#f1f5f9;color:#1e293b}
+  .carte{background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);
+         padding:32px 24px;margin:16px;max-width:420px;text-align:center}
+  h1{font-size:1.4rem;margin:0 0 12px}
+  p{line-height:1.5;margin:0 0 20px}
+  .bouton{display:block;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;
+          font-size:1.15rem;padding:16px;border-radius:12px}
+  .petit{font-size:.9rem;color:#64748b;margin:20px 0 0}
+</style>
 </head>
 <body>
-<p>HMC Stock a une nouvelle adresse.</p>
-<p><a href="https://hmc-stock.web.app/">Ouvrir HMC Stock</a> — pensez à mettre à jour votre favori.</p>
+<div class="carte">
+  <h1>📦 HMC Stock a déménagé</h1>
+  <p>La gestion des stocks se fait maintenant dans la <strong>nouvelle appli</strong>.<br>
+     Connectez-vous avec le même compte Google que pour l'appli HMC.</p>
+  <a class="bouton" href="https://hmc-stock.web.app/">👉 Ouvrir la nouvelle appli</a>
+  <p class="petit">Astuce : une fois dans la nouvelle appli, ajoutez-la à vos favoris
+     (ou « Ajouter à l'écran d'accueil » sur téléphone).</p>
+</div>
 </body>
 </html>
