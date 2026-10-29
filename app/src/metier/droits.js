@@ -63,3 +63,10 @@ const LIBELLES_ROLES = {
 export function libelleRole(role) {
   return LIBELLES_ROLES[role] || String(role || '');
 }
+
+/* Alertes et pastilles : chacun ne voit que celles de son magasin.
+   ADV, direction, admin et les comptes « tous magasins » voient tout ('' = tous). */
+export function magasinDesAlertes(moi) {
+  if (!moi || ROLES_TOUS_MAGASINS.includes(moi.role) || moi.magasin === 'ALL') return '';
+  return moi.magasin || '';
+}

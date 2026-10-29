@@ -2,7 +2,7 @@
    règles de sécurité dans tests/regles/regles.test.js. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables, libelleRole } from '../app/src/metier/droits.js';
+import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes } from '../app/src/metier/droits.js';
 
 const u = (role, magasin = 'Lattes', actif = true) => ({ role, magasin, actif });
 const MAGS = ['Lattes', 'Vedène', 'Aix'];
@@ -62,4 +62,12 @@ test('nom du rôle affiché sous le nom de la personne', () => {
   assert.equal(libelleRole('RESP_TECH'), 'Responsable technique');
   assert.equal(libelleRole('INCONNU'), 'INCONNU');
   assert.equal(libelleRole(undefined), '');
+});
+
+test('alertes : vendeurs et directeurs ne voient que leur magasin', () => {
+  assert.equal(magasinDesAlertes(u('VENDEUR', 'Lattes')), 'Lattes');
+  assert.equal(magasinDesAlertes(u('DIRECTEUR', 'Vedène')), 'Vedène');
+  assert.equal(magasinDesAlertes(u('DIRECTEUR', 'ALL')), '');
+  assert.equal(magasinDesAlertes(u('ADV', 'Lattes')), '');
+  assert.equal(magasinDesAlertes(u('ADMIN', 'ALL')), '');
 });

@@ -188,3 +188,65 @@ export function articlesAArchiver(fiches, jours, maintenant = Date.now()) {
     return !!ref && new Date(ref).getTime() < limite;
   });
 }
+
+/* Changement de catégorie d'un article en stock (modification de la fiche) :
+   stock interne, stock vendable, article de prêt ou mise à disposition.
+   Renvoie les colonnes à modifier, ou { error } si le changement n'est pas possible. */
+export const CATEGORIES = {
+  interne: 'Stock interne',
+  vendable: 'Stock vendable',
+  pret: 'Article de prêt',
+  mad: 'Mise à disposition',
+};
+
+export function categorieDe(fiche) {
+  if (fiche.Type === 'Mise à disposition') return 'mad';
+  if (fiche.Type === 'Article de prêt') return 'pret';
+  if (fiche.Type === 'Stock') return fiche.StockSubtype === 'Vendable' ? 'vendable' : 'interne';
+  return '';
+}
+
+export function changerCategorie(fiche, cible, { client = '', prix = '' } = {}) {
+  const depart = categorieDe(fiche);
+  if (!depart) return { error: 'Ce type d\'article ne peut pas changer de catégorie' };
+  if (!CATEGORIES[cible]) return { error: 'Catégorie inconnue' };
+  if (fiche.Statut !== 'Stock') return { error: 'Seul un article en stock peut changer de catégorie' };
+  if (depart === cible) return { champs: {} };
+
+  // Un article de prêt dont des exemplaires sont dehors ne peut pas changer
+  if (depart === 'pret') {
+    let prets = [];
+    try { prets = JSON.parse(fiche.Prets || '[]'); } catch (e) { prets = []; }
+    if (prets.some(p => p.statut === 'En cours')) return { error: 'Des prêts sont en cours : faites d\'abord les retours' };
+  }
+
+  // Quantité : celle du stock, sinon le nombre de colis d'une mise à dispo
+  const qte = entier(fiche.QuantiteStock);
+  const quantite = isNaN(qte) ? (entier(fiche.NombreColis) || 1) : qte;
+  const champs = {};
+
+  if (cible === 'mad') {
+    const nom = String(client || fiche.Client || '').trim();
+    if (!nom) return { error: 'Indiquez le nom du client pour une mise à disposition' };
+    Object.assign(champs, {
+      Type: 'Mise à disposition', Client: nom, StockSubtype: '',
+      MADSubtype: fiche.MADSubtype || 'Commande', StatutMAD: fiche.StatutMAD || 'À prévenir',
+      NombreColis: String(quantite || 1), QuantiteStock: '', QuantiteInitiale: '',
+    });
+    return { champs };
+  }
+
+  Object.assign(champs, {
+    Type: cible === 'pret' ? 'Article de prêt' : 'Stock',
+    StockSubtype: cible === 'pret' ? '' : (cible === 'vendable' ? 'Vendable' : 'Interne'),
+    QuantiteStock: quantite,
+  });
+  if (fiche.QuantiteInitiale === '' || fiche.QuantiteInitiale === null || fiche.QuantiteInitiale === undefined) champs.QuantiteInitiale = quantite;
+  if (depart === 'mad') champs.StatutMAD = '';
+  if (cible === 'vendable') {
+    const p = String(prix !== '' && prix !== null && prix !== undefined ? prix : (fiche.PrixVente ?? '')).trim();
+    if (!p || isNaN(parseFloat(p))) return { error: 'Le prix de vente est obligatoire pour un stock vendable' };
+    champs.PrixVente = p;
+  }
+  return { champs };
+}

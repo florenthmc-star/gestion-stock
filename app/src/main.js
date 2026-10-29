@@ -9,6 +9,7 @@ import { peutOuvrir } from './metier/droits.js';
 import { demarrer, appel, articles } from './donnees.js';
 import { demarrerEcrans, surDonnees } from './ecrans.js';
 import { surveillerVersion } from './version.js';
+import { activerListesDeroulantes } from './listes.js';
 
 // Essais en local sur les émulateurs Firebase (VITE_EMULATEURS=1), sans toucher aux vraies données
 if (configOk && import.meta.env.DEV && import.meta.env.VITE_EMULATEURS === '1') {
@@ -62,6 +63,7 @@ window.changerTheme = () => {
   majBoutonTheme();
 };
 majBoutonTheme();
+activerListesDeroulantes();
 
 window.seDeconnecter = async () => {
   if (!confirm('Se déconnecter de HMC Stock ?')) return;
