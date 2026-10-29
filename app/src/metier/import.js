@@ -51,6 +51,19 @@ export function archiveDepuisLigne(ligne) {
   return fiche;
 }
 
+/* L'onglet Archives contient parfois plusieurs lignes pour le même ID (article archivé deux fois,
+   à quelques secondes d'écart). Chaque ligne est gardée : la 1re garde son ID, les suivantes
+   deviennent ID-archive-2, ID-archive-3… (ID d'origine dans IDOrigine). Même résultat à chaque
+   import du même fichier, donc relancer l'import ne crée pas de doublon. */
+export function numeroterArchives(archives) {
+  const vus = new Map();
+  return archives.map(a => {
+    const n = (vus.get(a.ID) || 0) + 1;
+    vus.set(a.ID, n);
+    return n === 1 ? a : { ...a, ID: `${a.ID}-archive-${n}`, IDOrigine: a.ID };
+  });
+}
+
 /* Tableau de lignes ([[titres], [valeurs]…]) → objets { titre: valeur } (lignes sans ID ignorées) */
 export function objetsDepuisTableau(lignes) {
   if (!lignes || !lignes.length) return [];
