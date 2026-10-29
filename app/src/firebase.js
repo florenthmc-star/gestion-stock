@@ -36,6 +36,3 @@ export const configHMC = {
   appId:      import.meta.env.VITE_HMC_APP_ID,
   baseId:     import.meta.env.VITE_HMC_DATABASE_ID || '(default)',
 };
-
-// Adresse de l'ancienne appli (Apps Script) : sert seulement à la reprise des données
-export const URL_ANCIENNE_APPLI = import.meta.env.VITE_ANCIENNE_API_URL || '';

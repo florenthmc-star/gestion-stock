@@ -24,7 +24,7 @@ Ces règles sont appliquées par le serveur dans `firestore.rules`, pas seulemen
 - `app/src/donnees.js` : lecture/écriture Firestore. Remplace l'ancien serveur Apps Script
   avec les mêmes actions (`addArticle`, `adjustQuantity`, `preter`, …).
 - `app/src/metier/` : les règles de calcul reprises de `code.gs` (testées dans `tests/`).
-- `app/src/admin.js` : import depuis l'ancienne appli, recopie des utilisateurs de l'appli HMC,
+- `app/src/admin.js` : liste des administrateurs, recopie des utilisateurs de l'appli HMC,
   export des archives en Excel.
 - `firestore.rules` : la sécurité (testée dans `tests/regles/`).
 
@@ -40,10 +40,9 @@ que ce qui a changé depuis sa dernière visite (champ `majLe` sur chaque articl
 4. Créer le premier admin dans Firestore : collection `users`, document = ton email en minuscules,
    champs `role: "ADMIN"`, `magasin: "ALL"`, `actif: true`, `nom: "Flo"`.
 5. Fusionner dans `main` : GitHub vérifie puis met en ligne tout seul.
-6. Dans l'appli, onglet Paramètres (admin) :
-   - « Recopier les utilisateurs de l'appli HMC » ;
-   - « Lire l'ancienne appli », puis « Importer » : le contrôle compare les chiffres avant/après ;
-   - Archives : télécharger le Google Sheet en .xlsx et l'importer.
+6. Dans l'appli, onglet Paramètres (admin) : « Recopier les utilisateurs de l'appli HMC ».
+   (La reprise des données de l'ancienne appli a été faite le 29/10/2026 : 929 articles,
+   contrôle identique, et 251 lignes d'archives.)
 7. Quand tout est bon : rediriger l'ancienne adresse et couper l'ancien déploiement Apps Script.
 
 Lignes en double dans le Sheet (même ID) : la première ligne est gardée (c'est celle que

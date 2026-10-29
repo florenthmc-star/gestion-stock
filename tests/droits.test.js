@@ -2,7 +2,7 @@
    règles de sécurité dans tests/regles/regles.test.js. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables } from '../app/src/metier/droits.js';
+import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables, libelleRole } from '../app/src/metier/droits.js';
 
 const u = (role, magasin = 'Lattes', actif = true) => ({ role, magasin, actif });
 const MAGS = ['Lattes', 'Vedène', 'Aix'];
@@ -55,4 +55,11 @@ test('un vendeur peut clore une ligne épuisée (vente complète), pas une ligne
   assert.equal(peutClore(v, { Magasin: 'Lattes', QuantiteStock: 2 }), false);
   assert.equal(peutClore(v, { Magasin: 'Lattes', QuantiteStock: '' }), false);
   assert.equal(peutClore(v, { Magasin: 'Aix', QuantiteStock: 0 }), false);
+});
+
+test('nom du rôle affiché sous le nom de la personne', () => {
+  assert.equal(libelleRole('ADMIN'), 'Administrateur');
+  assert.equal(libelleRole('RESP_TECH'), 'Responsable technique');
+  assert.equal(libelleRole('INCONNU'), 'INCONNU');
+  assert.equal(libelleRole(undefined), '');
 });
