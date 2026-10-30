@@ -2,7 +2,7 @@
    règles de sécurité dans tests/regles/regles.test.js. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes } from '../app/src/metier/droits.js';
+import { peutOuvrir, peutModifier, peutArchiver, peutClore, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes, magasinHistorique, peutVoirHistorique } from '../app/src/metier/droits.js';
 
 const u = (role, magasin = 'Lattes', actif = true) => ({ role, magasin, actif });
 const MAGS = ['Lattes', 'Vedène', 'Aix'];
@@ -70,4 +70,16 @@ test('alertes : vendeurs et directeurs ne voient que leur magasin', () => {
   assert.equal(magasinDesAlertes(u('DIRECTEUR', 'ALL')), '');
   assert.equal(magasinDesAlertes(u('ADV', 'Lattes')), '');
   assert.equal(magasinDesAlertes(u('ADMIN', 'ALL')), '');
+});
+
+test('historique : ADV et direction tous les magasins, directeur le sien, vendeur rien', () => {
+  assert.equal(magasinHistorique(u('ADMIN', 'ALL')), '');
+  assert.equal(magasinHistorique(u('ADV', 'Lattes')), '');
+  assert.equal(magasinHistorique(u('DIRECTION', 'ALL')), '');
+  assert.equal(magasinHistorique(u('DIRECTEUR', 'Vedène')), 'Vedène');
+  assert.equal(magasinHistorique(u('DIRECTEUR', 'ALL')), '');
+  assert.equal(peutVoirHistorique(u('VENDEUR', 'Lattes')), false);
+  assert.equal(peutVoirHistorique(u('RESP_TECH', 'Lattes')), false);
+  assert.equal(peutVoirHistorique(u('DIRECTEUR', 'Lattes', false)), false);
+  assert.equal(peutVoirHistorique(u('COMPTA', 'ALL')), false);
 });

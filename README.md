@@ -15,6 +15,9 @@ Adresse : **https://hmc-stock.web.app**
 | VENDEUR | tous les magasins | leur magasin | seulement une ligne épuisée (quantité 0) |
 | COMPTA, RH, compte inactif | aucun accès | — | — |
 
+Rubrique **Historique** (recherche dans tous les articles, même sortis, et dans les archives) :
+admin, direction et ADV pour tous les magasins ; un directeur pour son magasin.
+
 Le nettoyage en masse (archives selon le délai choisi) et les paramètres sont réservés à l'admin.
 Ces règles sont appliquées par le serveur dans `firestore.rules`, pas seulement par l'écran.
 

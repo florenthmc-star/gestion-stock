@@ -3,7 +3,7 @@
 import { test, before, after, beforeEach } from 'node:test';
 import fs from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, query, where, serverTimestamp } from 'firebase/firestore';
 
 let env;
 const USERS = {
@@ -37,6 +37,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'articles', 'L0'), { ID: 'L0', Magasin: 'Lattes', QuantiteStock: 0, Statut: 'Stock' });
     await setDoc(doc(db, 'articles', 'V1'), { ID: 'V1', Magasin: 'Vedène', QuantiteStock: 2, Statut: 'Stock' });
     await setDoc(doc(db, 'archives', 'A1'), { ID: 'A1', Magasin: 'Lattes' });
+    await setDoc(doc(db, 'archives', 'A2'), { ID: 'A2', Magasin: 'Vedène' });
   });
 });
 
@@ -96,9 +97,24 @@ test('personne ne supprime vraiment un article', async () => {
   await assertFails(deleteDoc(doc(qui('admin@hmc.fr'), 'articles', 'L1')));
 });
 
-test('archives, paramètres et utilisateurs : réservés à l\'admin', async () => {
-  await assertSucceeds(getDoc(doc(qui('admin@hmc.fr'), 'archives', 'A1')));
-  await assertFails(getDoc(doc(qui('dg@hmc.fr'), 'archives', 'A1')));
+test('historique des archives : admin, direction, ADV partout ; directeur sur son magasin', async () => {
+  await assertSucceeds(getDocs(collection(qui('admin@hmc.fr'), 'archives')));
+  await assertSucceeds(getDocs(collection(qui('dg@hmc.fr'), 'archives')));
+  await assertSucceeds(getDocs(collection(qui('adv@hmc.fr'), 'archives')));
+  // Le directeur de Lattes : seulement en demandant les archives de Lattes
+  const dir = qui('dir.lattes@hmc.fr');
+  await assertSucceeds(getDocs(query(collection(dir, 'archives'), where('Magasin', '==', 'Lattes'))));
+  await assertSucceeds(getDoc(doc(dir, 'archives', 'A1')));
+  await assertFails(getDoc(doc(dir, 'archives', 'A2')));
+  await assertFails(getDocs(collection(dir, 'archives')));
+  await assertFails(getDocs(query(collection(dir, 'archives'), where('Magasin', '==', 'Vedène'))));
+  // Vendeurs, technique, compta : non
+  await assertFails(getDoc(doc(qui('v.lattes@hmc.fr'), 'archives', 'A1')));
+  await assertFails(getDoc(doc(qui('tech@hmc.fr'), 'archives', 'A1')));
+  await assertFails(getDoc(doc(qui('compta@hmc.fr'), 'archives', 'A1')));
+});
+
+test('paramètres et utilisateurs : réservés à l\'admin', async () => {
   await assertSucceeds(getDoc(doc(qui('v.lattes@hmc.fr'), 'config', 'parametres')));
   await assertFails(setDoc(doc(qui('dg@hmc.fr'), 'config', 'parametres'), { params: {} }));
   await assertSucceeds(setDoc(doc(qui('admin@hmc.fr'), 'config', 'parametres'), { params: {} }));

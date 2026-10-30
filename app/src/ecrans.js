@@ -6,7 +6,7 @@
 // du compte Google de la personne connectée (src/metier/droits.js).
 // ══════════════════════════════════════════════════════════
 import { appel, articles as lireArticles, lireConfig, etatConnexion, lireArchives } from './donnees.js';
-import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes } from './metier/droits.js';
+import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes, magasinHistorique, peutVoirHistorique } from './metier/droits.js';
 import { CATEGORIES, categorieDe, changerCategorie } from './metier/actions.js';
 // Outils admin (lecture Excel, recopie des utilisateurs) chargés seulement quand l'admin s'en sert
 const outilsAdmin = () => import('./admin.js');
@@ -106,7 +106,7 @@ export function demarrerEcrans(utilisateur) {
     document.getElementById('userAvatar').textContent = String(moi.nom || moi.email).trim().charAt(0).toUpperCase() || '?';
     document.getElementById('userRole').textContent = libelleRole(moi.role) + ' · ' + (moi.magasin === 'ALL' ? 'Tous les magasins' : moi.magasin);
     document.getElementById('tabParametres').style.display = estAdmin(moi) ? '' : 'none';
-    document.getElementById('tabHistorique').style.display = estAdmin(moi) ? '' : 'none';
+    document.getElementById('tabHistorique').style.display = peutVoirHistorique(moi) ? '' : 'none';
     // Prénom pré-rempli avec celui du compte (modifiable, comme avant)
     const prenomCompte = String(moi.nom || '').trim().split(/\s+/)[0] || '';
     if (!localStorage.getItem('hmc_prenom') && prenomCompte) localStorage.setItem('hmc_prenom', prenomCompte);
@@ -267,7 +267,13 @@ function remplirMagasins(magasins) {
     const monMag = magasinDesAlertes(moi);
     remplir('s_mag', magasins, 'Tous les magasins');
     ['m_mag','t_mag','rc_mag','p_mag','a_mag'].forEach(id => remplir(id, magasins, 'Tous les magasins', monMag));
-    remplir('h_mag', magasins, 'Tous les magasins');
+    // Historique : un directeur ne voit que son magasin (liste bloquée dessus)
+    const magHisto = magasinHistorique(moi);
+    if(magHisto){
+        remplir('h_mag', [magHisto], magHisto, magHisto);
+        const hm = document.getElementById('h_mag');
+        if(hm){ hm.value = magHisto; hm.disabled = true; }
+    } else remplir('h_mag', magasins, 'Tous les magasins');
     // Alertes : pas de choix du magasin pour ceux qui ne voient que le leur
     const am = document.getElementById('a_mag');
     if(am) am.closest('.filter-bar').style.display = monMag ? 'none' : '';
@@ -329,7 +335,8 @@ function getPrenom(){
 
 // ─── NAVIGATION ───────────────────────────────────────────
 async function switchTab(name, el) {
-    if((name === 'parametres' || name === 'historique') && !await checkIfAdmin()) return;
+    if(name === 'parametres' && !await checkIfAdmin()) return;
+    if(name === 'historique' && !peutVoirHistorique(moi)){ toast('🔒 Historique réservé aux directeurs, à l\'ADV et à la direction', 'err'); return; }
     if(name === 'historique') archivesHisto = null;   // archives relues à chaque ouverture (un archivage a pu avoir lieu)
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
@@ -814,7 +821,7 @@ function renderMAD() {
     const mag = document.getElementById('m_mag').value;
     const subtype = document.getElementById('m_subtype').value;
     const q = (document.getElementById('m_search')?.value || '').toLowerCase();
-    // Une mise à dispo sortie quitte la rubrique (elle reste dans l'Historique de l'admin)
+    // Une mise à dispo sortie quitte la rubrique (elle reste dans l'Historique)
     const allF = articles.filter(a => a.type==='Mise à disposition' && a.statut!=='Sorti' && (!mag || a.magasin===mag));
 
     document.getElementById('madStats').innerHTML = `
@@ -2263,7 +2270,7 @@ function lireLignesHisto(texte){
     return parsed;
 }
 
-// ─── HISTORIQUE (admin) ───────────────────────────────────
+// ─── HISTORIQUE (admin, direction, ADV ; directeur pour son magasin) ───
 // Recherche dans tous les articles, y compris sortis, remis à TLE,
 // récupérés, et dans les archives (lues une fois, à la première ouverture).
 let archivesHisto = null;
@@ -2274,7 +2281,7 @@ async function chargerArchivesHisto(){
     if(archivesHisto || _archivesEnCours) return;
     _archivesEnCours = true;
     try {
-        archivesHisto = (await lireArchives()).map(f => ({
+        archivesHisto = (await lireArchives(magasinHistorique(moi) || '')).map(f => ({
             ...parseArticles([f])[0], archive:true,
             dateArchivage:f.DateArchivage || '', raisonArchivage:f.RaisonArchivage || '',
         }));
@@ -2292,7 +2299,8 @@ function renderHistorique(){
     const zone = document.getElementById('histoList');
     if(!zone) return;
     if(!archivesHisto){ chargerArchivesHisto(); zone.innerHTML = skeleton(4); return; }
-    const mag = document.getElementById('h_mag').value;
+    // Directeur : toujours son magasin, quoi qu'indique la liste
+    const mag = magasinHistorique(moi) || document.getElementById('h_mag').value;
     const etat = document.getElementById('h_etat').value;
     const q = (document.getElementById('h_search').value || '').toLowerCase().trim();
 
