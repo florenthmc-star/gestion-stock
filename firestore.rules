@@ -10,7 +10,7 @@ rules_version = '2';
 //   articles/{ID}       une fiche par article, mêmes colonnes que l'ancien Google Sheet
 //                       + majLe / majPar (date et auteur de la dernière écriture)
 //                       + supprime: true quand l'article est parti dans les archives
-//   archives/{ID}       fiche complète des articles archivés (lue par l'admin)
+//   archives/{ID}       fiche complète des articles archivés (rubrique Historique)
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -45,6 +45,12 @@ service cloud.firestore {
       return request.resource.data.majLe == request.time && request.resource.data.majPar == email();
     }
     function supprime(d) { return d.get('supprime', false) == true; }
+    // Historique (Flo, 30/10/2026) : admin, direction et ADV pour tous les magasins,
+    // un directeur pour son magasin seulement (l'écran filtre alors sur Magasin).
+    function litArchives(d) {
+      return lecteur() && (role() in ['ADMIN', 'DIRECTION', 'ADV']
+        || (role() == 'DIRECTEUR' && surSonMagasin(d.Magasin)));
+    }
 
     match /users/{userEmail} {
       allow read: if connecte() && (userEmail == email() || admin());
@@ -76,7 +82,7 @@ service cloud.firestore {
     }
 
     match /archives/{id} {
-      allow read: if admin();
+      allow read: if litArchives(resource.data);
       allow create: if request.resource.data.ID == id && archive(request.resource.data);
       allow update, delete: if admin();
     }

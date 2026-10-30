@@ -267,7 +267,10 @@ export async function appel(p) {
 }
 
 /* Archives complètes (admin), lues seulement à la demande */
-export async function lireArchives() {
-  const snap = await getDocs(collection(db, 'archives'));
+/* magasin = '' : toutes les archives (admin, direction, ADV) ;
+   sinon seulement ce magasin (un directeur : les règles n'acceptent que ce filtre) */
+export async function lireArchives(magasin = '') {
+  const ref = collection(db, 'archives');
+  const snap = await getDocs(magasin ? query(ref, where('Magasin', '==', magasin)) : ref);
   return snap.docs.map(s => s.data());
 }

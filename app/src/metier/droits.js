@@ -70,3 +70,16 @@ export function magasinDesAlertes(moi) {
   if (!moi || ROLES_TOUS_MAGASINS.includes(moi.role) || moi.magasin === 'ALL') return '';
   return moi.magasin || '';
 }
+
+/* Rubrique Historique (Flo, 30/10/2026) : admin, direction et ADV voient
+   tous les magasins ; un directeur voit celui de son magasin.
+   Renvoie null (pas d'accès), '' (tous les magasins) ou le nom du magasin. */
+export function magasinHistorique(moi) {
+  if (!peutOuvrir(moi)) return null;
+  if (ROLES_TOUS_MAGASINS.includes(moi.role)) return '';
+  if (moi.role === 'DIRECTEUR') return moi.magasin === 'ALL' ? '' : (moi.magasin || null);
+  return null;
+}
+export function peutVoirHistorique(moi) {
+  return magasinHistorique(moi) !== null;
+}
