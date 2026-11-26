@@ -8,6 +8,7 @@
 import { appel, articles as lireArticles, lireConfig, etatConnexion, lireArchives } from './donnees.js';
 import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes, magasinHistorique, peutVoirHistorique } from './metier/droits.js';
 import { CATEGORIES, categorieDe, changerCategorie } from './metier/actions.js';
+import { vendeursConnus, memeVendeur } from './metier/vendeurs.js';
 // Outils admin (lecture Excel, recopie des utilisateurs) chargés seulement quand l'admin s'en sert
 const outilsAdmin = () => import('./admin.js');
 
@@ -28,7 +29,7 @@ let _paramsAppliques = '';
           + 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">'
           + '<div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;text-align:center;'
           + 'box-shadow:0 10px 40px rgba(0,0,0,.08);">'
-          + '<div style="font-size:52px;margin-bottom:16px;">🔒</div>'
+          + ''
           + '<h1 style="font-size:19px;margin:0 0 12px;color:#111827;">Étiquette professionnelle</h1>'
           + '<p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">'
           + 'Cette étiquette est réservée à un usage interne. Elle ne donne accès à aucune information.'
@@ -106,6 +107,8 @@ export function demarrerEcrans(utilisateur) {
     document.getElementById('userAvatar').textContent = String(moi.nom || moi.email).trim().charAt(0).toUpperCase() || '?';
     document.getElementById('userRole').textContent = libelleRole(moi.role) + ' · ' + (moi.magasin === 'ALL' ? 'Tous les magasins' : moi.magasin);
     document.getElementById('tabParametres').style.display = estAdmin(moi) ? '' : 'none';
+    // L'admin tient à jour la liste des vendeurs proposée à tous (en arrière-plan, sans bloquer)
+    if(estAdmin(moi)) setTimeout(() => outilsAdmin().then(o => o.publierEquipe()).catch(e => console.warn('Équipe non publiée', e)), 4000);
     document.getElementById('tabHistorique').style.display = peutVoirHistorique(moi) ? '' : 'none';
     // Prénom pré-rempli avec celui du compte (modifiable, comme avant)
     const prenomCompte = String(moi.nom || '').trim().split(/\s+/)[0] || '';
@@ -175,7 +178,7 @@ function saveParams() {
     params.recupClientDelai  = num('param_recup_delai', 2);
 
     busy(true, 'Enregistrement...');
-    saveParamsToAPI().then(r=>{ busy(false); if(r.error){ toast('❌ ' + r.error, 'err'); return; } toast('✅ Paramètres enregistrés sur tous les appareils'); renderAlertes(); });
+    saveParamsToAPI().then(r=>{ busy(false); if(r.error){ toast('' + r.error, 'err'); return; } toast('Paramètres enregistrés sur tous les appareils'); renderAlertes(); });
 }
 
 async function resetParams() {
@@ -185,7 +188,7 @@ async function resetParams() {
     await saveParamsToAPI();
     busy(false);
     applyParamsToForm();
-    toast('✅ Paramètres réinitialisés');
+    toast('Paramètres réinitialisés');
 }
 
 function renderSeuilsListe() {
@@ -203,9 +206,9 @@ function renderSeuilsListe() {
 
 async function setSeuil(id, val) {
     const r = await apiCall({ action:'setSeuil', ID:id, seuil:val });
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
+    if(r.error){ toast('' + r.error, 'err'); return; }
     seuilsPerso[id] = parseInt(val) || 0;
-    toast('✅ Seuil enregistré');
+    toast('Seuil enregistré');
 }
 
 // ─── API : même format qu'avant, mais vers Firestore (src/donnees.js) ───
@@ -236,9 +239,9 @@ function construireDonnees() {
     remplirMagasins(c.magasins || []);
 
     const e = etatConnexion();
-    if(e.horsLigne) setStatus('err', `📡 Hors ligne · ${articles.length} articles`);
-    else if(!e.pret && !articles.length) setStatus('loading', '🔄 Chargement...');
-    else setStatus('ok', `✅ ${articles.length} articles`);
+    if(e.horsLigne) setStatus('err', `Hors ligne · ${articles.length} articles`);
+    else if(!e.pret && !articles.length) setStatus('loading', 'Chargement...');
+    else setStatus('ok', `${articles.length} articles`);
 }
 
 async function loadData() {
@@ -289,7 +292,7 @@ function parseArticles(data) {
         nombreColis:parseInt(r.NombreColis)||1,
         quantiteStock:(r.QuantiteStock!==''&&r.QuantiteStock!=null)?parseInt(r.QuantiteStock):null,
         quantiteInitiale:(r.QuantiteInitiale!==''&&r.QuantiteInitiale!=null)?parseInt(r.QuantiteInitiale):null,
-        emplacement:r.Emplacement||'', kitchener:r.Kitchener||'',
+        emplacement:r.Emplacement||'', kitchener:r.Kitchener||'', vendeur:r.Vendeur||'',
         notes:r.Notes||'', statut:r.Statut||'Stock',
         dateReception:r.DateReception||'', datePret:r.DatePret||'',
         prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
@@ -320,7 +323,7 @@ function setStatus(cls, msg){
 function smartSearch(a, q){
     if(!q) return true;
     const hay = [a.article, a.reference, a.client, a.numeroAR, a.emplacement, a.magasin,
-                 a.kitchener, a.notes, a.id, a.emprunteur, a.recuperePar]
+                 a.kitchener, a.vendeur, a.notes, a.id, a.emprunteur, a.recuperePar]
                 .filter(Boolean).join(' ').toLowerCase();
     return q.split(/\s+/).filter(Boolean).every(mot => hay.includes(mot));
 }
@@ -328,7 +331,7 @@ function smartSearch(a, q){
 function getPrenom(){
     const el = document.getElementById('actPrenom');
     const v = el ? el.value.trim() : '';
-    if(!v){ toast('⚠️ Indiquez votre prénom avant d\'agir', 'err'); el?.focus(); return null; }
+    if(!v){ toast('Indiquez votre prénom avant d\'agir', 'err'); el?.focus(); return null; }
     localStorage.setItem('hmc_prenom', v);
     return v;
 }
@@ -336,7 +339,7 @@ function getPrenom(){
 // ─── NAVIGATION ───────────────────────────────────────────
 async function switchTab(name, el) {
     if(name === 'parametres' && !await checkIfAdmin()) return;
-    if(name === 'historique' && !peutVoirHistorique(moi)){ toast('🔒 Historique réservé aux directeurs, à l\'ADV et à la direction', 'err'); return; }
+    if(name === 'historique' && !peutVoirHistorique(moi)){ toast('Historique réservé aux directeurs, à l\'ADV et à la direction', 'err'); return; }
     if(name === 'historique') archivesHisto = null;   // archives relues à chaque ouverture (un archivage a pu avoir lieu)
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
@@ -348,7 +351,7 @@ async function switchTab(name, el) {
 
 async function checkIfAdmin() {
     if (estAdmin(moi)) return true;
-    toast('🔒 Réservé à l\'administrateur', 'err');
+    toast('Réservé à l\'administrateur', 'err');
     return false;
 }
 
@@ -412,7 +415,7 @@ async function openScanner() {
             () => {}
         );
     } catch (e) {
-        toast('📷 Caméra indisponible — saisissez l\'identifiant à la main', 'info');
+        toast('Caméra indisponible — saisissez l\'identifiant à la main', 'info');
     }
 }
 
@@ -431,10 +434,10 @@ function handleScan(decodedText) {
     if (/^https?:\/\//i.test(id)) {
         try { id = new URL(id).searchParams.get('article') || ''; } catch(e) { id = ''; }
     }
-    if (!id) { toast('❌ QR code non reconnu', 'err'); return; }
+    if (!id) { toast('QR code non reconnu', 'err'); return; }
 
     const a = articles.find(x => x.id === id);
-    if (!a) { toast('❌ Article introuvable (peut-être archivé)', 'err'); return; }
+    if (!a) { toast('Article introuvable (peut-être archivé)', 'err'); return; }
 
     closeScanner();
     openModal(id);
@@ -447,6 +450,28 @@ function onMagasinChange() {
     const sel = document.getElementById('f_emplacement_select');
     if(mag === 'Lattes'){ txt.style.display='none'; txt.required=false; sel.style.display='block'; sel.required=true; }
     else { txt.style.display='block'; txt.required=true; sel.style.display='none'; sel.required=false; }
+    majSuggestionsVendeurs(mag);
+}
+
+/* Noms proposés dans le champ « Vendeur de la cuisine » (saisie libre possible) */
+function majSuggestionsVendeurs(magasin){
+    const dl = document.getElementById('listeVendeurs');
+    if(dl) dl.innerHTML = vendeursConnus(articles, lireConfig().vendeurs, magasin || '').map(n => `<option value="${esc(n)}">`).join('');
+}
+
+/* Liste « Tous les vendeurs » d'un filtre, en gardant le choix en cours s'il existe encore */
+function remplirFiltreVendeurs(id, liste, magasin){
+    const sel = document.getElementById(id);
+    if(!sel) return '';
+    const noms = vendeursConnus(liste, lireConfig().vendeurs, magasin);
+    const cle = noms.join('|');
+    if(sel.dataset.liste !== cle){
+        const valeur = sel.value;
+        sel.innerHTML = '<option value="">Tous les vendeurs</option>' + noms.map(n => `<option>${esc(n)}</option>`).join('');
+        sel.dataset.liste = cle;
+        sel.value = noms.includes(valeur) ? valeur : '';
+    }
+    return sel.value;
 }
 
 function getEmplacement(){
@@ -460,11 +485,12 @@ function toggleFormFields() {
     const isStock = t==='Stock', isPret = t==='Article de prêt', isMAD = t==='Mise à disposition';
 
     document.getElementById('clientGroup').style.display = isMAD ? 'flex' : 'none';
+    document.getElementById('vendeurGroup').style.display = isMAD ? 'flex' : 'none';
     document.getElementById('f_client').required = isMAD;
     document.getElementById('arGroup').style.display = isMAD ? 'flex' : 'none';
     document.getElementById('madSubtypeGroup').style.display = isMAD ? 'flex' : 'none';
 
-    if(isMAD) onMadSubtypeChange();
+    if(isMAD){ onMadSubtypeChange(); majSuggestionsVendeurs(document.getElementById('f_magasin').value); }
     else {
         document.getElementById('savDelaiGroup').style.display = 'none';
         document.getElementById('repriseGroup').style.display = 'none';
@@ -475,7 +501,7 @@ function toggleFormFields() {
 
     document.getElementById('qtyGroup').style.display = (isStock||isPret) ? 'flex' : 'none';
     document.getElementById('f_qty').required = isStock || isPret;
-    document.getElementById('qtyLabel').textContent = isPret ? 'Quantité disponible à prêter *' : 'Quantité en Stock *';
+    document.getElementById('qtyLabel').textContent = isPret ? 'Quantité disponible à prêter *' : 'Quantité en stock *';
     document.getElementById('qtyHint').textContent = isPret ? 'Nombre d\'articles disponibles (ex : 6 mitigeurs)' : '';
 
     document.getElementById('stockSubtypeGroup').style.display = isStock ? 'flex' : 'none';
@@ -525,7 +551,7 @@ function resetForm() {
     document.getElementById('qrResult').style.display = 'none';
     ['qtyGroup','seuilGroup','priceGroup','madSubtypeGroup','stockSubtypeGroup','savDelaiGroup','repriseGroup']
         .forEach(id => document.getElementById(id).style.display = 'none');
-    ['clientGroup','arGroup','colisGroup'].forEach(id => document.getElementById(id).style.display = 'flex');
+    ['clientGroup','vendeurGroup','arGroup','colisGroup'].forEach(id => document.getElementById(id).style.display = 'flex');
     document.getElementById('f_client').required = true;
     document.getElementById('f_colis').required = true;
     document.getElementById('f_price').required = false;
@@ -542,7 +568,7 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     if(btn.disabled) return;
-    btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
+    btn.disabled = true; btn.textContent = 'Enregistrement...';
 
     const type = document.getElementById('f_type').value;
     const isStock = type==='Stock', isPret = type==='Article de prêt', isMAD = type==='Mise à disposition';
@@ -562,8 +588,8 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     const prixVente = (isStock && stockSubtype==='Vendable') ? document.getElementById('f_price').value : '';
 
     if(isStock && stockSubtype==='Vendable' && !prixVente){
-        toast('⚠️ Le prix de vente est obligatoire pour un stock vendable', 'err');
-        btn.disabled = false; btn.textContent = '✅ Générer le QR Code';
+        toast('Le prix de vente est obligatoire pour un stock vendable', 'err');
+        btn.disabled = false; btn.textContent = 'Générer le QR Code';
         return;
     }
 
@@ -584,6 +610,7 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
         QuantiteInitiale:qty!==null?qty:'',
         Emplacement:emplacement,
         Kitchener:prenom,
+        Vendeur:isMAD ? document.getElementById('f_vendeur').value.trim().replace(/\s+/g, ' ') : '',
         Notes:document.getElementById('f_notes').value || '',
         Statut:'Stock', DateReception:now, Historique:histoLine,
         MADSubtype:madSubtype,
@@ -595,8 +622,8 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
         SeuilAlerte:(isStock && stockSubtype !== 'Vendable') ? (parseInt(document.getElementById('f_seuil').value) || params.stockFaible) : undefined
     });
 
-    btn.disabled = false; btn.textContent = '✅ Générer le QR Code';
-    if(r.error){ toast('❌ Erreur : ' + r.error, 'err'); return; }
+    btn.disabled = false; btn.textContent = 'Générer le QR Code';
+    if(r.error){ toast('Erreur : ' + r.error, 'err'); return; }
 
     lastQRData = {
         id: id, article: article, reference: reference,
@@ -616,13 +643,13 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     document.getElementById('qrInfos').innerHTML = `
         <strong>${esc(article)}</strong><br>
         ${isMAD ? `Client : <strong>${esc(client)}</strong><br>` : ''}
-        ${isPret ? `<span style="color:var(--purple);font-weight:600;">🔄 ${qty} disponible(s) à prêter</span><br>` : ''}
+        ${isPret ? `<span style="color:var(--purple);font-weight:600;">${qty} disponible(s) à prêter</span><br>` : ''}
         Réf : ${esc(reference)} &nbsp;·&nbsp; ${esc(magasin)}
     `;
     document.getElementById('receptionForm').style.display = 'none';
     document.getElementById('qrResult').style.display = 'block';
     safeScroll(document.getElementById('qrResult'), {behavior:'smooth', block:'center'});
-    toast('✅ Article enregistré');
+    toast('Article enregistré');
     loadData();
 });
 
@@ -832,31 +859,34 @@ function renderMAD() {
 
     let list = allF.slice();
     if(subtype) list = list.filter(a => a.madSubtype===subtype);
+    const vendeur = remplirFiltreVendeurs('m_vend', allF, mag);
+    if(vendeur) list = list.filter(a => memeVendeur(a, vendeur));
     if(q) list = list.filter(a => smartSearch(a,q));
 
-    if(!list.length){ document.getElementById('madList').innerHTML = '<div class="empty"><div class="ico">📭</div><p>Aucun article</p></div>'; return; }
+    if(!list.length){ document.getElementById('madList').innerHTML = '<div class="empty"><p>Aucun article</p></div>'; return; }
 
     const bMap = {Stock:'b-stock', Prêt:'b-pret', Sorti:'b-sorti', SAV:'b-sav'};
     document.getElementById('madList').innerHTML = list.map(a => {
         const badges = [`<span class="badge ${bMap[a.statut]||'b-stock'}">${esc(a.statut)}</span>`];
-        if(a.madSubtype==='SAV') badges.push(`<span class="badge b-purple">🔧 SAV</span>`);
-        if(a.statutMAD==='À prévenir' && a.statut==='Stock') badges.push(`<span class="badge b-warn">📞 À prévenir</span>`);
-        if(a.statutMAD==='Client prévenu' && a.statut==='Stock') badges.push(`<span class="badge b-dispo">✅ Prévenu</span>`);
+        if(a.madSubtype==='SAV') badges.push(`<span class="badge b-purple">SAV</span>`);
+        if(a.statutMAD==='À prévenir' && a.statut==='Stock') badges.push(`<span class="badge b-warn">À prévenir</span>`);
+        if(a.statutMAD==='Client prévenu' && a.statut==='Stock') badges.push(`<span class="badge b-dispo">Prévenu</span>`);
 
         return `<div class="article-item" onclick="openModal('${esc(a.id)}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    ${a.client && a.client!=='Stock interne' ? `<div class="item-client">👤 ${esc(a.client)}</div>` : ''}
+                    ${a.client && a.client!=='Stock interne' ? `<div class="item-client">${esc(a.client)}</div>` : ''}
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
             </div>
             <div class="item-meta">
-                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">📍 <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
                 ${a.numeroAR ? `<span class="meta">AR: <strong>${esc(a.numeroAR)}</strong></span>` : ''}
-                ${a.nombreColis > 1 ? `<span class="meta">📦 <strong>${a.nombreColis} colis</strong></span>` : ''}
+                ${a.vendeur ? `<span class="meta">Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
+                ${a.nombreColis > 1 ? `<span class="meta"><strong>${a.nombreColis} colis</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -885,7 +915,7 @@ function renderStock() {
 
     let list = allF.slice();
     if(q) list = list.filter(a => smartSearch(a,q));
-    if(!list.length){ document.getElementById('stockList').innerHTML = '<div class="empty"><div class="ico">📦</div><p>Aucun article</p></div>'; return; }
+    if(!list.length){ document.getElementById('stockList').innerHTML = '<div class="empty"><p>Aucun article</p></div>'; return; }
 
     document.getElementById('stockList').innerHTML = list.map(a => {
         const qty = a.quantiteStock;
@@ -900,14 +930,14 @@ function renderStock() {
                 <div><div class="item-title">${esc(a.article)}</div><div class="item-ref">${esc(a.reference)}</div></div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
-                    ${isVendable && a.prixVente ? `<span class="badge b-success" style="font-size:13px;">💰 ${a.prixVente}€</span>` : ''}
+                    ${isVendable && a.prixVente ? `<span class="badge b-success" style="font-size:13px;">${a.prixVente}€</span>` : ''}
                     ${qty!==null ? `<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>` : ''}
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">📍 <strong>${esc(a.emplacement)}</strong></span>
-                ${isVendable ? `<span class="meta" style="color:var(--green);font-weight:600;">💰 Article vendable</span>` : ''}
+                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
+                ${isVendable ? `<span class="meta" style="color:var(--green);font-weight:600;">Article vendable</span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -937,7 +967,7 @@ function renderTLE() {
         <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Unités totales</div></div>
         <div class="stat-card green"><div class="num">${totalValeur.toFixed(2)}€</div><div class="lbl">Valeur totale</div></div>`;
 
-    if(!filtered.length){ document.getElementById('tleList').innerHTML = '<div class="empty"><div class="ico">✅</div><p>Aucun article correspondant</p></div>'; return; }
+    if(!filtered.length){ document.getElementById('tleList').innerHTML = '<div class="empty"><p>Aucun article correspondant</p></div>'; return; }
 
     const now = new Date();
     document.getElementById('tleList').innerHTML = filtered.map(a => {
@@ -947,29 +977,29 @@ function renderTLE() {
         const joursRestants = a.dateTLE ? Math.ceil((new Date(a.dateTLE) - now) / 86400000) : null;
         const urgentTLE = joursRestants !== null && joursRestants <= 2 && joursRestants >= 0;
 
-        let badgeText = '🚚 Attente TLE', badgeClass = 'b-pret';
-        if(a.statut==='Reprise - Attente TLE'){ badgeText = '🔧 Reprise SAV'; badgeClass = 'b-purple'; }
-        if(a.statut==='Sorti - Remis TLE'){ badgeText = '✅ Remis à TLE'; badgeClass = 'b-stock'; }
+        let badgeText = 'Attente TLE', badgeClass = 'b-pret';
+        if(a.statut==='Reprise - Attente TLE'){ badgeText = 'Reprise SAV'; badgeClass = 'b-purple'; }
+        if(a.statut==='Sorti - Remis TLE'){ badgeText = 'Remis à TLE'; badgeClass = 'b-stock'; }
 
         return `<div class="article-item" onclick="openModal('${esc(a.id)}')" style="${urgentTLE?'border-color:var(--orange-border);':''}">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    <div class="item-client">👤 ${esc(a.client || 'Client non renseigné')}</div>
+                    <div class="item-client">${esc(a.client || 'Client non renseigné')}</div>
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${badgeClass}">${badgeText}</span>
-                    ${urgentTLE ? `<span class="badge b-pret">⚠️ J-${joursRestants}</span>` : ''}
+                    ${urgentTLE ? `<span class="badge b-pret">J-${joursRestants}</span>` : ''}
                     <span style="font-size:14px;font-weight:700;color:var(--orange);">${qty} unité(s)</span>
                     ${a.prixVente ? `<span style="font-size:13px;color:var(--text3);">${a.prixVente}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>` : ''}
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">📍 <strong>${esc(a.emplacement)}</strong></span>
-                <span class="meta">📅 Réception <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                ${dateTLEStr ? `<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">${urgentTLE?'⚠️':'📦'} TLE : <strong>${dateTLEStr}</strong></span>` : ''}
+                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta">Réception <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                ${dateTLEStr ? `<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">TLE : <strong>${dateTLEStr}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -999,7 +1029,7 @@ function renderRecupClients() {
         <div class="stat-card green"><div class="num">${allRecup.filter(a=>a.statut==='Récupéré').length}</div><div class="lbl">Récupéré</div></div>`;
 
     if(q) allRecup = allRecup.filter(a => smartSearch(a,q));
-    if(!allRecup.length){ document.getElementById('recupList').innerHTML = '<div class="empty"><div class="ico">🛍️</div><p>Aucune récupération client</p></div>'; return; }
+    if(!allRecup.length){ document.getElementById('recupList').innerHTML = '<div class="empty"><p>Aucune récupération client</p></div>'; return; }
 
     const now = new Date();
     document.getElementById('recupList').innerHTML = allRecup.map(a => {
@@ -1013,15 +1043,15 @@ function renderRecupClients() {
         const estRecupere = a.statut === 'Récupéré';
 
         const badgeClass = estRecupere ? 'b-success' : enRetard ? 'b-retard' : urgentRecup ? 'b-warn' : 'b-pret';
-        const badgeText = estRecupere ? '✅ Récupéré'
-            : enRetard ? `⚠️ Retard +${Math.abs(joursRestants)}j`
-            : urgentRecup ? `⚠️ J-${joursRestants}` : '⏳ En attente';
+        const badgeText = estRecupere ? 'Récupéré'
+            : enRetard ? `Retard +${Math.abs(joursRestants)}j`
+            : urgentRecup ? `J-${joursRestants}` : 'En attente';
 
         return `<div class="article-item" onclick="openModal('${esc(a.id)}')" style="${(urgentRecup||enRetard)&&!estRecupere ? 'border-color:var(--orange-border);' : ''}">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    <div class="item-client">👤 ${esc(a.client || a.recuperePar || '?')}</div>
+                    <div class="item-client">${esc(a.client || a.recuperePar || '?')}</div>
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
@@ -1031,10 +1061,10 @@ function renderRecupClients() {
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">📍 <strong>${esc(a.emplacement)}</strong></span>
-                <span class="meta">📅 Vendu le <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                ${dateRecupStr ? `<span class="meta" style="${(urgentRecup||enRetard)&&!estRecupere ? 'color:var(--orange);font-weight:700;' : ''}">${(urgentRecup||enRetard)&&!estRecupere?'⚠️':'🛍️'} Récup: <strong>${dateRecupStr}</strong></span>` : ''}
+                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta">Vendu le <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                ${dateRecupStr ? `<span class="meta" style="${(urgentRecup||enRetard)&&!estRecupere ? 'color:var(--orange);font-weight:700;' : ''}">${(urgentRecup||enRetard)&&!estRecupere?'':''} Récup: <strong>${dateRecupStr}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -1092,10 +1122,10 @@ function renderPrets() {
         <div class="stat-card orange"><div class="num">${bientot.length}</div><div class="lbl">Retour bientôt</div></div>
         <div class="stat-card red"><div class="num">${retards.length}</div><div class="lbl">En retard</div></div>`;
 
-    document.getElementById('stab_dispo').textContent   = `🟣 Disponibles (${dispoArticles.length})`;
-    document.getElementById('stab_encours').textContent  = `🔵 En cours (${encours.length})`;
-    document.getElementById('stab_bientot').textContent  = `🟡 Bientôt (${bientot.length})`;
-    document.getElementById('stab_retard').textContent   = `🔴 Retard (${retards.length})`;
+    document.getElementById('stab_dispo').textContent   = `Disponibles (${dispoArticles.length})`;
+    document.getElementById('stab_encours').textContent  = `En cours (${encours.length})`;
+    document.getElementById('stab_bientot').textContent  = `Bientôt (${bientot.length})`;
+    document.getElementById('stab_retard').textContent   = `Retard (${retards.length})`;
     ['dispo','encours','bientot','retard'].forEach(t =>
         document.getElementById('stab_' + t).classList.toggle('active', currentPretTab === t));
 
@@ -1106,7 +1136,7 @@ function renderPrets() {
 
     if(!list.length){
         document.getElementById('pretsList').innerHTML =
-            `<div class="empty"><div class="ico">${currentPretTab==='retard'?'✅':'📋'}</div><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;
+            `<div class="empty"><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;
         return;
     }
 
@@ -1124,9 +1154,9 @@ function renderPrets() {
                     </div>
                 </div>
                 <div class="item-meta">
-                    <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
-                    <span class="meta">📍 <strong>${esc(a.emplacement)}</strong></span>
-                    ${pretsCet.length ? `<span class="meta">🔄 <strong>${pretsCet.length} en prêt</strong></span>` : ''}
+                    <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                    <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
+                    ${pretsCet.length ? `<span class="meta"><strong>${pretsCet.length} en prêt</strong></span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1138,15 +1168,15 @@ function renderPrets() {
                 <div class="item-head">
                     <div>
                         <div class="item-title">${esc(p.article)}</div>
-                        <div class="item-client">👤 ${esc(p.emprunteur || '?')}</div>
+                        <div class="item-client">${esc(p.emprunteur || '?')}</div>
                         <div class="item-ref">${esc(p.reference)}</div>
                     </div>
-                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `⚠️ +${Math.abs(diff)}j` : diff!==null ? `↩️ J-${diff}` : 'En prêt'}</span>
+                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `+${Math.abs(diff)}j` : diff!==null ? `Retour J-${diff}` : 'En prêt'}</span>
                 </div>
                 <div class="item-meta">
-                    <span class="meta">🏪 <strong>${esc(p.magasin)}</strong></span>
-                    <span class="meta">📅 Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                    ${p.dateRetourPrevue ? `<span class="meta">↩️ Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
+                    <span class="meta"><strong>${esc(p.magasin)}</strong></span>
+                    <span class="meta">Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                    ${p.dateRetourPrevue ? `<span class="meta">Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1197,7 +1227,7 @@ function renderAlertes() {
     });
 
     arts.filter(a => a.type==='Mise à disposition' && a.madSubtype==='SAV' && a.statut==='Sorti' && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui')
-        .forEach(a => alertes.push({type:'warning', t:`🔧 SAV — Reprise à réceptionner`, m:`${a.article} · Client: ${a.client} · ${a.magasin}`, id:a.id}));
+        .forEach(a => alertes.push({type:'warning', t:`SAV — Reprise à réceptionner`, m:`${a.article} · Client: ${a.client} · ${a.magasin}`, id:a.id}));
 
     arts.filter(a => {
         if(a.type!=='Stock' || a.stockSubtype==='Vendable' || a.quantiteStock===null || a.statut!=='Stock') return false;
@@ -1228,7 +1258,7 @@ function renderAlertes() {
     }).forEach(a => {
         const jours = Math.floor((now - new Date(a.dateReception)) / 86400000);
         const delai = a.savDelaiAlerte || seuilsSAV[a.id] || params.savDelaiDefaut || 30;
-        alertes.push({type:'danger', t:`🔧 SAV qui traîne — ${a.article}`, m:`${a.magasin} · Depuis ${jours}j (seuil: ${delai}j) · Client: ${a.client}`, id:a.id});
+        alertes.push({type:'danger', t:`SAV qui traîne — ${a.article}`, m:`${a.magasin} · Depuis ${jours}j (seuil: ${delai}j) · Client: ${a.client}`, id:a.id});
     });
 
     arts.filter(a => {
@@ -1237,17 +1267,17 @@ function renderAlertes() {
         return j <= 2 && j >= 0;
     }).forEach(a => {
         const j = Math.ceil((new Date(a.dateTLE) - now) / 86400000);
-        alertes.push({type:'warning', t:`📦 TLE bientôt — ${a.article}`, m:`${a.magasin} · Client: ${a.client} · ${new Date(a.dateTLE).toLocaleDateString('fr-FR')} (J-${j})`, id:a.id});
+        alertes.push({type:'warning', t:`TLE bientôt — ${a.article}`, m:`${a.magasin} · Client: ${a.client} · ${new Date(a.dateTLE).toLocaleDateString('fr-FR')} (J-${j})`, id:a.id});
     });
 
     if(!alertes.length){
-        document.getElementById('alertList').innerHTML = '<div class="empty"><div class="ico">✅</div><p>Aucune alerte !</p></div>';
+        document.getElementById('alertList').innerHTML = '<div class="empty"><p>Aucune alerte !</p></div>';
         return;
     }
     alertes.sort((a,b) => (a.type==='danger'?0:1) - (b.type==='danger'?0:1));
     document.getElementById('alertList').innerHTML = alertes.map(al => `
         <div class="alert-item ${al.type}" onclick="openModal('${esc(al.id)}')">
-            <span style="font-size:18px;">${al.type==='danger'?'🔴':'🟡'}</span>
+            <span class="alerte-point"></span>
             <div><div style="font-size:13px;font-weight:700;">${esc(al.t)}</div><div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(al.m)}</div></div>
         </div>`).join('');
 }
@@ -1291,7 +1321,7 @@ function closeChoiceDialog(value){
 function showDateDialog(title, message, defaultISO, sub = ''){
     return new Promise(resolve => {
         _dateResolver = resolve;
-        document.getElementById('dateTitle').textContent = title || '📅 Date';
+        document.getElementById('dateTitle').textContent = title || 'Date';
         document.getElementById('dateSub').textContent = sub || '';
         document.getElementById('dateMessage').innerHTML = message || '';
         document.getElementById('dateInput').value = defaultISO ? fmtDateInputLocal(defaultISO) : '';
@@ -1302,7 +1332,7 @@ function showDateDialog(title, message, defaultISO, sub = ''){
 
 function closeDateDialog(ok){
     const val = ok ? document.getElementById('dateInput').value : null;
-    if(ok && !val){ toast('⚠️ Choisissez une date', 'err'); return; }
+    if(ok && !val){ toast('Choisissez une date', 'err'); return; }
     document.getElementById('dateOverlay').classList.remove('active');
     if(_dateResolver){ const r = _dateResolver; _dateResolver = null; r(val ? parseDateInputToISO(val) : null); }
 }
@@ -1328,7 +1358,7 @@ function closeInputDialog(ok){
     if(_inputResolver){ const r = _inputResolver; _inputResolver = null; r(val || null); }
 }
 
-function showConfirmDialog(title, message, okLabel = '✅ Confirmer', danger = false){
+function showConfirmDialog(title, message, okLabel = 'Confirmer', danger = false){
     return new Promise(resolve => {
         _confirmResolver = resolve;
         document.getElementById('confirmTitle').textContent = title || 'Confirmation';
@@ -1350,15 +1380,15 @@ async function askQuantite(titre, message, max, defaut){
     const v = await showInputDialog(titre, message, String(defaut !== undefined ? defaut : 1), 'number');
     if(v === null) return null;
     const n = parseInt(v);
-    if(isNaN(n) || n <= 0){ toast('⚠️ Quantité invalide', 'err'); return null; }
-    if(max !== undefined && n > max){ toast(`⚠️ Maximum disponible : ${max}`, 'err'); return null; }
+    if(isNaN(n) || n <= 0){ toast('Quantité invalide', 'err'); return null; }
+    if(max !== undefined && n > max){ toast(`Maximum disponible : ${max}`, 'err'); return null; }
     return n;
 }
 
 // ─── FICHE ARTICLE ────────────────────────────────────────
 async function openModal(id) {
     const a = articles.find(x => x.id === id) || pretsActifs.find(x => x.id === id);
-    if(!a){ toast('❌ Article non trouvé', 'err'); return; }
+    if(!a){ toast('Article non trouvé', 'err'); return; }
 
     document.getElementById('mTitle').textContent = a.article;
     document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
@@ -1392,19 +1422,19 @@ function renderModalContent(a, histo) {
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;">
         <span class="badge ${typeClass}">${esc(a.type)}</span>
         <span class="badge ${bClass}">${esc(a.statut)}</span>
-        ${a.stockSubtype==='Vendable' ? `<span class="badge b-dispo">💰 Vendable</span>` : ''}
-        ${a.madSubtype==='SAV' ? `<span class="badge b-purple">🔧 SAV</span>` : ''}
+        ${a.stockSubtype==='Vendable' ? `<span class="badge b-dispo">Vendable</span>` : ''}
+        ${a.madSubtype==='SAV' ? `<span class="badge b-purple">SAV</span>` : ''}
     </div>`;
 
     if(estSorti){
         html += `<div style="background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center;">
-            <div style="font-weight:700;margin-bottom:4px;">🔒 Article sorti du stock</div>
+            <div style="font-weight:700;margin-bottom:4px;">Article sorti du stock</div>
             <div style="font-size:13px;">Aucune action possible · Historique consultable ci-dessous</div>
         </div>`;
     }
 
     if(lectureSeule && !estSorti){
-        html += `<div class="lecture-seule">👀 Consultation seule — article du magasin <strong>${esc(a.magasin)}</strong></div>`;
+        html += `<div class="lecture-seule">Consultation seule — article du magasin <strong>${esc(a.magasin)}</strong></div>`;
     }
 
     if(isArticlePret){
@@ -1420,7 +1450,7 @@ function renderModalContent(a, histo) {
     if(isPretIndividuel){
         const retard = a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date();
         html += `<div style="background:${retard?'var(--red-soft)':'var(--orange-soft)'};border:1.5px solid ${retard?'var(--red-border)':'var(--orange-border)'};border-radius:var(--r2);padding:13px;margin-bottom:14px;">
-            <div style="font-weight:800;color:${retard?'var(--red)':'var(--orange)'}">🔄 En prêt${retard?' — ⚠️ EN RETARD':''}</div>
+            <div style="font-weight:800;color:${retard?'var(--red)':'var(--orange)'}">En prêt${retard?' — EN RETARD':''}</div>
             <div style="font-size:13px;color:var(--text2);margin-top:5px;">
                 Prêté à <strong>${esc(a.prenomEmprunteur)}</strong> le <strong>${a.datePret ? new Date(a.datePret).toLocaleDateString('fr-FR') : '?'}</strong><br>
                 Retour prévu le <strong>${a.dateRetourPrevue ? new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR') : '?'}</strong>
@@ -1432,13 +1462,14 @@ function renderModalContent(a, histo) {
     html += `<div class="detail-grid">
         <div class="detail-field"><div class="k">Magasin</div><div class="v">${esc(a.magasin)}</div></div>
         ${a.client ? `<div class="detail-field"><div class="k">Client</div><div class="v" style="font-size:15px;font-weight:800;">${esc(a.client)}</div></div>` : ''}
+        ${a.vendeur ? `<div class="detail-field"><div class="k">Vendeur de la cuisine</div><div class="v">${esc(a.vendeur)}</div></div>` : ''}
         <div class="detail-field"><div class="k">Référence</div><div class="v">${esc(a.reference)}</div></div>
         <div class="detail-field"><div class="k">Emplacement</div><div class="v">${esc(a.emplacement)}</div></div>
         ${a.numeroAR ? `<div class="detail-field"><div class="k">N° AR</div><div class="v">${esc(a.numeroAR)}</div></div>` : ''}
         ${a.stockSubtype && isStock ? `<div class="detail-field"><div class="k">Sous-type stock</div><div class="v">${esc(a.stockSubtype)}</div></div>` : ''}
         ${a.madSubtype && isMAD ? `<div class="detail-field"><div class="k">Sous-type MAD</div><div class="v">${esc(a.madSubtype)}</div></div>` : ''}
-        ${isMAD && a.madSubtype==='SAV' ? `<div class="detail-field"><div class="k">Reprise article</div><div class="v" style="font-weight:700;color:${a.repriseArticle==='Oui'?'var(--orange)':'var(--text3)'}">${a.repriseArticle==='Oui'?'✅ OUI - À ramener':'❌ NON'}</div></div>` : ''}
-        ${isMAD && a.madSubtype==='SAV' && a.repriseArticle==='Oui' && a.repriseRecue==='Oui' ? `<div class="detail-field"><div class="k">Statut reprise</div><div class="v" style="color:var(--green);font-weight:700;">✅ Reprise reçue</div></div>` : ''}
+        ${isMAD && a.madSubtype==='SAV' ? `<div class="detail-field"><div class="k">Reprise article</div><div class="v" style="font-weight:700;color:${a.repriseArticle==='Oui'?'var(--orange)':'var(--text3)'}">${a.repriseArticle==='Oui'?'OUI - À ramener':'NON'}</div></div>` : ''}
+        ${isMAD && a.madSubtype==='SAV' && a.repriseArticle==='Oui' && a.repriseRecue==='Oui' ? `<div class="detail-field"><div class="k">Statut reprise</div><div class="v" style="color:var(--green);font-weight:700;">Reprise reçue</div></div>` : ''}
         ${a.prixVente !== null && a.prixVente !== '' ? `<div class="detail-field"><div class="k">Prix de vente</div><div class="v" style="color:var(--green);font-weight:800;">${a.prixVente} €</div></div>` : ''}
         ${a.dateTLE ? `<div class="detail-field"><div class="k">Date TLE</div><div class="v">${new Date(a.dateTLE).toLocaleDateString('fr-FR')}</div></div>` : ''}
         ${a.dateRecupClient ? `<div class="detail-field"><div class="k">Date récupération client</div><div class="v">${new Date(a.dateRecupClient).toLocaleDateString('fr-FR')}</div></div>` : ''}
@@ -1451,10 +1482,10 @@ function renderModalContent(a, histo) {
 
     if(!isPretIndividuel && !estSorti){
         html += `<div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:600;color:var(--blue);">🔳 Étiquette QR</span>
+            <span style="font-size:12px;font-weight:600;color:var(--blue);">Étiquette QR</span>
             <span style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="padding:7px 12px;font-size:12px;" onclick="printArticleQR('${esc(a.id)}')">🖨️ Standard</button>
-                <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="printArticleQRSmall('${esc(a.id)}')">🏷️ Étroite</button>
+                <button class="btn btn-primary" style="padding:7px 12px;font-size:12px;" onclick="printArticleQR('${esc(a.id)}')">Standard</button>
+                <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="printArticleQRSmall('${esc(a.id)}')">Étroite</button>
             </span>
         </div>`;
     }
@@ -1462,34 +1493,34 @@ function renderModalContent(a, histo) {
     if(!estSorti && !lectureSeule){
         let actionsHTML = '';
         if(isMAD && a.statut==='Stock'){
-            if(a.statutMAD==='À prévenir') actionsHTML += `<button class="btn btn-warning" onclick="actPrevenirClient('${esc(a.id)}')">📞 Prévenir client</button>`;
-            actionsHTML += `<button class="btn btn-success" onclick="actSortir('${esc(a.id)}')">📤 Sortir</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">📍 Emplacement</button>`;
+            if(a.statutMAD==='À prévenir') actionsHTML += `<button class="btn btn-warning" onclick="actPrevenirClient('${esc(a.id)}')">Prévenir client</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actSortir('${esc(a.id)}')">Sortir</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>`;
         }
         if(isStock && a.statut==='Stock'){
-            if(a.stockSubtype==='Vendable' && a.quantiteStock>0) actionsHTML += `<button class="btn btn-warning" onclick="actVendre('${esc(a.id)}')">💰 Vendre</button>`;
-            actionsHTML += `<button class="btn btn-primary" onclick="actSortirQte('${esc(a.id)}')">📦 Sortir quantité</button>
-               <button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">➕ Ajouter stock</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">📍 Emplacement</button>
-               ${a.stockSubtype!=='Vendable' ? `<button class="btn btn-outline" onclick="actSetSeuil('${esc(a.id)}')">⚙️ Seuil alerte</button>` : ''}`;
+            if(a.stockSubtype==='Vendable' && a.quantiteStock>0) actionsHTML += `<button class="btn btn-warning" onclick="actVendre('${esc(a.id)}')">Vendre</button>`;
+            actionsHTML += `<button class="btn btn-primary" onclick="actSortirQte('${esc(a.id)}')">Sortir quantité</button>
+               <button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">Ajouter stock</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>
+               ${a.stockSubtype!=='Vendable' ? `<button class="btn btn-outline" onclick="actSetSeuil('${esc(a.id)}')">Seuil alerte</button>` : ''}`;
         }
         if(isArticlePret && a.statut==='Stock'){
-            if((a.quantiteStock||0) > 0) actionsHTML += `<button class="btn btn-warning" onclick="actPreter('${esc(a.id)}')">🔄 Prêter</button>`;
-            actionsHTML += `<button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">➕ Ajouter au stock prêt</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">📍 Emplacement</button>`;
+            if((a.quantiteStock||0) > 0) actionsHTML += `<button class="btn btn-warning" onclick="actPreter('${esc(a.id)}')">Prêter</button>`;
+            actionsHTML += `<button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">Ajouter au stock prêt</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>`;
         }
         if(isPretIndividuel && a.statut==='En cours'){
-            actionsHTML += `<button class="btn btn-success" onclick="actRetourPret('${esc(a.id)}')">↩️ Retour de prêt</button>
-               <button class="btn btn-warning" onclick="actModifierDateRetour('${esc(a.id)}')">📅 Modifier retour</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actRetourPret('${esc(a.id)}')">Retour de prêt</button>
+               <button class="btn btn-warning" onclick="actModifierDateRetour('${esc(a.id)}')">Modifier retour</button>`;
         }
         if(a.statut==='Vendu - Attente TLE' || a.statut==='Reprise - Attente TLE'){
-            actionsHTML += `<button class="btn btn-success" onclick="actRemisTLE('${esc(a.id)}')">✅ Remis à TLE</button>`;
-            if(a.dateTLE) actionsHTML += `<button class="btn btn-outline" onclick="actModifierDateTLE('${esc(a.id)}')">📅 Modifier date TLE</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actRemisTLE('${esc(a.id)}')">Remis à TLE</button>`;
+            if(a.dateTLE) actionsHTML += `<button class="btn btn-outline" onclick="actModifierDateTLE('${esc(a.id)}')">Modifier date TLE</button>`;
         }
 
         if(actionsHTML){
             const memo = localStorage.getItem('hmc_prenom') || '';
-            html += `<div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" value="${esc(memo)}" placeholder="Obligatoire pour toute action"></div>
+            html += `<div class="prenom-bar"><label>Votre prénom</label><input type="text" id="actPrenom" value="${esc(memo)}" placeholder="Obligatoire pour toute action"></div>
             <div class="btn-row">${actionsHTML}</div>`;
         }
     }
@@ -1497,31 +1528,31 @@ function renderModalContent(a, histo) {
     if(isSAVAvecRepriseNonRecue && !lectureSeule){
         const memo = localStorage.getItem('hmc_prenom') || '';
         html += `<div style="margin-top:16px;">
-            <div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom2" value="${esc(memo)}" placeholder="Obligatoire"></div>
-            <button class="btn btn-success" onclick="actRepriseRecue('${esc(a.id)}')">📥 Reprise reçue en magasin</button>
+            <div class="prenom-bar"><label>Votre prénom</label><input type="text" id="actPrenom2" value="${esc(memo)}" placeholder="Obligatoire"></div>
+            <button class="btn btn-success" onclick="actRepriseRecue('${esc(a.id)}')">Reprise reçue en magasin</button>
         </div>`;
     }
 
     if(isArticlePret && !estSorti){
         const pretsCet = (a.prets||[]).filter(p => p.statut === 'En cours');
-        html += `<div class="divider"></div><div class="section-lbl">🔄 Prêts en cours (${pretsCet.length})</div>`;
+        html += `<div class="divider"></div><div class="section-lbl">Prêts en cours (${pretsCet.length})</div>`;
         if(!pretsCet.length) html += `<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
         else html += pretsCet.map(p => {
             const retard = p.dateRetourPrevue && new Date(p.dateRetourPrevue) < new Date();
             const diff = p.dateRetourPrevue ? Math.ceil((new Date(p.dateRetourPrevue) - new Date()) / 86400000) : null;
             return `<div class="loan-item ${retard?'retard':diff!==null&&diff<=params.alerteBientot?'bientot':''}">
                 <div class="loan-head">
-                    <span class="loan-client">👤 ${esc(p.emprunteur || '?')}</span>
+                    <span class="loan-client">${esc(p.emprunteur || '?')}</span>
                     <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `+${Math.abs(diff)}j retard` : diff!==null ? `J-${diff}` : 'En prêt'}</span>
                 </div>
                 <div class="loan-meta">
-                    <span>📅 Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong>${p.pretePar ? ' par ' + esc(p.pretePar) : ''}</span>
-                    ${p.qte && p.qte > 1 ? `<span>📦 <strong>${p.qte} unité(s)</strong></span>` : ''}
-                    ${p.dateRetourPrevue ? `<span>↩️ Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
+                    <span>Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong>${p.pretePar ? ' par ' + esc(p.pretePar) : ''}</span>
+                    ${p.qte && p.qte > 1 ? `<span><strong>${p.qte} unité(s)</strong></span>` : ''}
+                    ${p.dateRetourPrevue ? `<span>Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
                 </div>
                 ${lectureSeule ? '' : `<div class="btn-row" style="margin-top:8px;">
-                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretFromArray('${esc(a.id)}','${esc(p.pretId)}')">↩️ Retour</button>
-                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetourArray('${esc(a.id)}','${esc(p.pretId)}')">📅 Modifier date</button>
+                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretFromArray('${esc(a.id)}','${esc(p.pretId)}')">Retour</button>
+                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetourArray('${esc(a.id)}','${esc(p.pretId)}')">Modifier date</button>
                 </div>`}
             </div>`;
         }).join('');
@@ -1530,17 +1561,17 @@ function renderModalContent(a, histo) {
     if(isRecup && a.statut==='En attente' && !lectureSeule){
         const memo = localStorage.getItem('hmc_prenom') || '';
         html += `<div class="divider"></div>
-        <div class="section-lbl">🛍️ Actions Récupération</div>
-        <div class="prenom-bar"><label>👤 Votre prénom</label><input type="text" id="actPrenom" value="${esc(memo)}" placeholder="Obligatoire pour toute action"></div>
+        <div class="section-lbl">Actions Récupération</div>
+        <div class="prenom-bar"><label>Votre prénom</label><input type="text" id="actPrenom" value="${esc(memo)}" placeholder="Obligatoire pour toute action"></div>
         <div class="btn-row">
-            <button class="btn btn-success" onclick="actRecupClientRecuperee('${esc(a.id)}')">✅ Client a récupéré</button>
-            <button class="btn btn-outline" onclick="actModifierDateRecupClient('${esc(a.id)}')">📅 Modifier date récupération</button>
+            <button class="btn btn-success" onclick="actRecupClientRecuperee('${esc(a.id)}')">Client a récupéré</button>
+            <button class="btn btn-outline" onclick="actModifierDateRecupClient('${esc(a.id)}')">Modifier date récupération</button>
         </div>`;
     }
 
     html += buildEditSection(a, estSorti || lectureSeule);
 
-    html += `<div class="divider"></div><div class="section-lbl">📜 Historique</div>`;
+    html += `<div class="divider"></div><div class="section-lbl">Historique</div>`;
     if(!histo.length) html += `<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Aucun historique</div>`;
     else html += histo.map(h => `<div class="histo">
         <div class="histo-date">${esc(h.dateStr || '')}</div>
@@ -1570,7 +1601,7 @@ function buildEditSection(a, estSorti){
 
     return `<div class="divider"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div class="section-lbl" style="margin:0;">✏️ Modifier la fiche</div>
+        <div class="section-lbl" style="margin:0;">Modifier la fiche</div>
         <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${esc(a.id)}')">Ouvrir / fermer</button>
     </div>
     <div id="editSection_${esc(a.id)}" class="edit-form" style="display:none;margin-top:10px;">
@@ -1588,12 +1619,13 @@ function buildEditSection(a, estSorti){
                     ${Object.entries(CATEGORIES).map(([k, l]) => `<option value="${k}" ${categorie===k?'selected':''}>${esc(l)}</option>`).join('')}
                 </select></div>` : ''}
             ${(isMAD || isRecup || isTLEStatus || changeCat) ? `<div class="fg" id="e_wrap_client"><label>Client</label><input id="e_client" value="${esc(a.client)}"></div>` : ''}
+            ${(isMAD || a.vendeur) ? `<div class="fg"><label>Vendeur de la cuisine</label><input id="e_vendeur" list="listeVendeursFiche" value="${esc(a.vendeur)}" placeholder="Qui a vendu la cuisine ?"><datalist id="listeVendeursFiche">${vendeursConnus(articles, lireConfig().vendeurs, a.magasin).map(n => `<option value="${esc(n)}">`).join('')}</datalist></div>` : ''}
             ${isMAD ? `<div class="fg"><label>N° AR</label><input id="e_numeroAR" value="${esc(a.numeroAR)}"></div>` : ''}
             ${isMAD ? `<div class="fg"><label>Nombre de colis</label><input id="e_nombreColis" type="number" min="1" value="${a.nombreColis||1}"></div>` : ''}
             ${isMAD ? `<div class="fg"><label>Sous-type</label>
                 <select id="e_madSubtype" onchange="updateEditFormVisibility('${esc(a.id)}')">
-                    <option value="Commande" ${a.madSubtype==='Commande'?'selected':''}>📦 Commande client</option>
-                    <option value="SAV" ${a.madSubtype==='SAV'?'selected':''}>🔧 SAV</option>
+                    <option value="Commande" ${a.madSubtype==='Commande'?'selected':''}>Commande client</option>
+                    <option value="SAV" ${a.madSubtype==='SAV'?'selected':''}>SAV</option>
                 </select></div>` : ''}
             ${isMAD ? `<div class="fg" id="e_wrap_savDelai"><label>Alerte SAV (jours)</label><input id="e_savDelaiAlerte" type="number" min="1" value="${a.savDelaiAlerte || params.savDelaiDefaut || 30}"></div>` : ''}
             ${isMAD ? `<div class="fg" id="e_wrap_reprise"><label>Reprise article</label>
@@ -1610,9 +1642,9 @@ function buildEditSection(a, estSorti){
             <div class="fg full"><label>Votre prénom (obligatoire)</label><input id="e_prenom" value="${esc(memo)}" placeholder="Pour tracer la modification"></div>
         </div>
         <div class="btn-row">
-            <button class="btn btn-primary" onclick="actSaveEdit('${esc(a.id)}')">💾 Enregistrer les modifications</button>
+            <button class="btn btn-primary" onclick="actSaveEdit('${esc(a.id)}')">Enregistrer les modifications</button>
             <button class="btn btn-outline" onclick="toggleEdit('${esc(a.id)}')">Annuler</button>
-            ${peutArchiver(moi, a.magasin) ? `<button class="btn btn-danger" onclick="actSupprimerArticle('${esc(a.id)}')">🗑️ Archiver cet article</button>` : ''}
+            ${peutArchiver(moi, a.magasin) ? `<button class="btn btn-danger" onclick="actSupprimerArticle('${esc(a.id)}')">Archiver cet article</button>` : ''}
         </div>
     </div>`;
 }
@@ -1678,8 +1710,8 @@ async function actPrevenirClient(id){
     const r = await doUpdate(id, { StatutMAD:'Client prévenu' });
     if(!r.error) await doHisto(id, p, 'Client prévenu', `Client ${a.client} informé de la mise à disposition`);
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📞 Client marqué comme prévenu');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Client marqué comme prévenu');
     await loadData();
     openModal(id);
 }
@@ -1687,13 +1719,13 @@ async function actPrevenirClient(id){
 /* Choix obligatoire de la façon dont l'article sort (le texte part dans l'historique).
    « Autre » permet d'écrire librement. Renvoie null si la personne annule. */
 async function demanderModeSortie(question, modes){
-    const choix = await showChoiceDialog('📤 Sortie', question, [
+    const choix = await showChoiceDialog('Sortie', question, [
         ...modes.map(m => ({ label:esc(m), value:m, className:'btn btn-outline' })),
-        { label:'✏️ Autre…', value:'autre', className:'btn btn-outline' }
+        { label:'Autre…', value:'autre', className:'btn btn-outline' }
     ]);
     if(!choix) return null;
     if(choix !== 'autre') return choix.replace(/^\S+\s/, '');   // sans l'emoji dans l'historique
-    const libre = await showInputDialog('📤 Sortie', 'Précisez comment l\'article est sorti.', '');
+    const libre = await showInputDialog('Sortie', 'Précisez comment l\'article est sorti.', '');
     return libre && libre.trim() ? libre.trim() : null;
 }
 
@@ -1705,15 +1737,15 @@ async function actSortir(id){
         `Confirmer la sortie de <strong>${esc(a.article)}</strong>${a.client ? ` pour <strong>${esc(a.client)}</strong>` : ''} ?`)) return;
 
     const raison = await demanderModeSortie('Comment l\'article est-il sorti ?', [
-        '🛍️ Récupéré par le client', '🚚 Remis à TLE (navette)', '🔧 Récupéré par le poseur']);
+        'Récupéré par le client', 'Remis à TLE (navette)', 'Récupéré par le poseur']);
     if(raison === null) return;
 
     busy(true, 'Sortie en cours...');
     const r = await doUpdate(id, { Statut:'Sorti', DateSortie:new Date().toISOString(), RaisonSortie:raison });
     if(!r.error) await doHisto(id, p, 'Sortie', raison);
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📤 Article sorti');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Article sorti');
     closeModal();
     loadData();
 }
@@ -1723,17 +1755,17 @@ async function actSortirQte(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
 
-    const qte = await askQuantite('📦 Sortir une quantité', `Disponible : <strong>${a.quantiteStock}</strong> unité(s).`, a.quantiteStock, 1);
+    const qte = await askQuantite('Sortir une quantité', `Disponible : <strong>${a.quantiteStock}</strong> unité(s).`, a.quantiteStock, 1);
     if(qte === null) return;
     const raison = await demanderModeSortie('Comment sort cette quantité ?', [
-        '🔨 Utilisation chantier', '🛍️ Récupéré par le client', '🚚 Remis à TLE (navette)', '🔧 Récupéré par le poseur']);
+        'Utilisation chantier', 'Récupéré par le client', 'Remis à TLE (navette)', 'Récupéré par le poseur']);
     if(raison === null) return;
 
     busy(true, 'Mise à jour du stock...');
     const r = await apiCall({ action:'adjustQuantity', ID:id, delta:-qte, user:p, raison:raison, setSortiIfZero:'1' });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); await loadData(); return; }
-    toast(`📦 ${qte} sortie(s) — reste ${r.newQty}`);
+    if(r.error){ toast('' + r.error, 'err'); await loadData(); return; }
+    toast(`${qte} sortie(s) — reste ${r.newQty}`);
     await loadData();
     openModal(id);
 }
@@ -1743,7 +1775,7 @@ async function actAjouterQte(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
 
-    const qte = await askQuantite('➕ Ajouter au stock', `Stock actuel : <strong>${a.quantiteStock}</strong> unité(s).`, undefined, 1);
+    const qte = await askQuantite('Ajouter au stock', `Stock actuel : <strong>${a.quantiteStock}</strong> unité(s).`, undefined, 1);
     if(qte === null) return;
     const raison = await showInputDialog('Motif', 'Origine de ce réapprovisionnement ?', 'Réapprovisionnement');
     if(raison === null) return;
@@ -1751,8 +1783,8 @@ async function actAjouterQte(id){
     busy(true, 'Mise à jour du stock...');
     const r = await apiCall({ action:'adjustQuantity', ID:id, delta:qte, user:p, raison:raison });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); await loadData(); return; }
-    toast(`➕ ${qte} ajoutée(s) — total ${r.newQty}`);
+    if(r.error){ toast('' + r.error, 'err'); await loadData(); return; }
+    toast(`${qte} ajoutée(s) — total ${r.newQty}`);
     await loadData();
     openModal(id);
 }
@@ -1762,23 +1794,23 @@ async function actPreter(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
     const dispo = a.quantiteStock || 0;
-    if(dispo <= 0){ toast('⚠️ Aucune unité disponible', 'err'); return; }
+    if(dispo <= 0){ toast('Aucune unité disponible', 'err'); return; }
 
-    const qte = await askQuantite('🔄 Prêter', `Disponible : <strong>${dispo}</strong> unité(s).`, dispo, 1);
+    const qte = await askQuantite('Prêter', `Disponible : <strong>${dispo}</strong> unité(s).`, dispo, 1);
     if(qte === null) return;
 
     const emprunteur = await showInputDialog('Emprunteur', 'Nom du client ou du collaborateur qui emprunte.', '');
     if(!emprunteur) return;
 
     const defaut = new Date(Date.now() + 7 * 86400000).toISOString();
-    const dateRetour = await showDateDialog('📅 Date de retour prévue', 'Quand cet article doit-il revenir en magasin ?', defaut);
+    const dateRetour = await showDateDialog('Date de retour prévue', 'Quand cet article doit-il revenir en magasin ?', defaut);
     if(!dateRetour) return;
 
     busy(true, 'Enregistrement du prêt...');
     const r = await apiCall({ action:'preter', ID:id, qte:qte, emprunteur:emprunteur, dateRetourPrevue:dateRetour, user:p });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); await loadData(); return; }
-    toast(`🔄 Prêt enregistré — reste ${r.restant} disponible(s)`);
+    if(r.error){ toast('' + r.error, 'err'); await loadData(); return; }
+    toast(`Prêt enregistré — reste ${r.restant} disponible(s)`);
     await loadData();
     openModal(id);
 }
@@ -1791,8 +1823,8 @@ async function actRetourPretFromArray(parentId, pretId){
     busy(true, 'Enregistrement du retour...');
     const r = await apiCall({ action:'retourPret', ID:parentId, pretId:pretId, user:p });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); await loadData(); return; }
-    toast('↩️ Retour enregistré');
+    if(r.error){ toast('' + r.error, 'err'); await loadData(); return; }
+    toast('Retour enregistré');
     await loadData();
     openModal(parentId);
 }
@@ -1802,14 +1834,14 @@ async function actModifierDateRetourArray(parentId, pretId){
     const a = articles.find(x => x.id === parentId);
     const pret = a ? (a.prets||[]).find(x => x.pretId === pretId) : null;
 
-    const nouvelle = await showDateDialog('📅 Nouvelle date de retour', 'Reporter le retour de ce prêt.', pret ? pret.dateRetourPrevue : '');
+    const nouvelle = await showDateDialog('Nouvelle date de retour', 'Reporter le retour de ce prêt.', pret ? pret.dateRetourPrevue : '');
     if(!nouvelle) return;
 
     busy(true, 'Mise à jour...');
     const r = await apiCall({ action:'modifierDateRetour', ID:parentId, pretId:pretId, dateRetourPrevue:nouvelle, user:p });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📅 Date de retour modifiée');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Date de retour modifiée');
     await loadData();
     openModal(parentId);
 }
@@ -1822,8 +1854,8 @@ async function actRetourPret(id){
     const r = await doUpdate(id, { Statut:'Retourné', DateRetourReel:new Date().toISOString() });
     if(!r.error) await doHisto(id, p, 'Retour de prêt', 'Article rendu en magasin');
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('↩️ Retour enregistré');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Retour enregistré');
     closeModal();
     loadData();
 }
@@ -1831,14 +1863,14 @@ async function actRetourPret(id){
 async function actModifierDateRetour(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id) || pretsActifs.find(x => x.id === id);
-    const nouvelle = await showDateDialog('📅 Nouvelle date de retour', 'Reporter le retour de ce prêt.', a ? a.dateRetourPrevue : '');
+    const nouvelle = await showDateDialog('Nouvelle date de retour', 'Reporter le retour de ce prêt.', a ? a.dateRetourPrevue : '');
     if(!nouvelle) return;
     busy(true, 'Mise à jour...');
     const r = await doUpdate(id, { DateRetourPrevue:nouvelle });
     if(!r.error) await doHisto(id, p, 'Date de retour modifiée', 'Nouvelle date : ' + new Date(nouvelle).toLocaleDateString('fr-FR'));
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📅 Date modifiée');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Date modifiée');
     await loadData();
     openModal(id);
 }
@@ -1850,13 +1882,13 @@ async function actEmplacement(id){
 
     let nouveau;
     if(a.magasin === 'Lattes'){
-        nouveau = await showChoiceDialog('📍 Nouvel emplacement', `Emplacement actuel : <strong>${esc(a.emplacement)}</strong>`, [
+        nouveau = await showChoiceDialog('Nouvel emplacement', `Emplacement actuel : <strong>${esc(a.emplacement)}</strong>`, [
             {label:'Réserve', value:'Réserve'},
             {label:'Bureau en haut', value:'Bureau en haut'},
             {label:'Local RDC', value:'Local RDC'}
         ]);
     } else {
-        nouveau = await showInputDialog('📍 Nouvel emplacement', `Emplacement actuel : <strong>${esc(a.emplacement)}</strong>`, a.emplacement);
+        nouveau = await showInputDialog('Nouvel emplacement', `Emplacement actuel : <strong>${esc(a.emplacement)}</strong>`, a.emplacement);
     }
     if(!nouveau || nouveau === a.emplacement) return;
 
@@ -1864,8 +1896,8 @@ async function actEmplacement(id){
     const r = await doUpdate(id, { Emplacement:nouveau });
     if(!r.error) await doHisto(id, p, 'Changement d\'emplacement', `${a.emplacement} → ${nouveau}`);
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📍 Emplacement mis à jour');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Emplacement mis à jour');
     await loadData();
     openModal(id);
 }
@@ -1874,14 +1906,14 @@ async function actEmplacement(id){
 async function actSetSeuil(id){
     const a = articles.find(x => x.id === id); if(!a) return;
     const actuel = seuilsPerso[id] !== undefined ? seuilsPerso[id] : params.stockFaible;
-    const v = await showInputDialog('⚙️ Seuil d\'alerte', 'Une alerte apparaîtra dès que la quantité descend à ce niveau.', String(actuel), 'number');
+    const v = await showInputDialog('Seuil d\'alerte', 'Une alerte apparaîtra dès que la quantité descend à ce niveau.', String(actuel), 'number');
     if(v === null) return;
     busy(true, 'Enregistrement...');
     const r = await apiCall({ action:'setSeuil', ID:id, seuil:v });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
+    if(r.error){ toast('' + r.error, 'err'); return; }
     seuilsPerso[id] = parseInt(v) || 0;
-    toast('⚙️ Seuil enregistré : ' + seuilsPerso[id]);
+    toast('Seuil enregistré : ' + seuilsPerso[id]);
     refreshBadges();
     openModal(id);
 }
@@ -1895,36 +1927,36 @@ async function actVendre(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
     const dispo = a.quantiteStock || 0;
-    if(dispo <= 0){ toast('⚠️ Stock épuisé', 'err'); return; }
+    if(dispo <= 0){ toast('Stock épuisé', 'err'); return; }
 
-    const client = await showInputDialog('💰 Vente — Client', 'Nom du client.', '');
+    const client = await showInputDialog('Vente — Client', 'Nom du client.', '');
     if(!client) return;
 
-    const qte = await askQuantite('💰 Quantité vendue', `Disponible : <strong>${dispo}</strong> unité(s) à ${a.prixVente || '?'}€.`, dispo, 1);
+    const qte = await askQuantite('Quantité vendue', `Disponible : <strong>${dispo}</strong> unité(s) à ${a.prixVente || '?'}€.`, dispo, 1);
     if(qte === null) return;
 
-    const destination = await showChoiceDialog('🚚 Qui récupère l\'article ?', 'Le client vient-il le chercher en magasin, ou est-ce TLE qui passe le prendre (navette) ?', [
-        {label:'🛍️ Le client vient le chercher', value:'client', className:'btn btn-primary'},
-        {label:'🚚 TLE vient le chercher (navette)', value:'tle', className:'btn btn-teal'}
+    const destination = await showChoiceDialog('Qui récupère l\'article ?', 'Le client vient-il le chercher en magasin, ou est-ce TLE qui passe le prendre (navette) ?', [
+        {label:'Le client vient le chercher', value:'client', className:'btn btn-primary'},
+        {label:'TLE vient le chercher (navette)', value:'tle', className:'btn btn-teal'}
     ]);
     if(!destination) return;
 
     let dateTLE = '', dateRecup = '', statutNouveau, typeNouveau, prefixe;
 
     if(destination === 'tle'){
-        dateTLE = await showDateDialog('📅 Passage de la navette TLE', 'Date prévue du passage de TLE pour récupérer l\'article. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 7*86400000).toISOString());
+        dateTLE = await showDateDialog('Passage de la navette TLE', 'Date prévue du passage de TLE pour récupérer l\'article. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 7*86400000).toISOString());
         if(!dateTLE) return;
         typeNouveau = 'Stock';
         statutNouveau = 'Vendu - Attente TLE';
         prefixe = 'VENTE-';
     } else {
-        const quand = await showChoiceDialog('🛍️ Récupération', 'Le client repart-il avec l\'article ?', [
-            {label:'✅ Oui, tout de suite', value:'maintenant', className:'btn btn-success'},
-            {label:'📅 Non, plus tard', value:'plus_tard', className:'btn btn-outline'}
+        const quand = await showChoiceDialog('Récupération', 'Le client repart-il avec l\'article ?', [
+            {label:'Oui, tout de suite', value:'maintenant', className:'btn btn-success'},
+            {label:'Non, plus tard', value:'plus_tard', className:'btn btn-outline'}
         ]);
         if(!quand) return;
         if(quand === 'plus_tard'){
-            dateRecup = await showDateDialog('📅 Récupération par le client', 'Date prévue de passage du client. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 3*86400000).toISOString());
+            dateRecup = await showDateDialog('Récupération par le client', 'Date prévue de passage du client. Date provisoire : elle se modifie ensuite dans la fiche.', new Date(Date.now() + 3*86400000).toISOString());
             if(!dateRecup) return;
         }
         typeNouveau = 'Récupération client';
@@ -1939,14 +1971,14 @@ async function actVendre(id){
         ${destination === 'tle' ? `Départ TLE le <strong>${new Date(dateTLE).toLocaleDateString('fr-FR')}</strong>`
           : statutNouveau === 'Récupéré' ? 'Récupéré immédiatement par le client'
           : `Récupération prévue le <strong>${new Date(dateRecup).toLocaleDateString('fr-FR')}</strong>`}`;
-    if(!await showConfirmDialog('Valider la vente', recap, '💰 Valider la vente')) return;
+    if(!await showConfirmDialog('Valider la vente', recap, 'Valider la vente')) return;
 
     // 1) Décompte atomique du stock
     busy(true, 'Décompte du stock...');
     const adj = await apiCall({ action:'adjustQuantity', ID:id, delta:-qte, user:p, raison:'Vente à ' + client });
     if(adj.error){
         busy(false);
-        toast('❌ ' + adj.error, 'err');
+        toast('' + adj.error, 'err');
         await loadData();
         return;
     }
@@ -1983,7 +2015,7 @@ async function actVendre(id){
         busy(true, 'Annulation du décompte...');
         await apiCall({ action:'adjustQuantity', ID:id, delta:qte, user:p, raison:'Annulation vente (échec création suivi)' });
         busy(false);
-        toast('❌ Vente annulée : ' + created.error + ' — le stock a été rétabli', 'err');
+        toast('Vente annulée : ' + created.error + ' — le stock a été rétabli', 'err');
         await loadData();
         return;
     }
@@ -1995,7 +2027,7 @@ async function actVendre(id){
     }
 
     busy(false);
-    toast(`💰 Vente enregistrée — ${adj.newQty} restant(s) en stock`);
+    toast(`Vente enregistrée — ${adj.newQty} restant(s) en stock`);
     closeModal();
     await loadData();
     openModal(newId);
@@ -2011,8 +2043,8 @@ async function actRecupClientRecuperee(id){
     const r = await doUpdate(id, { Statut:'Récupéré', RecuperePar:a.client || a.recuperePar || '', DateSortie:new Date().toISOString() });
     if(!r.error) await doHisto(id, p, 'Récupéré par le client', `${a.quantiteStock || 1} unité(s) remise(s) à ${a.client || a.recuperePar || 'client'}`);
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('✅ Récupération enregistrée');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Récupération enregistrée');
     await loadData();
     openModal(id);
 }
@@ -2020,15 +2052,15 @@ async function actRecupClientRecuperee(id){
 async function actModifierDateRecupClient(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
-    const nouvelle = await showDateDialog('📅 Date de récupération', 'Quand le client vient-il chercher l\'article ?', getDateRecup(a) || '');
+    const nouvelle = await showDateDialog('Date de récupération', 'Quand le client vient-il chercher l\'article ?', getDateRecup(a) || '');
     if(!nouvelle) return;
 
     busy(true, 'Mise à jour...');
     const r = await doUpdate(id, { DateRecupClient:nouvelle });
     if(!r.error) await doHisto(id, p, 'Date de récupération modifiée', 'Nouvelle date : ' + new Date(nouvelle).toLocaleDateString('fr-FR'));
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📅 Date modifiée');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Date modifiée');
     await loadData();
     openModal(id);
 }
@@ -2043,8 +2075,8 @@ async function actRemisTLE(id){
     const r = await doUpdate(id, { Statut:'Sorti - Remis TLE', DateSortie:new Date().toISOString(), RaisonSortie:'Remis au transporteur TLE' });
     if(!r.error) await doHisto(id, p, 'Remis à TLE', `${a.quantiteStock || 1} unité(s) · Client : ${a.client || '?'}`);
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('🚚 Remis à TLE');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Remis à TLE');
     closeModal();
     loadData();
 }
@@ -2052,15 +2084,15 @@ async function actRemisTLE(id){
 async function actModifierDateTLE(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
-    const nouvelle = await showDateDialog('📅 Date TLE', 'Quand l\'article part-il chez TLE ?', a.dateTLE || '');
+    const nouvelle = await showDateDialog('Date TLE', 'Quand l\'article part-il chez TLE ?', a.dateTLE || '');
     if(!nouvelle) return;
 
     busy(true, 'Mise à jour...');
     const r = await doUpdate(id, { DateTLE:nouvelle });
     if(!r.error) await doHisto(id, p, 'Date TLE modifiée', 'Nouvelle date : ' + new Date(nouvelle).toLocaleDateString('fr-FR'));
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('📅 Date TLE modifiée');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Date TLE modifiée');
     await loadData();
     openModal(id);
 }
@@ -2069,11 +2101,11 @@ async function actModifierDateTLE(id){
 async function actRepriseRecue(id){
     const el = document.getElementById('actPrenom2');
     const p = el ? el.value.trim() : '';
-    if(!p){ toast('⚠️ Indiquez votre prénom', 'err'); el?.focus(); return; }
+    if(!p){ toast('Indiquez votre prénom', 'err'); el?.focus(); return; }
     localStorage.setItem('hmc_prenom', p);
 
     const sav = articles.find(x => x.id === id); if(!sav) return;
-    const dateTLE = await showDateDialog('📅 Départ TLE de la reprise', 'Quand l\'ancien article part-il chez TLE ?', new Date(Date.now() + 7*86400000).toISOString());
+    const dateTLE = await showDateDialog('Départ TLE de la reprise', 'Quand l\'ancien article part-il chez TLE ?', new Date(Date.now() + 7*86400000).toISOString());
     if(!dateTLE) return;
 
     if(!await showConfirmDialog('Reprise reçue',
@@ -2099,14 +2131,14 @@ async function actRepriseRecue(id){
 
     if(created.error){
         busy(false);
-        toast('❌ ' + created.error, 'err');
+        toast('' + created.error, 'err');
         return;
     }
 
     const r = await doUpdate(id, { RepriseRecue:'Oui' });
     if(!r.error) await doHisto(id, p, 'Reprise réceptionnée', 'Ancien article rentré en magasin · suivi ' + newId);
     busy(false);
-    toast('📥 Reprise enregistrée');
+    toast('Reprise enregistrée');
     closeModal();
     await loadData();
     openModal(newId);
@@ -2115,11 +2147,11 @@ async function actRepriseRecue(id){
 // ─── ENREGISTREMENT DES MODIFICATIONS DE FICHE ────────────
 async function actSaveEdit(id){
     const a = articles.find(x => x.id === id);
-    if(!a){ toast('❌ Article introuvable', 'err'); return; }
+    if(!a){ toast('Article introuvable', 'err'); return; }
 
     const prenomEl = document.getElementById('e_prenom');
     const p = prenomEl ? prenomEl.value.trim() : '';
-    if(!p){ toast('⚠️ Indiquez votre prénom', 'err'); prenomEl?.focus(); return; }
+    if(!p){ toast('Indiquez votre prénom', 'err'); prenomEl?.focus(); return; }
     localStorage.setItem('hmc_prenom', p);
 
     const val = eid => { const el = document.getElementById(eid); return el ? el.value.trim() : null; };
@@ -2139,6 +2171,8 @@ async function actSaveEdit(id){
     compare('magasin', 'Magasin', val('e_magasin'), a.magasin, 'Magasin');
     compare('emplacement', 'Emplacement', val('e_emplacement'), a.emplacement, 'Emplacement');
     compare('client', 'Client', val('e_client'), a.client, 'Client');
+    const vend = val('e_vendeur');
+    compare('vendeur', 'Vendeur', vend === null ? null : vend.replace(/\s+/g, ' '), a.vendeur, 'Vendeur de la cuisine');
     compare('numeroAR', 'NumeroAR', val('e_numeroAR'), a.numeroAR, 'N° AR');
     compare('nombreColis', 'NombreColis', val('e_nombreColis'), a.nombreColis, 'Colis');
     compare('madSubtype', 'MADSubtype', val('e_madSubtype'), a.madSubtype, 'Sous-type MAD');
@@ -2165,7 +2199,7 @@ async function actSaveEdit(id){
     const ficheBrute = lireArticles().find(f => f.ID === id);
     if(cat && ficheBrute && cat !== categorieDe(ficheBrute)){
         const r = changerCategorie(ficheBrute, cat, { client: val('e_client') || '', prix: val('e_prixVente') ?? '' });
-        if(r.error){ toast('⚠️ ' + r.error, 'err'); return; }
+        if(r.error){ toast('' + r.error, 'err'); return; }
         Object.assign(updates, r.champs);
         changes.push(`Catégorie : ${CATEGORIES[categorieDe(ficheBrute)]} → ${CATEGORIES[cat]}`);
     }
@@ -2188,9 +2222,9 @@ async function actSaveEdit(id){
     const r = await doUpdate(id, updates);
     if(!r.error) await doHisto(id, p, 'Modification de la fiche', changes.join(' · '));
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
+    if(r.error){ toast('' + r.error, 'err'); return; }
 
-    toast(`✅ ${changes.length} modification(s) enregistrée(s)`);
+    toast(`${changes.length} modification(s) enregistrée(s)`);
     await loadData();
     openModal(id);
 }
@@ -2202,11 +2236,11 @@ async function actSupprimerArticle(id){
     if(!a) return;
     const prenomEl = document.getElementById('e_prenom');
     const p = prenomEl ? prenomEl.value.trim() : (localStorage.getItem('hmc_prenom') || '');
-    if(!p){ toast('⚠️ Indiquez votre prénom', 'err'); prenomEl?.focus(); return; }
+    if(!p){ toast('Indiquez votre prénom', 'err'); prenomEl?.focus(); return; }
 
     if(!await showConfirmDialog('Archiver l\'article',
         `<strong>${esc(a.article)}</strong> partira dans les archives.<br><br>Rien n'est perdu : la fiche et son historique restent dans les archives (téléchargeables en Excel par l'admin).`,
-        '🗑️ Archiver', true)) return;
+        'Archiver', true)) return;
 
     const raison = await showInputDialog('Motif d\'archivage', 'Pourquoi archiver cette ligne ?', 'Archivage manuel');
     if(raison === null) return;
@@ -2214,8 +2248,8 @@ async function actSupprimerArticle(id){
     busy(true, 'Archivage...');
     const r = await apiCall({ action:'deleteArticle', ID:id, user:p, raison:raison });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('🗑️ Article archivé');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Article archivé');
     closeModal();
     loadData();
 }
@@ -2286,7 +2320,7 @@ async function chargerArchivesHisto(){
             dateArchivage:f.DateArchivage || '', raisonArchivage:f.RaisonArchivage || '',
         }));
     } catch(e) {
-        toast('❌ Archives illisibles : ' + (e.message || e), 'err');
+        toast('Archives illisibles : ' + (e.message || e), 'err');
         archivesHisto = [];
     } finally { _archivesEnCours = false; }
     renderHistorique();
@@ -2306,6 +2340,8 @@ function renderHistorique(){
 
     let liste = [...articles, ...archivesHisto];
     if(mag) liste = liste.filter(a => a.magasin === mag);
+    const vendeur = remplirFiltreVendeurs('h_vend', liste, mag);
+    if(vendeur) liste = liste.filter(a => memeVendeur(a, vendeur));
     if(etat === 'encours') liste = liste.filter(a => !a.archive && STATUTS_EN_COURS.includes(a.statut));
     else if(etat === 'clos') liste = liste.filter(a => !a.archive && !STATUTS_EN_COURS.includes(a.statut));
     else if(etat === 'archives') liste = liste.filter(a => a.archive);
@@ -2315,28 +2351,29 @@ function renderHistorique(){
 
     const MAX = 150;
     document.getElementById('histoStats').textContent = `${liste.length} résultat(s)` + (liste.length > MAX ? ` · les ${MAX} plus récents affichés, précisez la recherche` : '');
-    if(!liste.length){ zone.innerHTML = '<div class="empty"><div class="ico">🔍</div><p>Aucun résultat</p></div>'; return; }
+    if(!liste.length){ zone.innerHTML = '<div class="empty"><p>Aucun résultat</p></div>'; return; }
 
     zone.innerHTML = liste.slice(0, MAX).map(a => {
         const badges = [`<span class="badge ${STATUTS_EN_COURS.includes(a.statut) ? 'b-stock' : 'b-sorti'}">${esc(a.statut)}</span>`];
-        if(a.archive) badges.push('<span class="badge b-purple">🗄️ Archivé</span>');
-        const quand = a.archive ? `🗄️ Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
-            : a.dateSortie ? `📤 Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
-            : `📥 Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
+        if(a.archive) badges.push('<span class="badge b-purple">Archivé</span>');
+        const quand = a.archive ? `Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
+            : a.dateSortie ? `Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
+            : `Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
         return `<div class="article-item" onclick="${a.archive ? 'ouvrirArchive' : 'openModal'}('${esc(a.id)}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    ${a.client && a.client !== 'Stock interne' ? `<div class="item-client">👤 ${esc(a.client)}</div>` : ''}
+                    ${a.client && a.client !== 'Stock interne' ? `<div class="item-client">${esc(a.client)}</div>` : ''}
                     <div class="item-ref">${esc(a.reference)} · ${esc(a.type)}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
             </div>
             <div class="item-meta">
-                <span class="meta">🏪 <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
                 <span class="meta">${quand}</span>
-                ${a.raisonSortie ? `<span class="meta">↪ <strong>${esc(a.raisonSortie)}</strong></span>` : ''}
+                ${a.raisonSortie ? `<span class="meta">Sortie : <strong>${esc(a.raisonSortie)}</strong></span>` : ''}
                 ${a.numeroAR ? `<span class="meta">AR: <strong>${esc(a.numeroAR)}</strong></span>` : ''}
+                ${a.vendeur ? `<span class="meta">Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -2351,7 +2388,7 @@ function ouvrirArchive(id){
     document.getElementById('mTitle').textContent = a.article;
     document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
     document.getElementById('mBody').innerHTML = `
-        <div class="lecture-seule">🗄️ Article archivé le <strong>${fmtJour(a.dateArchivage)}</strong>${a.raisonArchivage ? ' — ' + esc(a.raisonArchivage) : ''}</div>
+        <div class="lecture-seule">Article archivé le <strong>${fmtJour(a.dateArchivage)}</strong>${a.raisonArchivage ? ' — ' + esc(a.raisonArchivage) : ''}</div>
         <div class="detail-grid">
             ${champ('Magasin', a.magasin)}${champ('Statut', a.statut)}
             ${champ('Client', a.client && a.client !== 'Stock interne' ? a.client : '')}${champ('N° AR', a.numeroAR)}
@@ -2359,7 +2396,7 @@ function ouvrirArchive(id){
             ${champ('Date réception', fmtJour(a.dateReception))}${champ('Date sortie', fmtJour(a.dateSortie))}
             ${champ('Comment il est sorti', a.raisonSortie, true)}${champ('Notes', a.notes, true)}
         </div>
-        <div class="divider"></div><div class="section-lbl">📜 Historique</div>
+        <div class="divider"></div><div class="section-lbl">Historique</div>
         ${histo.length ? histo.map(h => `<div class="histo">
             <div class="histo-date">${esc(h.dateStr || '')}</div>
             <div class="histo-action">${esc(h.action)}${h.utilisateur ? ' — ' + esc(h.utilisateur) : ''}</div>
@@ -2370,7 +2407,7 @@ function ouvrirArchive(id){
 
 // ─── NETTOYAGE / ARCHIVAGE EN MASSE ───────────────────────
 async function actArchiveOld(){
-    if(!estAdmin(moi)){ toast('🔒 Réservé à l\'administrateur', 'err'); return; }
+    if(!estAdmin(moi)){ toast('Réservé à l\'administrateur', 'err'); return; }
     const jours = params.archiveJours || 90;
     const limite = Date.now() - jours * 86400000;
 
@@ -2388,13 +2425,13 @@ async function actArchiveOld(){
     const apercu = candidats.slice(0, 5).map(a => `• ${esc(a.article)} — ${esc(a.magasin)}`).join('<br>');
     if(!await showConfirmDialog('Nettoyer la base',
         `<strong>${candidats.length} article(s)</strong> clos depuis plus de ${jours} jours partiront dans les archives.<br><br>${apercu}${candidats.length > 5 ? `<br>• … et ${candidats.length - 5} autre(s)` : ''}<br><br>Rien n'est supprimé : tout reste dans les archives (téléchargeables en Excel ci-dessous).`,
-        '🗑️ Archiver', true)) return;
+        'Archiver', true)) return;
 
     busy(true, `Archivage de ${candidats.length} article(s)...`);
     const r = await apiCall({ action:'archiveArticles', ids:JSON.stringify(candidats.map(a => a.id)) });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast(`🗑️ ${r.archived !== undefined ? r.archived : candidats.length} article(s) archivé(s)`);
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast(`${r.archived !== undefined ? r.archived : candidats.length} article(s) archivé(s)`);
     loadData();
 }
 
@@ -2405,8 +2442,8 @@ async function enregistrerMagasins(){
     busy(true, 'Enregistrement...');
     const r = await apiCall({ action:'saveMagasins', magasins: liste });
     busy(false);
-    if(r.error){ toast('❌ ' + r.error, 'err'); return; }
-    toast('✅ Magasins enregistrés');
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Magasins enregistrés');
     loadData();
 }
 
@@ -2415,11 +2452,11 @@ async function lancerRecopieUtilisateurs(){
     try {
         busy(true, 'Lecture des utilisateurs de l\'appli HMC...');
         const r = await (await outilsAdmin()).recopierUtilisateurs(moi);
-        zone.textContent = `✅ ${r.total} utilisateur(s) recopié(s), dont ${r.actifs} actif(s). ${r.desactives} ancien(s) compte(s) désactivé(s).`;
-        toast('✅ Utilisateurs recopiés');
+        zone.textContent = `${r.total} utilisateur(s) recopié(s), dont ${r.actifs} actif(s). ${r.desactives} ancien(s) compte(s) désactivé(s).`;
+        toast('Utilisateurs recopiés');
     } catch(e) {
-        zone.textContent = '❌ ' + (e.message || e);
-        toast('❌ Recopie impossible', 'err');
+        zone.textContent = '' + (e.message || e);
+        toast('Recopie impossible', 'err');
     } finally { busy(false); }
 }
 
@@ -2430,7 +2467,7 @@ async function afficherAdmins(){
         const noms = await (await outilsAdmin()).listerAdmins();
         zone.innerHTML = noms.length ? noms.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Aucun</span>';
     } catch(e) {
-        zone.textContent = '❌ ' + (e.message || e);
+        zone.textContent = '' + (e.message || e);
     }
 }
 async function lancerExportArchives(){
@@ -2439,7 +2476,7 @@ async function lancerExportArchives(){
         const n = await (await outilsAdmin()).telechargerArchives();
         toast(`⬇️ ${n} article(s) archivé(s) téléchargé(s)`);
     } catch(e) {
-        toast('❌ ' + (e.message || e), 'err');
+        toast('' + (e.message || e), 'err');
     } finally { busy(false); }
 }
 

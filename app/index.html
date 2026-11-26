@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#f4f3ef">
     <title>HMC — Gestion de Stock</title>
     <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('hmc.theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
     <link rel="icon" href="/favicon.png" type="image/png">
@@ -12,46 +12,46 @@
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- Scanner QR caméra (usage interne uniquement) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
-        /* Design repris de l'Application HMC : sobre, menu latéral à gauche sur ordinateur,
-           barre en haut sur téléphone. Toutes les couleurs sont des variables :
-           le mode sombre ne fait que les changer. Les anciens noms (--bg, --blue…)
-           pointent vers les nouveaux pour que le reste de l'appli suive sans changement. */
+        /* Style « atelier » : papier clair, encre, une seule couleur d'accent (vert sapin),
+           des lignes fines plutôt que des ombres, des chiffres et références en police à chasse fixe.
+           Toutes les couleurs sont des variables : le mode sombre ne fait que les changer.
+           Les anciens noms (--bg, --blue…) pointent vers les nouveaux pour que le reste suive. */
         :root, :root[data-theme="light"]{
-            --fond:#f4f6fb;--surface:#ffffff;--surface2:#f8fafc;--survol:#f1f5fd;
-            --bord:#e3e8f0;--bord2:#d3dae6;
-            --texte:#0f172a;--texte2:#475569;--texte3:#8a94a6;
-            --bleu:#2563eb;--bleuFonce:#1d4ed8;--bleuDoux:#e8f0fe;--bleuBord:#c7d7fd;
-            --vert:#15803d;--vertDoux:#e7f6ec;--vertBord:#bfe5cb;
-            --or:#b45309;--orDoux:#fdf3e2;--orBord:#f6d9a8;
-            --rouge:#dc2626;--rougeDoux:#fdecec;--rougeBord:#f7c4c4;
-            --violet:#6d28d9;--violetDoux:#f1ebfd;--violetBord:#dccdfa;
-            --cyan:#0e7490;--cyanDoux:#e6f6fa;--cyanBord:#b3e3ef;
-            --grisDoux:#f1f5f9;
-            --ombre:0 1px 2px rgba(15,23,42,.04),0 4px 16px rgba(15,23,42,.05);
-            --ombreMoy:0 4px 20px rgba(15,23,42,.08);
-            --ombrePop:0 12px 40px rgba(15,23,42,.16),0 2px 6px rgba(15,23,42,.06);
-            --voile:rgba(15,23,42,.35);
+            --fond:#f4f3ef;--surface:#fffefb;--surface2:#f8f7f3;--survol:#efede7;
+            --bord:#e3e0d8;--bord2:#d3cfc5;
+            --texte:#1c1b18;--texte2:#55524a;--texte3:#8a867c;
+            --bleu:#245c4f;--bleuFonce:#1b4a3f;--bleuDoux:#e6efe9;--bleuBord:#bfd5c9;
+            --vert:#2f6e3b;--vertDoux:#e8f1e6;--vertBord:#c5dcc3;
+            --or:#94570f;--orDoux:#f8eedc;--orBord:#ead2a6;
+            --rouge:#b3261e;--rougeDoux:#f8e6e3;--rougeBord:#ecc2bc;
+            --violet:#5d4b8a;--violetDoux:#eeeaf5;--violetBord:#d6cfe6;
+            --cyan:#24687a;--cyanDoux:#e5f0f2;--cyanBord:#bfd9df;
+            --grisDoux:#efede7;
+            --ombre:none;
+            --ombreMoy:0 6px 24px rgba(28,27,24,.08);
+            --ombrePop:0 18px 48px rgba(28,27,24,.16),0 2px 6px rgba(28,27,24,.06);
+            --voile:rgba(28,27,24,.38);
             color-scheme:light;
         }
         :root[data-theme="dark"]{
-            --fond:#0b0f19;--surface:#121826;--surface2:#161d2d;--survol:#1a2336;
-            --bord:#222c3f;--bord2:#2e3a52;
-            --texte:#e6ebf5;--texte2:#a8b3c7;--texte3:#6f7b91;
-            --bleu:#60a5fa;--bleuFonce:#3b82f6;--bleuDoux:rgba(96,165,250,.14);--bleuBord:rgba(96,165,250,.35);
-            --vert:#4ade80;--vertDoux:rgba(74,222,128,.12);--vertBord:rgba(74,222,128,.3);
-            --or:#fbbf24;--orDoux:rgba(251,191,36,.12);--orBord:rgba(251,191,36,.3);
-            --rouge:#f87171;--rougeDoux:rgba(248,113,113,.13);--rougeBord:rgba(248,113,113,.32);
-            --violet:#c4b5fd;--violetDoux:rgba(167,139,250,.14);--violetBord:rgba(167,139,250,.32);
-            --cyan:#67e8f9;--cyanDoux:rgba(103,232,249,.12);--cyanBord:rgba(103,232,249,.3);
-            --grisDoux:rgba(148,163,184,.12);
-            --ombre:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.25);
-            --ombreMoy:0 6px 22px rgba(0,0,0,.4);
-            --ombrePop:0 16px 48px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.3);
+            --fond:#141513;--surface:#1b1c1a;--surface2:#20221f;--survol:#262825;
+            --bord:#2c2e2a;--bord2:#3a3d38;
+            --texte:#ecebe6;--texte2:#b2b0a8;--texte3:#7d7b74;
+            --bleu:#8cc7b1;--bleuFonce:#a6d6c4;--bleuDoux:rgba(140,199,177,.12);--bleuBord:rgba(140,199,177,.32);
+            --vert:#9ccf96;--vertDoux:rgba(156,207,150,.12);--vertBord:rgba(156,207,150,.3);
+            --or:#e3b26a;--orDoux:rgba(227,178,106,.12);--orBord:rgba(227,178,106,.3);
+            --rouge:#ec8b80;--rougeDoux:rgba(236,139,128,.12);--rougeBord:rgba(236,139,128,.32);
+            --violet:#bdb0e3;--violetDoux:rgba(189,176,227,.12);--violetBord:rgba(189,176,227,.3);
+            --cyan:#8ccad8;--cyanDoux:rgba(140,202,216,.12);--cyanBord:rgba(140,202,216,.3);
+            --grisDoux:rgba(178,176,168,.1);
+            --ombre:none;
+            --ombreMoy:0 6px 24px rgba(0,0,0,.4);
+            --ombrePop:0 18px 48px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.3);
             --voile:rgba(0,0,0,.55);
             color-scheme:dark;
         }
@@ -65,294 +65,347 @@
             --purple:var(--violet);--purple-soft:var(--violetDoux);--purple-border:var(--violetBord);
             --teal:var(--cyan);--teal-soft:var(--cyanDoux);--teal-border:var(--cyanBord);
             --text:var(--texte);--text1:var(--texte);--text2:var(--texte2);--text3:var(--texte3);
-            --r:14px;--r2:10px;
+            --r:8px;--r2:6px;
             --shadow:var(--ombre);--shadow-md:var(--ombreMoy);--shadow-lg:var(--ombrePop);
-            --police:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+            --police:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+            --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
         }
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         html,body{min-height:100%;}
         body{font-family:var(--police);font-size:14px;line-height:1.45;background:var(--fond);color:var(--texte);-webkit-font-smoothing:antialiased;}
         button,input,select,textarea{font-family:inherit;}
         :focus-visible{outline:2px solid var(--bleu);outline-offset:2px;}
+        ::selection{background:var(--bleuBord);}
+        .ico{width:16px;height:16px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
 
         /* ── Mise en page : menu latéral + contenu ── */
-        .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100svh;}
-        .barreLaterale{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;gap:18px;padding:20px 14px;background:var(--surface);border-right:1px solid var(--bord);overflow:auto;}
-        .marque{display:flex;align-items:center;gap:10px;padding:0 6px;}
-        .marque b{display:block;font-size:14.5px;}
-        .marque span:not(.logo){font-size:12px;color:var(--texte3);}
-        .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;font-weight:800;font-size:16px;}
-        .profil{display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--bord);}
-        .avatar{width:40px;height:40px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:var(--bleuDoux);color:var(--bleuTexte,var(--bleu));font-weight:800;font-size:16px;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--bleuBord);}
+        .app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100svh;}
+        .barreLaterale{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;gap:22px;padding:22px 12px 16px;background:var(--fond);border-right:1px solid var(--bord);overflow:auto;}
+        .marque{display:flex;align-items:baseline;gap:6px;padding:0 10px;font-size:17px;letter-spacing:-.01em;}
+        .marque b{font-weight:700;}
+        .marque span{font-weight:400;color:var(--texte3);}
+        .profil{display:flex;align-items:center;gap:10px;padding:0 10px 18px;border-bottom:1px solid var(--bord);}
+        .avatar{width:32px;height:32px;border-radius:6px;flex:0 0 auto;display:grid;place-items:center;background:var(--bleu);color:var(--surface);font-weight:600;font-size:14px;}
         .profil-texte{min-width:0;}
-        .profil-texte b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .profil-texte span{display:block;font-size:12px;color:var(--texte2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .tabs{display:flex;flex-direction:column;gap:2px;}
-        .tab{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:0;background:none;cursor:pointer;color:var(--texte2);font-weight:600;font-size:13.5px;text-align:left;white-space:nowrap;transition:background .15s,color .15s;}
+        .profil-texte b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .profil-texte span{display:block;font-size:12px;color:var(--texte3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .tabs{display:flex;flex-direction:column;gap:1px;}
+        .tab{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;border:0;background:none;cursor:pointer;color:var(--texte2);font-weight:500;font-size:13.5px;text-align:left;white-space:nowrap;transition:background .12s,color .12s;}
+        .tab .ico{color:var(--texte3);transition:color .12s;}
         .tab:hover{background:var(--survol);color:var(--texte);}
-        .tab.active{background:var(--bleuDoux);color:var(--bleu);}
-        .tab-badge{margin-left:auto;background:var(--rouge);color:#fff;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;line-height:1.5;}
-        .basLateral{margin-top:auto;display:flex;gap:8px;justify-content:center;}
-        .btnIcone{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;cursor:pointer;border:1px solid var(--bord);background:var(--surface);color:var(--texte2);font-size:16px;transition:background .15s,color .15s;}
+        .tab.active{background:var(--surface);color:var(--texte);box-shadow:inset 0 0 0 1px var(--bord);}
+        .tab.active .ico{color:var(--bleu);}
+        .tab-badge{margin-left:auto;color:var(--rouge);font-family:var(--mono);font-size:11.5px;font-weight:500;line-height:1;}
+        .basLateral{margin-top:auto;display:flex;gap:6px;padding:0 4px;}
+        .btnIcone{width:34px;height:34px;display:grid;place-items:center;border-radius:6px;cursor:pointer;border:1px solid transparent;background:none;color:var(--texte3);transition:background .12s,color .12s;}
         .btnIcone:hover{background:var(--survol);color:var(--texte);}
+        .btnIcone .ico{width:17px;height:17px;}
 
         .colonne{display:flex;flex-direction:column;min-width:0;}
-        .header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 26px;background:color-mix(in srgb,var(--fond) 85%,transparent);backdrop-filter:blur(8px);}
+        .header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:14px 32px;background:color-mix(in srgb,var(--fond) 88%,transparent);backdrop-filter:blur(8px);}
         main{flex:1;}
-        .page{max-width:1080px;margin:0 auto;padding:6px 26px 24px;}
-        .pane{display:none;animation:fadeIn .15s ease;}
-        .pane.active{display:block;}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-        .page-title{font-size:24px;font-weight:700;letter-spacing:-.01em;margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+        .page{max-width:1040px;margin:0 auto;padding:4px 32px 28px;}
+        .pane{display:none;}
+        .pane.active{display:block;animation:fadeIn .12s ease;}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        .page-title{font-size:22px;font-weight:600;letter-spacing:-.015em;margin-bottom:20px;}
 
-        /* Pastille d'état (en direct / hors ligne) */
-        .pill{padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;}
-        .pill.ok{background:var(--vertDoux);color:var(--vert);border-color:var(--vertBord);}
-        .pill.loading{background:var(--orDoux);color:var(--or);border-color:var(--orBord);}
-        .pill.err{background:var(--rougeDoux);color:var(--rouge);border-color:var(--rougeBord);}
-        .btn-sm{height:34px;padding:0 13px;border-radius:10px;font-size:13px;font-weight:600;border:1px solid var(--bord2);background:var(--surface);color:var(--texte2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s;}
-        .btn-sm:hover{background:var(--survol);color:var(--texte);}
-        .btn-scan{background:var(--bleu);color:#fff;border-color:var(--bleu);}
-        .btn-scan:hover{background:var(--bleuFonce);color:#fff;border-color:var(--bleuFonce);}
+        /* Indicateur d'état (en direct / hors ligne) : un point et du texte */
+        .pill{font-size:12.5px;font-weight:500;color:var(--texte2);display:inline-flex;align-items:center;gap:7px;font-variant-numeric:tabular-nums;}
+        .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--texte3);}
+        .pill.ok::before{background:var(--vert);}
+        .pill.loading::before{background:var(--or);animation:pulse 1s ease-in-out infinite alternate;}
+        .pill.err{color:var(--rouge);}
+        .pill.err::before{background:var(--rouge);}
+        @keyframes pulse{to{opacity:.3}}
+        .btn-sm{height:32px;padding:0 12px;border-radius:6px;font-size:13px;font-weight:500;border:1px solid var(--bord2);background:var(--surface);color:var(--texte);cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .12s,border-color .12s;}
+        .btn-sm:hover{background:var(--survol);}
+        .btn-scan{background:var(--texte);color:var(--fond);border-color:var(--texte);}
+        .btn-scan:hover{background:var(--texte2);border-color:var(--texte2);}
 
-        /* ── Chiffres clés ── */
-        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
-        .stat-card{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);padding:16px;box-shadow:var(--ombre);}
-        .stat-card .num{font-size:26px;font-weight:800;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
-        .stat-card .lbl{font-size:12px;font-weight:600;color:var(--texte3);}
-        .stat-card.blue .num{color:var(--bleu);}
-        .stat-card.green .num{color:var(--vert);}
-        .stat-card.orange .num{color:var(--or);}
+        /* ── Chiffres clés : une bande, séparée par des filets ── */
+        .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:22px;border-top:1px solid var(--bord);border-bottom:1px solid var(--bord);}
+        .stat-card{padding:14px 18px 13px;border-left:1px solid var(--bord);}
+        .stat-card:first-child{border-left:0;padding-left:2px;}
+        .stat-card .num{font-family:var(--mono);font-size:24px;font-weight:500;line-height:1.1;margin-bottom:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+        .stat-card .lbl{font-size:12px;color:var(--texte3);display:flex;align-items:center;gap:6px;}
+        .stat-card .lbl::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--texte3);}
+        .stat-card.blue .lbl::before{background:var(--bleu);}
+        .stat-card.green .lbl::before{background:var(--vert);}
+        .stat-card.orange .lbl::before{background:var(--or);}
+        .stat-card.red .lbl::before{background:var(--rouge);}
         .stat-card.red .num{color:var(--rouge);}
-        .stat-card.purple .num{color:var(--violet);}
+        .stat-card.purple .lbl::before{background:var(--violet);}
 
-        .card{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);padding:22px;box-shadow:var(--ombre);margin-bottom:14px;}
+        .card{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);padding:24px;margin-bottom:16px;}
 
         /* ── Formulaires ── */
-        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+        .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 18px;}
         .fg{display:flex;flex-direction:column;gap:6px;}
         .fg.full{grid-column:1/-1;}
-        .fg label{font-size:12px;font-weight:600;color:var(--texte2);}
+        .fg label{font-size:12.5px;font-weight:500;color:var(--texte2);}
         .fg input,.fg select,.fg textarea,.filter-bar select,.filter-bar input,.edit-form input,.edit-form select,.edit-form textarea,.date-input,.prenom-bar input,.setting-row input[type=number]{
-            background:var(--surface);border:1px solid var(--bord2);border-radius:10px;padding:10px 12px;color:var(--texte);font-size:16px;font-weight:500;transition:border-color .15s,box-shadow .15s;}
+            background:var(--surface);border:1px solid var(--bord2);border-radius:6px;padding:9px 11px;color:var(--texte);font-size:16px;transition:border-color .12s,box-shadow .12s;}
+        .fg input::placeholder,.filter-bar input::placeholder,.edit-form input::placeholder{color:var(--texte3);}
         .fg input:focus,.fg select:focus,.fg textarea:focus,.filter-bar select:focus,.filter-bar input:focus,.edit-form input:focus,.edit-form select:focus,.edit-form textarea:focus,.date-input:focus,.prenom-bar input:focus,.setting-row input[type=number]:focus{
             outline:none;border-color:var(--bleu);box-shadow:0 0 0 3px var(--bleuDoux);}
-        .fg .hint{font-size:11.5px;color:var(--texte3);margin-top:2px;}
+        .fg .hint{font-size:12px;color:var(--texte3);}
 
-        /* ── Boutons ── */
-        .btn{height:40px;padding:0 16px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:background .15s,filter .15s,border-color .15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+        /* ── Boutons : un seul bouton plein par écran, le reste en contour ── */
+        .btn{height:38px;padding:0 15px;border-radius:6px;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s,color .12s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
         .btn:disabled{opacity:.45;cursor:not-allowed;}
-        .btn:active:not(:disabled){transform:scale(.98);}
+        .btn:active:not(:disabled){transform:translateY(1px);}
         .btn-primary{background:var(--bleu);border-color:var(--bleu);color:#fff;}
-        .btn-primary:hover:not(:disabled){filter:brightness(1.07);}
-        .btn-success{background:var(--vert);color:#fff;}
-        .btn-warning{background:var(--or);color:#fff;}
-        .btn-danger{background:var(--rouge);color:#fff;}
-        .btn-purple{background:var(--violet);color:#fff;}
-        .btn-teal{background:var(--cyan);color:#fff;}
-        :root[data-theme="dark"] :is(.btn-primary,.btn-success,.btn-warning,.btn-danger,.btn-purple,.btn-teal,.btn-scan,.b-retard,.tab-badge,.toast.ok,.toast.err,.toast.info){color:#0b0f19;}
-        .btn-success:hover:not(:disabled),.btn-warning:hover:not(:disabled),.btn-danger:hover:not(:disabled),.btn-purple:hover:not(:disabled),.btn-teal:hover:not(:disabled){filter:brightness(1.07);}
+        .btn-primary:hover:not(:disabled){background:var(--bleuFonce);border-color:var(--bleuFonce);}
+        .btn-success{background:var(--texte);border-color:var(--texte);color:var(--fond);}
+        .btn-success:hover:not(:disabled){background:var(--texte2);border-color:var(--texte2);}
+        .btn-warning{background:var(--orDoux);border-color:var(--orBord);color:var(--or);}
+        .btn-warning:hover:not(:disabled){border-color:var(--or);}
+        .btn-danger{background:var(--surface);border-color:var(--rougeBord);color:var(--rouge);}
+        .btn-danger:hover:not(:disabled){background:var(--rougeDoux);border-color:var(--rouge);}
+        .btn-purple{background:var(--surface);border-color:var(--violetBord);color:var(--violet);}
+        .btn-purple:hover:not(:disabled){background:var(--violetDoux);}
+        .btn-teal{background:var(--surface);border-color:var(--bleuBord);color:var(--bleu);}
+        .btn-teal:hover:not(:disabled){background:var(--bleuDoux);}
+        :root[data-theme="dark"] .btn-primary{color:#10130f;}
         .btn-outline{background:var(--surface);color:var(--texte);border-color:var(--bord2);}
-        .btn-outline:hover{background:var(--survol);}
-        .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+        .btn-outline:hover:not(:disabled){background:var(--survol);}
+        .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;}
 
-        .filter-bar{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;box-shadow:var(--ombre);}
-        .filter-bar select,.filter-bar input{padding:8px 12px;}
+        /* Filtres : posés sur la page, sans encadré */
+        .filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+        .filter-bar select,.filter-bar input{padding:7px 11px;font-size:14px;}
+        #m_search,#s_search,#t_search,#rc_search,#p_search,#h_search{padding-left:34px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%238a867c' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 11px center;}
 
-        /* ── Listes d'articles ── */
-        .article-item{background:var(--surface);border:1px solid var(--bord);border-radius:var(--r);padding:15px 18px;margin-bottom:9px;cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s;box-shadow:var(--ombre);}
-        .article-item:hover{border-color:var(--bleuBord);background:var(--survol);}
-        .article-item:active{transform:scale(.997);}
-        .item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;}
-        .item-title{font-size:14.5px;font-weight:700;}
-        .item-client{font-size:15px;font-weight:700;color:var(--texte);margin-top:3px;}
-        .item-ref{font-size:12px;color:var(--texte3);margin-top:2px;font-variant-numeric:tabular-nums;}
-        .item-meta{display:flex;flex-wrap:wrap;gap:12px;}
-        .meta{font-size:12.5px;color:var(--texte3);display:flex;align-items:center;gap:4px;}
-        .meta strong{color:var(--texte2);font-weight:600;}
+        /* ── Listes d'articles : des lignes dans un même tableau, pas des cartes séparées ── */
+        .article-item{background:var(--surface);border:1px solid var(--bord);border-top:0;padding:13px 18px;cursor:pointer;transition:background .1s;}
+        .article-item:not(.article-item + .article-item){border-top:1px solid var(--bord);border-top-left-radius:var(--r);border-top-right-radius:var(--r);}
+        .article-item:not(:has(+ .article-item)){border-bottom-left-radius:var(--r);border-bottom-right-radius:var(--r);margin-bottom:12px;}
+        .article-item:hover{background:var(--surface2);}
+        .article-item:hover .item-title{color:var(--bleu);}
+        .item-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:6px;}
+        .item-title{font-size:14px;font-weight:600;transition:color .1s;}
+        .item-client{font-size:13.5px;font-weight:500;color:var(--texte);margin-top:1px;}
+        .item-ref{font-family:var(--mono);font-size:12px;color:var(--texte3);margin-top:2px;}
+        .item-meta{display:flex;flex-wrap:wrap;gap:4px 0;}
+        .meta{font-size:12.5px;color:var(--texte3);display:inline-flex;align-items:center;gap:4px;}
+        .meta + .meta::before{content:"";width:3px;height:3px;border-radius:50%;background:var(--bord2);margin:0 9px;}
+        .meta strong{color:var(--texte2);font-weight:500;}
 
-        .badge{padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;border:1px solid transparent;}
-        .b-stock,.b-dispo,.b-success{background:var(--vertDoux);color:var(--vert);border-color:var(--vertBord);}
-        .b-mad{background:var(--bleuDoux);color:var(--bleu);border-color:var(--bleuBord);}
-        .b-pret,.b-warn{background:var(--orDoux);color:var(--or);border-color:var(--orBord);}
-        .b-sorti{background:var(--grisDoux);color:var(--texte3);border-color:var(--bord2);}
-        .b-sav{background:var(--rougeDoux);color:var(--rouge);border-color:var(--rougeBord);}
+        .badge{padding:2px 7px;border-radius:4px;font-size:11.5px;font-weight:500;white-space:nowrap;border:1px solid transparent;line-height:1.5;}
+        .b-stock,.b-dispo,.b-success{background:var(--vertDoux);color:var(--vert);}
+        .b-mad{background:var(--bleuDoux);color:var(--bleu);}
+        .b-pret,.b-warn{background:var(--orDoux);color:var(--or);}
+        .b-sorti{background:var(--grisDoux);color:var(--texte3);}
+        .b-sav{background:var(--rougeDoux);color:var(--rouge);}
         .b-retard{background:var(--rouge);color:#fff;}
-        .b-purple{background:var(--violetDoux);color:var(--violet);border-color:var(--violetBord);}
+        :root[data-theme="dark"] .b-retard{color:#10130f;}
+        .b-purple{background:var(--violetDoux);color:var(--violet);}
 
-        .loan-item{background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);padding:13px 15px;margin-bottom:8px;}
-        .loan-item.retard{background:var(--rougeDoux);border-color:var(--rougeBord);}
-        .loan-item.bientot{background:var(--orDoux);border-color:var(--orBord);}
+        .loan-item{background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);padding:12px 14px;margin-bottom:8px;}
+        .loan-item.retard{border-left:3px solid var(--rouge);}
+        .loan-item.bientot{border-left:3px solid var(--or);}
         .loan-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;}
-        .loan-client{font-size:14px;font-weight:700;color:var(--texte);}
-        .loan-meta{display:flex;flex-wrap:wrap;gap:10px;}
+        .loan-client{font-size:14px;font-weight:600;color:var(--texte);}
+        .loan-meta{display:flex;flex-wrap:wrap;gap:4px 14px;}
         .loan-meta span{font-size:12px;color:var(--texte3);}
-        .loan-meta strong{color:var(--texte2);}
+        .loan-meta strong{color:var(--texte2);font-weight:500;}
 
         /* ── Fenêtres ── */
-        .overlay{display:none;position:fixed;inset:0;background:var(--voile);z-index:200;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);}
+        .overlay{display:none;position:fixed;inset:0;background:var(--voile);z-index:200;align-items:center;justify-content:center;padding:16px;}
         .overlay.active{display:flex;}
-        .modal{background:var(--surface);border:1px solid var(--bord);border-radius:18px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--ombrePop);display:flex;flex-direction:column;animation:modalIn .18s ease;}
-        @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
-        .modal-top{padding:20px 24px 16px;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--surface);z-index:2;flex-shrink:0;}
-        .modal-close{width:32px;height:32px;border-radius:10px;border:1px solid var(--bord);background:var(--surface2);color:var(--texte3);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
-        .modal-close:hover{background:var(--rougeDoux);color:var(--rouge);border-color:var(--rougeBord);}
-        .modal-body{padding:20px 24px;overflow-y:auto;}
+        .modal{background:var(--surface);border:1px solid var(--bord);border-radius:10px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:var(--ombrePop);display:flex;flex-direction:column;animation:modalIn .14s ease;}
+        @keyframes modalIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        .modal-top{padding:18px 22px 14px;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:sticky;top:0;background:var(--surface);z-index:2;flex-shrink:0;}
+        .modal-top #mSub{font-family:var(--mono);font-size:12px;}
+        .modal-close{width:30px;height:30px;border-radius:6px;border:0;background:none;color:var(--texte3);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,color .12s;flex-shrink:0;}
+        .modal-close:hover{background:var(--survol);color:var(--texte);}
+        .modal-body{padding:18px 22px 22px;overflow-y:auto;}
 
-        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px;}
-        .detail-field{background:var(--surface2);border-radius:var(--r2);padding:11px 13px;border:1px solid var(--bord);}
-        .detail-field .k{font-size:11px;font-weight:600;color:var(--texte3);margin-bottom:3px;}
-        .detail-field .v{font-size:13.5px;font-weight:600;}
-        .detail-field.full{grid-column:1/-1;}
+        /* Fiche : couples libellé / valeur séparés par des filets */
+        .detail-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:24px;margin-bottom:18px;border-top:1px solid var(--bord);}
+        .detail-field{padding:9px 0;border-bottom:1px solid var(--bord);display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
+        .detail-field .k{font-size:12.5px;color:var(--texte3);flex:0 0 auto;}
+        .detail-field .v{font-size:13.5px;font-weight:500;text-align:right;min-width:0;overflow-wrap:anywhere;}
+        .detail-field.full{grid-column:1/-1;flex-direction:column;align-items:stretch;gap:3px;}
+        .detail-field.full .v{text-align:left;font-weight:400;}
 
-        .histo{padding:10px 13px;border-left:3px solid var(--bleu);background:var(--surface2);border-radius:0 var(--r2) var(--r2) 0;margin-bottom:7px;}
-        .histo-date{font-size:11px;color:var(--texte3);font-variant-numeric:tabular-nums;}
-        .histo-action{font-size:12.5px;font-weight:700;margin:2px 0;}
-        .histo-detail{font-size:12px;color:var(--texte3);}
+        .histo{padding:8px 0 8px 14px;border-left:2px solid var(--bord2);margin-left:4px;}
+        .histo + .histo{margin-top:0;}
+        .histo-date{font-family:var(--mono);font-size:11.5px;color:var(--texte3);}
+        .histo-action{font-size:13px;font-weight:600;margin:1px 0;}
+        .histo-detail{font-size:12.5px;color:var(--texte2);}
 
-        .alert-item{padding:12px 16px;border-radius:var(--r2);margin-bottom:9px;cursor:pointer;transition:background .15s;display:flex;gap:10px;align-items:flex-start;}
-        .alert-item.danger{background:var(--rougeDoux);border:1px solid var(--rougeBord);}
-        .alert-item.warning{background:var(--orDoux);border:1px solid var(--orBord);}
-        .alert-item:hover{filter:brightness(.98);}
+        .alert-item{padding:12px 16px;background:var(--surface);border:1px solid var(--bord);border-top:0;cursor:pointer;transition:background .1s;display:flex;gap:12px;align-items:flex-start;}
+        .alert-item:not(.alert-item + .alert-item){border-top:1px solid var(--bord);border-top-left-radius:var(--r);border-top-right-radius:var(--r);}
+        .alert-item:not(:has(+ .alert-item)){border-bottom-left-radius:var(--r);border-bottom-right-radius:var(--r);}
+        .alert-item:hover{background:var(--surface2);}
+        .alerte-point{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:0 0 auto;background:var(--or);}
+        .alert-item.danger .alerte-point{background:var(--rouge);}
 
-        .prenom-bar{background:var(--bleuDoux);border:1px solid var(--bleuBord);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-        .prenom-bar label{font-size:12.5px;font-weight:700;color:var(--bleu);white-space:nowrap;}
-        .prenom-bar input{flex:1;padding:8px 12px;min-width:0;}
+        .prenom-bar{background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);padding:10px 12px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+        .prenom-bar label{font-size:12.5px;font-weight:500;color:var(--texte2);white-space:nowrap;}
+        .prenom-bar input{flex:1;padding:7px 11px;min-width:0;}
 
-        .divider{height:1px;background:var(--bord);margin:16px 0;}
-        .section-lbl{font-size:12px;font-weight:600;color:var(--texte3);margin-bottom:10px;}
+        .divider{height:1px;background:var(--bord);margin:18px 0;}
+        .section-lbl{font-size:11.5px;font-weight:600;color:var(--texte3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
 
-        .sub-tabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
-        .sub-tab{padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid var(--bord2);background:var(--surface);color:var(--texte2);transition:all .15s;}
-        .sub-tab:hover{background:var(--survol);color:var(--texte);}
-        .sub-tab.active{background:var(--bleu);color:#fff;border-color:var(--bleu);}
-        .sub-tab.s-warn.active{background:var(--or);border-color:var(--or);}
-        .sub-tab.s-danger.active{background:var(--rouge);border-color:var(--rouge);}
-        .sub-tab.s-purple.active{background:var(--violet);border-color:var(--violet);}
-        :root[data-theme="dark"] .sub-tab.active{color:#0b0f19;}
+        /* Sous-onglets : soulignés, comme des intercalaires */
+        .sub-tabs{display:flex;gap:2px;margin-bottom:18px;flex-wrap:wrap;border-bottom:1px solid var(--bord);}
+        .sub-tab{padding:8px 12px;margin-bottom:-1px;font-size:13px;font-weight:500;cursor:pointer;border:0;border-bottom:2px solid transparent;background:none;color:var(--texte3);transition:color .12s,border-color .12s;}
+        .sub-tab:hover{color:var(--texte);}
+        .sub-tab.active{color:var(--texte);border-bottom-color:var(--bleu);}
+        .sub-tab.s-warn.active{border-bottom-color:var(--or);}
+        .sub-tab.s-danger.active{color:var(--rouge);border-bottom-color:var(--rouge);}
+        .sub-tab.s-purple.active{border-bottom-color:var(--violet);}
 
-        .empty{text-align:center;padding:44px 20px;color:var(--texte3);}
-        .empty .ico{font-size:36px;margin-bottom:10px;}
+        .empty{text-align:center;padding:48px 20px;color:var(--texte3);border:1px dashed var(--bord2);border-radius:var(--r);}
 
-        .qty-big{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;}
+        .qty-big{font-family:var(--mono);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;}
         .qty-big.ok{color:var(--vert);}
         .qty-big.low{color:var(--or);}
-        .qty-big.empty{color:var(--rouge);}
+        .qty-big.empty{color:var(--rouge);border:0;padding:0;}
 
-        .dispo-counter{display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--violetDoux);border:1px solid var(--violetBord);border-radius:var(--r2);margin-bottom:14px;}
-        .dispo-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;}
+        .dispo-counter{display:flex;gap:12px;align-items:center;padding:10px 14px;background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);margin-bottom:14px;}
+        .dispo-num{font-family:var(--mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;}
         .dispo-num.ok{color:var(--vert);}
         .dispo-num.low{color:var(--or);}
-        .dispo-num.empty{color:var(--rouge);}
+        .dispo-num.empty{color:var(--rouge);border:0;padding:0;}
         .dispo-label{font-size:12px;color:var(--texte3);line-height:1.4;}
-        .dispo-label strong{color:var(--texte2);display:block;}
+        .dispo-label strong{color:var(--texte2);display:block;font-weight:500;}
 
         /* ── Paramètres ── */
-        .settings-section{margin-bottom:22px;}
+        .settings-section{margin-bottom:24px;}
         .settings-section:last-child{margin-bottom:0;}
-        .settings-section h3{font-size:14px;font-weight:700;color:var(--texte);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bord);}
-        .setting-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);margin-bottom:7px;gap:14px;flex-wrap:wrap;}
-        .setting-row label{font-size:13px;font-weight:600;color:var(--texte2);}
+        .settings-section h3{font-size:14px;font-weight:600;color:var(--texte);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bord);}
+        .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bord);gap:14px;flex-wrap:wrap;}
+        .setting-row label{font-size:13.5px;color:var(--texte);}
         .setting-row .si{display:flex;align-items:center;gap:7px;}
-        .setting-row input[type=number]{width:74px;padding:7px 9px;font-weight:600;text-align:center;}
+        .setting-row input[type=number]{width:72px;padding:6px 8px;text-align:center;font-family:var(--mono);font-size:14px;}
         .setting-row span{font-size:12px;color:var(--texte3);}
-        details.repli > summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--bleu);list-style:none;}
+        details.repli > summary{cursor:pointer;font-size:13px;font-weight:500;color:var(--bleu);list-style:none;}
         details.repli > summary::-webkit-details-marker{display:none;}
+        details.repli > summary::before{content:"+ ";font-family:var(--mono);}
+        details.repli[open] > summary::before{content:"– ";}
         details.repli[open] > summary{margin-bottom:12px;}
         .acces-liste{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-        .acces-liste span{padding:4px 10px;border-radius:999px;background:var(--bleuDoux);color:var(--bleu);font-size:12.5px;font-weight:600;}
+        .acces-liste span{padding:3px 9px;border-radius:4px;background:var(--surface2);border:1px solid var(--bord);font-size:12.5px;}
 
         .edit-form{background:var(--surface2);border:1px solid var(--bord);border-radius:var(--r2);padding:14px;margin-bottom:14px;}
-        .edit-form .form-grid{gap:10px;}
-        .edit-form input,.edit-form select,.edit-form textarea{padding:8px 11px;width:100%;}
+        .edit-form .form-grid{gap:10px 14px;}
+        .edit-form input,.edit-form select,.edit-form textarea{padding:7px 10px;width:100%;}
 
-        footer{text-align:center;padding:10px 12px 16px;font-size:12px;color:var(--texte3);}
+        footer{text-align:center;padding:12px 12px 18px;font-size:11.5px;color:var(--texte3);font-family:var(--mono);}
 
         /* Interrupteur */
-        .switch{position:relative;display:inline-block;width:52px;height:30px;}
+        .switch{position:relative;display:inline-block;width:40px;height:22px;}
         .switch input{opacity:0;width:0;height:0;}
-        .slider{position:absolute;cursor:pointer;inset:0;background:var(--bord2);border-radius:30px;transition:.25s;}
-        .slider:before{position:absolute;content:"";height:24px;width:24px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 2px 4px rgba(0,0,0,.2);}
+        .slider{position:absolute;cursor:pointer;inset:0;background:var(--bord2);border-radius:22px;transition:.2s;}
+        .slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
         input:checked + .slider{background:var(--bleu);}
-        input:checked + .slider:before{transform:translateX(22px);}
+        input:checked + .slider:before{transform:translateX(18px);}
 
-        /* Messages éphémères */
-        .toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:600;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
-        .toast{background:var(--texte);color:var(--fond);padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--ombrePop);max-width:90vw;text-align:center;animation:toastIn .25s ease;}
-        .toast.ok{background:var(--vert);color:#fff;}
-        .toast.err{background:var(--rouge);color:#fff;}
-        .toast.info{background:var(--bleu);color:#fff;}
-        @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+        /* Messages éphémères : encre foncée, un trait de couleur à gauche */
+        .toast-wrap{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:600;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;}
+        .toast{background:var(--texte);color:var(--fond);padding:11px 16px 11px 14px;border-radius:6px;font-size:13.5px;font-weight:500;box-shadow:var(--ombrePop);max-width:90vw;border-left:4px solid var(--texte3);animation:toastIn .2s ease;}
+        .toast.ok{border-left-color:#5fae7a;}
+        .toast.err{border-left-color:#e2564b;}
+        .toast.info{border-left-color:#6fa9c4;}
+        @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
         /* Scanner QR */
-        #qrReader{width:100%;border-radius:12px;overflow:hidden;background:#111;}
-        #qrReader video{border-radius:12px;width:100%;}
+        #qrReader{width:100%;border-radius:8px;overflow:hidden;background:#111;}
+        #qrReader video{border-radius:8px;width:100%;}
 
         /* Chargement */
-        .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--survol) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:var(--r);height:86px;margin-bottom:9px;}
+        .skeleton{background:linear-gradient(90deg,var(--surface2) 25%,var(--survol) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:var(--r);height:76px;margin-bottom:8px;}
         @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-        .busy{position:fixed;inset:0;background:color-mix(in srgb,var(--fond) 55%,transparent);z-index:700;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+        .busy{position:fixed;inset:0;background:color-mix(in srgb,var(--fond) 55%,transparent);z-index:700;display:none;align-items:center;justify-content:center;}
         .busy.active{display:flex;}
-        .busy-box{background:var(--surface);border:1px solid var(--bord);border-radius:14px;padding:18px 26px;box-shadow:var(--ombrePop);font-size:13.5px;font-weight:600;color:var(--texte2);display:flex;align-items:center;gap:10px;}
-        .spin{width:16px;height:16px;border:2.5px solid var(--bord2);border-top-color:var(--bleu);border-radius:50%;animation:spin .7s linear infinite;}
+        .busy-box{background:var(--surface);border:1px solid var(--bord);border-radius:8px;padding:14px 20px;box-shadow:var(--ombreMoy);font-size:13.5px;font-weight:500;color:var(--texte2);display:flex;align-items:center;gap:10px;}
+        .spin{width:15px;height:15px;border:2px solid var(--bord2);border-top-color:var(--bleu);border-radius:50%;animation:spin .7s linear infinite;}
         @keyframes spin{to{transform:rotate(360deg)}}
 
         /* Connexion et consultation seule */
         .ecran-connexion{position:fixed;inset:0;background:var(--fond);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;}
         .ecran-connexion.cache{display:none;}
-        .connexion-box{background:var(--surface);border:1px solid var(--bord);border-radius:18px;padding:32px 26px;max-width:400px;width:100%;text-align:center;box-shadow:var(--ombreMoy);}
-        .connexion-box .logo{width:52px;height:52px;border-radius:14px;font-size:24px;margin:0 auto;}
-        .connexion-box h1{font-size:20px;font-weight:700;margin:14px 0 8px;}
+        .connexion-box{background:var(--surface);border:1px solid var(--bord);border-radius:10px;padding:34px 28px 28px;max-width:380px;width:100%;}
+        .connexion-box .marque{padding:0;font-size:22px;margin-bottom:14px;}
+        .connexion-box h1{display:none;}
         .connexion-box p{font-size:14px;color:var(--texte2);line-height:1.6;margin-bottom:18px;}
-        .lecture-seule{background:var(--surface2);border:1px solid var(--bord2);color:var(--texte2);padding:12px;border-radius:10px;margin-bottom:16px;text-align:center;font-size:13px;}
+        .connexion-box .btn-row{justify-content:flex-start!important;}
+        .lecture-seule{background:var(--surface2);border:1px solid var(--bord);color:var(--texte2);padding:10px 12px;border-radius:6px;margin-bottom:16px;font-size:13px;}
 
-        /* Listes déroulantes « maison » (ordinateur) : bouton et liste arrondis, voir src/listes.js */
+        /* Listes déroulantes « maison » (ordinateur) : voir src/listes.js */
         .liste-native{position:absolute!important;opacity:0;pointer-events:none;width:1px!important;height:1px;min-width:0!important;padding:0!important;border:0!important;}
-        .liste-bouton{display:block;width:auto;min-width:0;text-align:left;cursor:pointer;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
-            border:1px solid var(--bord2);border-radius:10px;padding:10px 36px 10px 12px;color:var(--texte);font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .15s,box-shadow .15s;}
+        .liste-bouton{display:block;width:auto;min-width:0;text-align:left;cursor:pointer;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a867c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;
+            border:1px solid var(--bord2);border-radius:6px;padding:9px 32px 9px 11px;color:var(--texte);font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:border-color .12s,box-shadow .12s;}
         .liste-bouton:hover{border-color:var(--texte3);}
         .liste-bouton:focus-visible,.liste-bouton.ouverte{outline:none;border-color:var(--bleu);box-shadow:0 0 0 3px var(--bleuDoux);}
-        .liste-bouton:disabled{opacity:.5;cursor:default;}
+        .liste-bouton:disabled{opacity:.55;cursor:default;}
         .liste-bouton.liste-erreur{border-color:var(--rouge);box-shadow:0 0 0 3px var(--rougeDoux);}
-        .filter-bar .liste-bouton{padding-top:8px;padding-bottom:8px;}
-        .edit-form .liste-bouton{padding-top:8px;padding-bottom:8px;width:100%;}
-        .liste-pop{position:fixed;z-index:1000;max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:2px;padding:6px;background:var(--surface);border:1px solid var(--bord);border-radius:12px;box-shadow:var(--ombrePop);animation:listeIn .12s ease;}
-        @keyframes listeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-        .liste-option{border:0;background:none;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px;color:var(--texte);cursor:pointer;white-space:nowrap;}
+        .filter-bar .liste-bouton{padding-top:7px;padding-bottom:7px;font-size:14px;}
+        .edit-form .liste-bouton{padding-top:7px;padding-bottom:7px;width:100%;}
+        .liste-pop{position:fixed;z-index:1000;max-height:300px;overflow:auto;display:flex;flex-direction:column;padding:4px;background:var(--surface);border:1px solid var(--bord2);border-radius:8px;box-shadow:var(--ombreMoy);animation:listeIn .1s ease;}
+        @keyframes listeIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+        .liste-option{border:0;background:none;text-align:left;padding:7px 10px;border-radius:4px;font-size:14px;color:var(--texte);cursor:pointer;white-space:nowrap;}
         .liste-option:hover,.liste-option:focus{background:var(--survol);outline:none;}
-        .liste-option.choisie{background:var(--bleuDoux);color:var(--bleu);font-weight:600;}
+        .liste-option.choisie{color:var(--bleu);font-weight:600;}
         .liste-option:disabled{opacity:.45;cursor:default;}
 
         /* ── Téléphone et tablette : le menu passe en haut ── */
         @media(max-width:900px){
             .app{display:block;}
-            .barreLaterale{height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 12px 0;border-right:0;border-bottom:1px solid var(--bord);z-index:150;}
-            .marque{display:none;}
-            .profil{padding:0;background:none;border:0;flex:1;min-width:0;}
-            .avatar{width:34px;height:34px;font-size:14px;}
-            .basLateral{margin:0;}
-            .tabs{order:3;flex-direction:row;flex-basis:100%;overflow-x:auto;scrollbar-width:none;margin:0 -12px;padding:0 12px 8px;}
+            .barreLaterale{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 14px 0;border-right:0;border-bottom:1px solid var(--bord);background:var(--surface);}
+            .marque{padding:0;font-size:16px;}
+            .profil{order:2;padding:0;border:0;margin-left:auto;flex-direction:row-reverse;min-width:0;}
+            .profil-texte{text-align:right;}
+            .avatar{width:30px;height:30px;font-size:13px;}
+            .basLateral{order:2;margin:0;padding:0;}
+            .tabs{order:3;flex-direction:row;flex-basis:100%;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:2px 14px 0;gap:0;}
             .tabs::-webkit-scrollbar{display:none;}
-            .tab{padding:8px 12px;}
-            .tab-badge{margin-left:4px;}
-            .header{position:static;justify-content:space-between;padding:12px 14px 4px;background:none;backdrop-filter:none;}
-            .page{padding:6px 14px 20px;}
-            .page-title{font-size:20px;}
+            .tab{padding:9px 11px 10px;border-radius:0;border-bottom:2px solid transparent;}
+            .tab.active{background:none;box-shadow:none;border-bottom-color:var(--bleu);}
+            .tab-badge{margin-left:2px;}
+            .header{position:static;justify-content:space-between;padding:12px 16px 4px;background:none;backdrop-filter:none;}
+            .page{padding:6px 16px 20px;}
+            .page-title{font-size:20px;margin-bottom:16px;}
         }
         @media(max-width:640px){
+            .profil-texte{display:none;}
             .detail-grid{grid-template-columns:1fr;}
             .stats-row{grid-template-columns:repeat(2,1fr);}
+            .stat-card:nth-child(3){border-left:0;padding-left:2px;}
+            .stat-card:nth-child(n+3){border-top:1px solid var(--bord);}
             .modal-body{padding:14px 16px;}
-            .modal-top{padding:16px 16px 12px;}
+            .modal-top{padding:14px 16px 12px;}
             .card{padding:16px;}
+            .article-item{padding:12px 14px;}
+            .filter-bar > *{flex:1 1 140px;}
         }
         @media(prefers-reduced-motion:reduce){.pane,.modal,.toast{animation:none;}}
     </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <!-- Icônes du menu (dessin au trait, 24×24) -->
+    <symbol id="i-reception" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-mad" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-stock" viewBox="0 0 24 24"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><path d="M6 22V10h12v12"/></symbol>
+    <symbol id="i-tle" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+    <symbol id="i-recup" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="i-prets" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-alertes" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-historique" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-parametres" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 8h4M18 16h4"/></symbol>
+    <symbol id="i-lune" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-soleil" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-sortir" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></symbol>
+</svg>
 <div class="ecran-connexion" id="ecranConnexion">
     <div class="connexion-box">
-        <div class="logo">📦</div>
+        <div class="marque"><b>HMC</b><span>Stock</span></div>
         <h1>HMC Stock</h1>
         <p id="connexionMessage">Chargement…</p>
         <div id="connexionActions" class="btn-row" style="justify-content:center;"></div>
@@ -361,40 +414,39 @@
 <div class="app">
 <aside class="barreLaterale">
     <div class="marque">
-        <span class="logo">📦</span>
-        <div><b>HMC Stock</b><span>Gestion des stocks</span></div>
+        <b>HMC</b><span>Stock</span>
     </div>
     <div class="profil">
         <div class="avatar" id="userAvatar">?</div>
         <div class="profil-texte"><b id="userChip"></b><span id="userRole"></span></div>
     </div>
     <nav class="tabs">
-    <button class="tab active" onclick="switchTab('reception',this)">📥 Réception</button>
-    <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
-    <button class="tab" onclick="switchTab('tle',this)">🚚 TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('recup',this)">🛍️ Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
-    <button class="tab" id="tabHistorique" style="display:none" onclick="switchTab('historique',this)">🕘 Historique</button>
-    <button class="tab" id="tabParametres" style="display:none" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
+    <button class="tab active" onclick="switchTab('reception',this)"><svg class="ico"><use href="#i-reception"/></svg>Réception</button>
+    <button class="tab" onclick="switchTab('mad',this)"><svg class="ico"><use href="#i-mad"/></svg>Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('stock',this)"><svg class="ico"><use href="#i-stock"/></svg>Stock</button>
+    <button class="tab" onclick="switchTab('tle',this)"><svg class="ico"><use href="#i-tle"/></svg>TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('recup',this)"><svg class="ico"><use href="#i-recup"/></svg>Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('prets',this)"><svg class="ico"><use href="#i-prets"/></svg>Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('alertes',this)"><svg class="ico"><use href="#i-alertes"/></svg>Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
+    <button class="tab" id="tabHistorique" style="display:none" onclick="switchTab('historique',this)"><svg class="ico"><use href="#i-historique"/></svg>Historique</button>
+    <button class="tab" id="tabParametres" style="display:none" onclick="switchTab('parametres',this)"><svg class="ico"><use href="#i-parametres"/></svg>Paramètres</button>
     </nav>
     <div class="basLateral">
-        <button class="btnIcone" id="btnTheme" type="button" onclick="changerTheme()" title="Mode sombre">🌙</button>
-        <button class="btnIcone" type="button" onclick="seDeconnecter()" title="Se déconnecter">🚪</button>
+        <button class="btnIcone" id="btnTheme" type="button" onclick="changerTheme()" title="Mode sombre"><svg class="ico"><use href="#i-lune"/></svg></button>
+        <button class="btnIcone" type="button" onclick="seDeconnecter()" title="Se déconnecter"><svg class="ico"><use href="#i-sortir"/></svg></button>
     </div>
 </aside>
 <div class="colonne">
 <div class="header">
-    <div class="pill loading" id="statusPill">🔄 Connexion...</div>
-    <button class="btn-sm btn-scan" onclick="openScanner()">📷 Scanner</button>
+    <div class="pill loading" id="statusPill">Connexion...</div>
+    <button class="btn-sm btn-scan" onclick="openScanner()"><svg class="ico"><use href="#i-scan"/></svg>Scanner</button>
 </div>
 <main>
 <div class="page">
 
 <!-- ═══ RÉCEPTION ═══ -->
 <div id="reception" class="pane active">
-    <div class="page-title">📥 Réception d'Article</div>
+    <div class="page-title">Réception d'un article</div>
     <div class="card">
         <form id="receptionForm">
             <div class="form-grid">
@@ -408,20 +460,26 @@
                     <label>Type *</label>
                     <select id="f_type" required onchange="toggleFormFields()">
                         <option value="">Sélectionner...</option>
-                        <option value="Mise à disposition">🚚 Mise à disposition</option>
-                        <option value="Stock">📦 Stock</option>
-                        <option value="Article de prêt">🔄 Article de prêt</option>
+                        <option value="Mise à disposition">Mise à disposition</option>
+                        <option value="Stock">Stock</option>
+                        <option value="Article de prêt">Article de prêt</option>
                     </select>
                 </div>
                 <div class="fg" id="clientGroup">
-                    <label>Nom du Client *</label>
+                    <label>Nom du client *</label>
                     <input id="f_client" type="text" placeholder="Nom du client">
+                </div>
+                <div class="fg" id="vendeurGroup">
+                    <label>Vendeur de la cuisine</label>
+                    <input id="f_vendeur" type="text" list="listeVendeurs" autocomplete="off" placeholder="Qui a vendu la cuisine ?">
+                    <datalist id="listeVendeurs"></datalist>
+                    <span class="hint">Pour retrouver ensuite tous les articles d'un vendeur</span>
                 </div>
                 <div class="fg" id="madSubtypeGroup" style="display:none">
                     <label>Type *</label>
                     <select id="f_mad_subtype" onchange="onMadSubtypeChange()">
-                        <option value="Commande">📦 Commande client</option>
-                        <option value="SAV">🔧 SAV</option>
+                        <option value="Commande">Commande client</option>
+                        <option value="SAV">SAV</option>
                     </select>
                 </div>
                 <div class="fg" id="savDelaiGroup" style="display:none">
@@ -450,7 +508,7 @@
                     <input id="f_ref" type="text" required placeholder="Référence">
                 </div>
                 <div class="fg" id="colisGroup">
-                    <label>Nombre de Colis *</label>
+                    <label>Nombre de colis *</label>
                     <input id="f_colis" type="number" min="1" value="1">
                 </div>
                 <div class="fg" id="qtyGroup" style="display:none">
@@ -461,8 +519,8 @@
                 <div class="fg" id="stockSubtypeGroup" style="display:none">
                     <label>Type de stock *</label>
                     <select id="f_stock_subtype" onchange="onStockSubtypeChange()">
-                        <option value="Interne">📦 Stock interne</option>
-                        <option value="Vendable">💰 Stock vendable</option>
+                        <option value="Interne">Stock interne</option>
+                        <option value="Vendable">Stock vendable</option>
                     </select>
                 </div>
                 <div class="fg" id="priceGroup" style="display:none">
@@ -486,7 +544,7 @@
                     </select>
                 </div>
                 <div class="fg">
-                    <label>Votre Prénom *</label>
+                    <label>Votre prénom *</label>
                     <input id="f_prenom" type="text" required placeholder="Votre prénom">
                 </div>
                 <div class="fg full">
@@ -495,20 +553,20 @@
                 </div>
             </div>
             <div class="btn-row">
-                <button type="submit" class="btn btn-primary" id="submitBtn">✅ Générer le QR Code</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Générer le QR Code</button>
             </div>
         </form>
     </div>
     <div id="qrResult" style="display:none">
         <div class="card" style="text-align:center;padding:28px 20px;border:1.5px solid #c7d7fd;background:var(--blue-soft);">
-            <div style="font-size:15px;font-weight:800;margin-bottom:4px;">✅ Article enregistré</div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:4px;">Article enregistré</div>
             <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">QR code prêt à imprimer et coller sur le colis</p>
             <div id="qrcode" style="display:inline-block;background:white;padding:14px;border-radius:var(--r2);box-shadow:var(--shadow-md);margin-bottom:16px;"></div>
             <div id="qrInfos" style="margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.9;"></div>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="printQR()">🖨️ Étiquettes standard</button>
-                <button class="btn btn-outline" onclick="printQRSmall()">🏷️ Format étroit (mitigeurs)</button>
-                <button class="btn btn-outline" onclick="resetForm()">➕ Nouvel article</button>
+                <button class="btn btn-primary" onclick="printQR()">Étiquettes standard</button>
+                <button class="btn btn-outline" onclick="printQRSmall()">Format étroit (mitigeurs)</button>
+                <button class="btn btn-outline" onclick="resetForm()">Nouvel article</button>
             </div>
         </div>
     </div>
@@ -516,25 +574,28 @@
 
 <!-- ═══ MISES À DISPO ═══ -->
 <div id="mad" class="pane">
-    <div class="page-title">🚚 Mises à Disposition</div>
+    <div class="page-title">Mises à disposition</div>
     <div class="stats-row" id="madStats"></div>
     <div class="filter-bar">
         <select id="m_mag" onchange="renderMAD()">
             <option value="">Tous les magasins</option>
         </select>
+        <select id="m_vend" onchange="renderMAD()">
+            <option value="">Tous les vendeurs</option>
+        </select>
         <select id="m_subtype" onchange="renderMAD()">
             <option value="">Tous les types</option>
-            <option value="Commande">📦 Commandes uniquement</option>
-            <option value="SAV">🔧 SAV uniquement</option>
+            <option value="Commande">Commandes uniquement</option>
+            <option value="SAV">SAV uniquement</option>
         </select>
-        <input id="m_search" placeholder="🔍 Client, article, réf, AR..." oninput="debounceRender(renderMAD)" style="flex:1;min-width:180px;">
+        <input id="m_search" placeholder="Client, article, réf, AR..." oninput="debounceRender(renderMAD)" style="flex:1;min-width:180px;">
     </div>
     <div id="madList"></div>
 </div>
 
 <!-- ═══ STOCK ═══ -->
 <div id="stock" class="pane">
-    <div class="page-title">📦 Gestion du Stock</div>
+    <div class="page-title">Stock</div>
     <div class="stats-row" id="stockStats"></div>
     <div class="filter-bar">
         <select id="s_mag" onchange="renderStock()">
@@ -542,79 +603,79 @@
         </select>
         <select id="s_subtype" onchange="renderStock()">
             <option value="">Tous types</option>
-            <option value="Interne">📦 Stock interne</option>
-            <option value="Vendable">💰 Stock vendable</option>
+            <option value="Interne">Stock interne</option>
+            <option value="Vendable">Stock vendable</option>
         </select>
-        <input id="s_search" placeholder="🔍 Article, référence, emplacement..." oninput="debounceRender(renderStock)" style="flex:1;min-width:180px;">
+        <input id="s_search" placeholder="Article, référence, emplacement..." oninput="debounceRender(renderStock)" style="flex:1;min-width:180px;">
     </div>
     <div id="stockList"></div>
 </div>
 
 <!-- ═══ TLE - ARTICLES VENDUS ═══ -->
 <div id="tle" class="pane">
-    <div class="page-title">🚚 Articles vendus — TLE</div>
+    <div class="page-title">Articles vendus — TLE</div>
     <div class="stats-row" id="tleStats"></div>
     <div class="filter-bar">
         <select id="t_mag" onchange="renderTLE()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="t_statut" onchange="renderTLE()">
-            <option value="attente" selected>📦 En attente TLE + Reprises SAV</option>
+            <option value="attente" selected>En attente TLE + Reprises SAV</option>
             <option value="">Tout type</option>
-            <option value="Vendu - Attente TLE">📦 Vente en attente TLE</option>
-            <option value="Reprise - Attente TLE">🔧 Reprise SAV</option>
-            <option value="Sorti - Remis TLE">✅ Remis à TLE</option>
+            <option value="Vendu - Attente TLE">Vente en attente TLE</option>
+            <option value="Reprise - Attente TLE">Reprise SAV</option>
+            <option value="Sorti - Remis TLE">Remis à TLE</option>
         </select>
-        <input id="t_search" placeholder="🔍 Article, référence..." oninput="debounceRender(renderTLE)" style="flex:1;min-width:180px;">
+        <input id="t_search" placeholder="Article, référence..." oninput="debounceRender(renderTLE)" style="flex:1;min-width:180px;">
     </div>
     <div id="tleList"></div>
 </div>
 
 <!-- ═══ RÉCUPÉRATIONS CLIENTS ═══ -->
 <div id="recup" class="pane">
-    <div class="page-title">🛍️ Récupérations Clients</div>
+    <div class="page-title">Récupérations client</div>
     <div class="stats-row" id="recupStats"></div>
     <div class="filter-bar">
         <select id="rc_mag" onchange="renderRecupClients()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="rc_statut" onchange="renderRecupClients()">
-            <option value="En attente" selected>⏳ En attente</option>
+            <option value="En attente" selected>En attente</option>
             <option value="">Tout</option>
-            <option value="Récupéré">✅ Récupéré</option>
+            <option value="Récupéré">Récupéré</option>
         </select>
-        <input id="rc_search" placeholder="🔍 Article, client, référence..." oninput="debounceRender(renderRecupClients)" style="flex:1;min-width:180px;">
+        <input id="rc_search" placeholder="Article, client, référence..." oninput="debounceRender(renderRecupClients)" style="flex:1;min-width:180px;">
     </div>
     <div id="recupList"></div>
 </div>
 
 <!-- ═══ PRÊTS ═══ -->
 <div id="prets" class="pane">
-    <div class="page-title">🔄 Gestion des Prêts</div>
+    <div class="page-title">Prêts</div>
     <div class="stats-row" id="pretsStats"></div>
     <div class="filter-bar">
         <select id="p_mag" onchange="renderPrets()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="p_dispo_filter" onchange="renderPrets()">
-            <option value="dispo" selected>🟣 Disponibles</option>
-            <option value="non_dispo">⚫ Non disponibles</option>
-            <option value="tout">📋 Tout</option>
+            <option value="dispo" selected>Disponibles</option>
+            <option value="non_dispo">Non disponibles</option>
+            <option value="tout">Tout</option>
         </select>
-        <input id="p_search" placeholder="🔍 Article, client emprunteur..." oninput="debounceRender(renderPrets)" style="flex:1;min-width:180px;">
+        <input id="p_search" placeholder="Article, client emprunteur..." oninput="debounceRender(renderPrets)" style="flex:1;min-width:180px;">
     </div>
     <div class="sub-tabs">
-        <button class="sub-tab s-purple active" id="stab_dispo" onclick="setPretTab('dispo')">🟣 Disponibles</button>
-        <button class="sub-tab" id="stab_encours" onclick="setPretTab('encours')">🔵 En cours</button>
-        <button class="sub-tab s-warn" id="stab_bientot" onclick="setPretTab('bientot')">🟡 Bientôt</button>
-        <button class="sub-tab s-danger" id="stab_retard" onclick="setPretTab('retard')">🔴 En retard</button>
+        <button class="sub-tab s-purple active" id="stab_dispo" onclick="setPretTab('dispo')">Disponibles</button>
+        <button class="sub-tab" id="stab_encours" onclick="setPretTab('encours')">En cours</button>
+        <button class="sub-tab s-warn" id="stab_bientot" onclick="setPretTab('bientot')">Bientôt</button>
+        <button class="sub-tab s-danger" id="stab_retard" onclick="setPretTab('retard')">En retard</button>
     </div>
     <div id="pretsList"></div>
 </div>
 
 <!-- ═══ ALERTES ═══ -->
 <div id="alertes" class="pane">
-    <div class="page-title">🔔 Alertes</div>
+    <div class="page-title">Alertes</div>
     <div class="filter-bar">
         <select id="a_mag" onchange="renderAlertes()">
             <option value="">Tous les magasins</option>
@@ -625,10 +686,13 @@
 
 <!-- ═══ HISTORIQUE (admin, direction, ADV ; directeur : son magasin) ═══ -->
 <div id="historique" class="pane">
-    <div class="page-title">🕘 Historique</div>
+    <div class="page-title">Historique</div>
     <div class="filter-bar">
         <select id="h_mag" onchange="renderHistorique()">
             <option value="">Tous les magasins</option>
+        </select>
+        <select id="h_vend" onchange="renderHistorique()">
+            <option value="">Tous les vendeurs</option>
         </select>
         <select id="h_etat" onchange="renderHistorique()">
             <option value="">Tout</option>
@@ -636,7 +700,7 @@
             <option value="clos">Sortis, remis à TLE, récupérés</option>
             <option value="archives">Archivés</option>
         </select>
-        <input id="h_search" placeholder="🔍 Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
+        <input id="h_search" placeholder="Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
     </div>
     <div id="histoStats" style="font-size:13px;color:var(--text3);margin:0 0 10px 4px;"></div>
     <div id="histoList"></div>
@@ -644,11 +708,11 @@
 
 <!-- ═══ PARAMÈTRES (admin seulement) ═══ -->
 <div id="parametres" class="pane">
-    <div class="page-title">⚙️ Paramètres</div>
+    <div class="page-title">Paramètres</div>
 
     <div class="card">
         <div class="settings-section">
-            <h3>🔐 Qui a accès aux paramètres</h3>
+            <h3>Qui a accès aux paramètres</h3>
             <p style="font-size:13px;color:var(--text3);">Seuls les comptes au rôle <strong>Administrateur</strong> voient cet onglet. Le serveur refuse aussi toute modification des paramètres venant d'un autre compte. Le rôle se change dans l'appli HMC, puis « Recopier les utilisateurs » ci-dessous.</p>
             <div class="acces-liste" id="listeAdmins"><span>…</span></div>
         </div>
@@ -656,7 +720,7 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>🔔 Délais d'alerte</h3>
+            <h3>Délais d'alerte</h3>
             <div class="setting-row">
                 <label>Prêt : « Retour bientôt » à partir de</label>
                 <div class="si"><input type="number" id="param_bientot" min="1" max="30" value="3"><span>jours avant</span></div>
@@ -678,7 +742,7 @@
                 <div class="si"><input type="number" id="param_recup_delai" min="0" max="10" value="2"><span>jours</span></div>
             </div>
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer</button>
+                <button class="btn btn-primary" onclick="saveParams()">Enregistrer</button>
                 <button class="btn btn-outline" onclick="resetParams()">↺ Valeurs par défaut</button>
             </div>
         </div>
@@ -686,15 +750,15 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>🗄️ Archivage</h3>
+            <h3>Archivage</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Les articles sortis ou les prêts retournés depuis plus longtemps que ce délai partent dans les archives quand vous cliquez sur « Archiver maintenant ». Rien n'est perdu : les archives se téléchargent en Excel.</p>
             <div class="setting-row">
                 <label>Archiver les articles clos depuis plus de</label>
                 <div class="si"><input type="number" id="param_archive" min="30" max="365" value="90"><span>jours</span></div>
             </div>
             <div class="btn-row">
-                <button class="btn btn-outline" onclick="saveParams()">💾 Enregistrer le délai</button>
-                <button class="btn btn-danger" onclick="actArchiveOld()">🗑️ Archiver maintenant</button>
+                <button class="btn btn-outline" onclick="saveParams()">Enregistrer le délai</button>
+                <button class="btn btn-danger" onclick="actArchiveOld()">Archiver maintenant</button>
                 <button class="btn btn-outline" onclick="lancerExportArchives()">⬇️ Télécharger les archives (Excel)</button>
             </div>
         </div>
@@ -702,22 +766,22 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>👥 Utilisateurs</h3>
+            <h3>Utilisateurs</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Les collaborateurs et leurs rôles viennent de l'appli HMC. Après un ajout ou un changement dans l'appli HMC, cliquez ici (connexion Google demandée une seconde fois, lecture seule).</p>
-            <div class="btn-row"><button class="btn btn-primary" onclick="lancerRecopieUtilisateurs()">🔄 Recopier les utilisateurs de l'appli HMC</button></div>
+            <div class="btn-row"><button class="btn btn-primary" onclick="lancerRecopieUtilisateurs()">Recopier les utilisateurs de l'appli HMC</button></div>
             <div id="resultatUtilisateurs" style="font-size:13px;color:var(--text2);margin-top:10px;"></div>
         </div>
         <div class="settings-section">
-            <h3>🏬 Magasins</h3>
+            <h3>Magasins</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Un magasin par ligne. Pour ajouter Mobalpa ou Valencia, écrivez-le ici : il apparaît partout dans l'appli. Écrivez-le comme dans l'appli HMC pour que les droits des collaborateurs suivent.</p>
             <textarea id="param_magasins" rows="6" class="date-input" style="width:100%;"></textarea>
-            <div class="btn-row"><button class="btn btn-primary" onclick="enregistrerMagasins()">💾 Enregistrer les magasins</button></div>
+            <div class="btn-row"><button class="btn btn-primary" onclick="enregistrerMagasins()">Enregistrer les magasins</button></div>
         </div>
     </div>
 
     <div class="card">
         <details class="repli settings-section">
-            <summary>📋 Seuils d'alerte par article (stock interne) ▾</summary>
+            <summary>Seuils d'alerte par article (stock interne) ▾</summary>
             <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Un seuil par article. Il se règle aussi à la création de l'article ou dans sa fiche.</p>
             <div id="seuilsListe"></div>
         </details>
@@ -775,7 +839,7 @@
             <div id="inputMessage" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;"></div>
             <input type="text" id="inputField" class="date-input" onkeydown="if(event.key==='Enter'){event.preventDefault();closeInputDialog(true);}">
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="closeInputDialog(true)">✅ Valider</button>
+                <button class="btn btn-primary" onclick="closeInputDialog(true)">Valider</button>
                 <button class="btn btn-outline" onclick="closeInputDialog(false)">Annuler</button>
             </div>
         </div>
@@ -787,7 +851,7 @@
     <div class="modal" style="max-width:380px;">
         <div class="modal-top">
             <div>
-                <div style="font-size:16px;font-weight:800;" id="dateTitle">📅 Date</div>
+                <div style="font-size:16px;font-weight:800;" id="dateTitle">Date</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="dateSub"></div>
             </div>
             <button class="modal-close" onclick="closeDateDialog(false)">×</button>
@@ -796,7 +860,7 @@
             <div id="dateMessage" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;"></div>
             <input type="date" id="dateInput" class="date-input">
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="closeDateDialog(true)">✅ Valider</button>
+                <button class="btn btn-primary" onclick="closeDateDialog(true)">Valider</button>
                 <button class="btn btn-outline" onclick="closeDateDialog(false)">Annuler</button>
             </div>
         </div>
@@ -815,7 +879,7 @@
         <div class="modal-body">
             <div id="confirmMessage" style="font-size:14px;color:var(--text2);line-height:1.6;"></div>
             <div class="btn-row">
-                <button class="btn btn-primary" id="confirmOk" onclick="closeConfirmDialog(true)">✅ Confirmer</button>
+                <button class="btn btn-primary" id="confirmOk" onclick="closeConfirmDialog(true)">Confirmer</button>
                 <button class="btn btn-outline" onclick="closeConfirmDialog(false)">Annuler</button>
             </div>
         </div>
@@ -827,7 +891,7 @@
     <div class="modal" style="max-width:420px;">
         <div class="modal-top">
             <div>
-                <div style="font-size:17px;font-weight:800;">📷 Scanner un QR code</div>
+                <div style="font-size:17px;font-weight:800;">Scanner un QR code</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:2px;">Visez l'étiquette de l'article</div>
             </div>
             <button class="modal-close" onclick="closeScanner()">×</button>
