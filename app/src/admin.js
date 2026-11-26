@@ -4,17 +4,32 @@
  **********************************************************************/
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, doc, writeBatch, query, where } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, writeBatch, setDoc, query, where } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import { db, googleProvider, configHMC } from './firebase.js';
 import { lireConfig, lireArchives } from './donnees.js';
 import { ficheUtilisateur } from './metier/import.js';
 import { COLS } from './metier/actions.js';
+import { listeEquipe } from './metier/vendeurs.js';
 
 /** Noms des administrateurs actifs (les seuls à voir les paramètres) */
 export async function listerAdmins() {
   const snap = await getDocs(query(collection(db, 'users'), where('role', '==', 'ADMIN')));
   return snap.docs.map(s => s.data()).filter(u => u.actif === true).map(u => u.nom || u.email).sort();
+}
+
+/**
+ * Liste des vendeurs (nom + magasin) recopiée dans les paramètres, lisibles par tous :
+ * c'est elle qui propose les noms dans « Vendeur de la cuisine ».
+ * Les fiches utilisateurs, elles, restent lisibles par l'admin seulement.
+ * N'écrit que si la liste a changé.
+ */
+export async function publierEquipe() {
+  const snap = await getDocs(collection(db, 'users'));
+  const equipe = listeEquipe(snap.docs.map(s => s.data()));
+  if (JSON.stringify(equipe) === JSON.stringify(lireConfig().vendeurs || [])) return false;
+  await setDoc(doc(db, 'config', 'parametres'), { vendeurs: equipe }, { merge: true });
+  return true;
 }
 
 /** Téléchargement des archives en Excel */
@@ -58,6 +73,7 @@ export async function recopierUtilisateurs(moi) {
       if (!vus.has(s.id) && s.id !== moi.email && s.data().actif) { lot.update(s.ref, { actif: false }); desactives++; }
     });
     await lot.commit();
+    await publierEquipe();
     return { total: hmc.size, actifs, desactives };
   } finally {
     await signOut(authHMC);

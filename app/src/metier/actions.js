@@ -19,6 +19,9 @@ export const COLS = [
   'RaisonSortie', 'ParentId', 'Historique', 'StatutMAD', 'SAVDelaiAlerte', 'PrixVente', 'StatutPastille',
   'StockSubtype', 'MADSubtype', 'RecuperePar', 'Prets', 'DateTLE',
   'DateRecupClient', 'RepriseArticle', 'RepriseRecue',
+  // Vendeur qui a vendu la cuisine d'où vient l'article (ajouté le 26/11/2026,
+  // différent de Kitchener = la personne qui a réceptionné l'article)
+  'Vendeur',
 ];
 
 /* « [20/02/2026 14:05] Amandine - Réception · Type: Stock » */

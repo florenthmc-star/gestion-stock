@@ -53,7 +53,7 @@ function majBoutonTheme() {
   const b = document.getElementById('btnTheme');
   if (!b) return;
   const sombre = document.documentElement.getAttribute('data-theme') === 'dark';
-  b.textContent = sombre ? '☀️' : '🌙';
+  b.innerHTML = `<svg class="ico"><use href="#i-${sombre ? 'soleil' : 'lune'}"/></svg>`;
   b.title = sombre ? 'Passer en mode clair' : 'Passer en mode sombre';
 }
 window.changerTheme = () => {

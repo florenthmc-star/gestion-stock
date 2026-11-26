@@ -18,6 +18,11 @@ Adresse : **https://hmc-stock.web.app**
 Rubrique **Historique** (recherche dans tous les articles, même sortis, et dans les archives) :
 admin, direction et ADV pour tous les magasins ; un directeur pour son magasin.
 
+**Vendeur de la cuisine** : sur une mise à dispo, le vendeur qui a vendu la cuisine d'où vient
+l'article (différent de « Réceptionné par »). Filtre « Tous les vendeurs » dans Mises à dispo et
+Historique ; les noms proposés viennent de l'équipe (vendeurs et directeurs actifs, publiée par l'admin)
+et des noms déjà saisis.
+
 Le nettoyage en masse (archives selon le délai choisi) et les paramètres sont réservés à l'admin.
 Ces règles sont appliquées par le serveur dans `firestore.rules`, pas seulement par l'écran.
 

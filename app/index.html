@@ -346,13 +346,77 @@
             .modal-top{padding:16px 16px 12px;}
             .card{padding:16px;}
         }
+        /* Icônes (remplacent les emojis) : dessin au trait, couleur du texte */
+        .ico{width:1.1em;height:1.1em;flex:0 0 auto;display:inline-block;vertical-align:-.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+        .tab .ico{width:18px;height:18px;opacity:.85;}
+        .tab.active .ico{opacity:1;}
+        .page-title .ico{width:24px;height:24px;color:var(--bleu);}
+        .logo .ico{width:19px;height:19px;stroke-width:2.2;}
+        .connexion-box .logo .ico{width:26px;height:26px;}
+        .btnIcone .ico{width:18px;height:18px;}
+        .meta .ico{width:13px;height:13px;color:var(--texte3);}
+        .item-client .ico{width:15px;height:15px;color:var(--texte3);}
+        .badge .ico{width:12px;height:12px;vertical-align:-.15em;}
+        .btn .ico{width:16px;height:16px;}
+        .section-lbl .ico,.settings-section h3 .ico{width:15px;height:15px;color:var(--bleu);vertical-align:-.2em;}
+        .ico-vide{margin-bottom:10px;color:var(--texte3);}
+        .ico-vide .ico{width:34px;height:34px;stroke-width:1.5;}
+        .alerte-point{width:10px;height:10px;border-radius:50%;margin-top:5px;flex:0 0 auto;background:var(--or);}
+        .alert-item.danger .alerte-point{background:var(--rouge);}
+        .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;}
+        #m_search,#s_search,#t_search,#rc_search,#p_search,#h_search,#a_search{padding-left:36px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 12px center;}
         @media(prefers-reduced-motion:reduce){.pane,.modal,.toast{animation:none;}}
     </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <!-- Icônes de l'appli (dessin au trait, 24×24, style « Lucide ») : <svg class="ico"><use href="#i-nom"/></svg> -->
+    <symbol id="i-reception" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-mad" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-stock" viewBox="0 0 24 24"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12M6 14h12M6 22V10h12v12"/></symbol>
+    <symbol id="i-tle" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+    <symbol id="i-recup" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="i-prets" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-alertes" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-historique" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-parametres" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-lune" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-soleil" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="i-deconnexion" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-croix" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-alerte" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-crayon" viewBox="0 0 24 24"><path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/><path d="m15 5 4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+    <symbol id="i-magasin" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></symbol>
+    <symbol id="i-etiquette" viewBox="0 0 24 24"><path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/></symbol>
+    <symbol id="i-oeil" viewBox="0 0 24 24"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-personne" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-equipe" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-vendeur" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></symbol>
+    <symbol id="i-euro" viewBox="0 0 24 24"><path d="M4 10h12M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/></symbol>
+    <symbol id="i-disquette" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7M7 3v4a1 1 0 0 0 1 1h7"/></symbol>
+    <symbol id="i-calendrier" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-presse" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol>
+    <symbol id="i-lieu" viewBox="0 0 24 24"><path d="M20 10c0 4.99-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 14.99 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-tel" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+    <symbol id="i-sortie" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/></symbol>
+    <symbol id="i-sablier" viewBox="0 0 24 24"><path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></symbol>
+    <symbol id="i-cadenas" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-cle" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+    <symbol id="i-marteau" viewBox="0 0 24 24"><path d="m15 12-8.37 8.37a2.12 2.12 0 0 1-3-3L12 9M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3M21 21v.01M12 7v3a2 2 0 0 1-2 2H7M3 12h.01M12 3h.01M12 16v.01M16 12h1M21 12v.01M12 21v-1"/></symbol>
+    <symbol id="i-imprimante" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+    <symbol id="i-corbeille" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+    <symbol id="i-retour" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24"><path d="m15 10 5 5-5 5"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></symbol>
+    <symbol id="i-loupe" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+</svg>
 <div class="ecran-connexion" id="ecranConnexion">
     <div class="connexion-box">
-        <div class="logo">📦</div>
+        <div class="logo"><svg class="ico"><use href="#i-mad"/></svg></div>
         <h1>HMC Stock</h1>
         <p id="connexionMessage">Chargement…</p>
         <div id="connexionActions" class="btn-row" style="justify-content:center;"></div>
@@ -361,7 +425,7 @@
 <div class="app">
 <aside class="barreLaterale">
     <div class="marque">
-        <span class="logo">📦</span>
+        <span class="logo"><svg class="ico"><use href="#i-mad"/></svg></span>
         <div><b>HMC Stock</b><span>Gestion des stocks</span></div>
     </div>
     <div class="profil">
@@ -369,32 +433,32 @@
         <div class="profil-texte"><b id="userChip"></b><span id="userRole"></span></div>
     </div>
     <nav class="tabs">
-    <button class="tab active" onclick="switchTab('reception',this)">📥 Réception</button>
-    <button class="tab" onclick="switchTab('mad',this)">🚚 Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('stock',this)">📦 Stock</button>
-    <button class="tab" onclick="switchTab('tle',this)">🚚 TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('recup',this)">🛍️ Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('prets',this)">🔄 Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
-    <button class="tab" onclick="switchTab('alertes',this)">🔔 Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
-    <button class="tab" id="tabHistorique" style="display:none" onclick="switchTab('historique',this)">🕘 Historique</button>
-    <button class="tab" id="tabParametres" style="display:none" onclick="switchTab('parametres',this)">⚙️ Paramètres</button>
+    <button class="tab active" onclick="switchTab('reception',this)"><svg class="ico"><use href="#i-reception"/></svg> Réception</button>
+    <button class="tab" onclick="switchTab('mad',this)"><svg class="ico"><use href="#i-mad"/></svg> Mises à dispo <span class="tab-badge" id="madBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('stock',this)"><svg class="ico"><use href="#i-stock"/></svg> Stock</button>
+    <button class="tab" onclick="switchTab('tle',this)"><svg class="ico"><use href="#i-tle"/></svg> TLE <span class="tab-badge" id="tleBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('recup',this)"><svg class="ico"><use href="#i-recup"/></svg> Récupérations <span class="tab-badge" id="recupBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('prets',this)"><svg class="ico"><use href="#i-prets"/></svg> Prêts <span class="tab-badge" id="retardBadge" style="display:none">!</span></button>
+    <button class="tab" onclick="switchTab('alertes',this)"><svg class="ico"><use href="#i-alertes"/></svg> Alertes <span class="tab-badge" id="alertBadge" style="display:none">!</span></button>
+    <button class="tab" id="tabHistorique" style="display:none" onclick="switchTab('historique',this)"><svg class="ico"><use href="#i-historique"/></svg> Historique</button>
+    <button class="tab" id="tabParametres" style="display:none" onclick="switchTab('parametres',this)"><svg class="ico"><use href="#i-parametres"/></svg> Paramètres</button>
     </nav>
     <div class="basLateral">
-        <button class="btnIcone" id="btnTheme" type="button" onclick="changerTheme()" title="Mode sombre">🌙</button>
-        <button class="btnIcone" type="button" onclick="seDeconnecter()" title="Se déconnecter">🚪</button>
+        <button class="btnIcone" id="btnTheme" type="button" onclick="changerTheme()" title="Mode sombre"></button>
+        <button class="btnIcone" type="button" onclick="seDeconnecter()" title="Se déconnecter"><svg class="ico"><use href="#i-deconnexion"/></svg></button>
     </div>
 </aside>
 <div class="colonne">
 <div class="header">
-    <div class="pill loading" id="statusPill">🔄 Connexion...</div>
-    <button class="btn-sm btn-scan" onclick="openScanner()">📷 Scanner</button>
+    <div class="pill loading" id="statusPill">Connexion...</div>
+    <button class="btn-sm btn-scan" onclick="openScanner()"><svg class="ico"><use href="#i-photo"/></svg> Scanner</button>
 </div>
 <main>
 <div class="page">
 
 <!-- ═══ RÉCEPTION ═══ -->
 <div id="reception" class="pane active">
-    <div class="page-title">📥 Réception d'Article</div>
+    <div class="page-title"><svg class="ico"><use href="#i-reception"/></svg> Réception d'Article</div>
     <div class="card">
         <form id="receptionForm">
             <div class="form-grid">
@@ -408,20 +472,26 @@
                     <label>Type *</label>
                     <select id="f_type" required onchange="toggleFormFields()">
                         <option value="">Sélectionner...</option>
-                        <option value="Mise à disposition">🚚 Mise à disposition</option>
-                        <option value="Stock">📦 Stock</option>
-                        <option value="Article de prêt">🔄 Article de prêt</option>
+                        <option value="Mise à disposition">Mise à disposition</option>
+                        <option value="Stock">Stock</option>
+                        <option value="Article de prêt">Article de prêt</option>
                     </select>
                 </div>
                 <div class="fg" id="clientGroup">
                     <label>Nom du Client *</label>
                     <input id="f_client" type="text" placeholder="Nom du client">
                 </div>
+                <div class="fg" id="vendeurGroup">
+                    <label>Vendeur de la cuisine</label>
+                    <input id="f_vendeur" type="text" list="listeVendeurs" autocomplete="off" placeholder="Qui a vendu la cuisine ?">
+                    <datalist id="listeVendeurs"></datalist>
+                    <span class="hint">Pour retrouver ensuite tous les articles d'un vendeur</span>
+                </div>
                 <div class="fg" id="madSubtypeGroup" style="display:none">
                     <label>Type *</label>
                     <select id="f_mad_subtype" onchange="onMadSubtypeChange()">
-                        <option value="Commande">📦 Commande client</option>
-                        <option value="SAV">🔧 SAV</option>
+                        <option value="Commande">Commande client</option>
+                        <option value="SAV">SAV</option>
                     </select>
                 </div>
                 <div class="fg" id="savDelaiGroup" style="display:none">
@@ -461,8 +531,8 @@
                 <div class="fg" id="stockSubtypeGroup" style="display:none">
                     <label>Type de stock *</label>
                     <select id="f_stock_subtype" onchange="onStockSubtypeChange()">
-                        <option value="Interne">📦 Stock interne</option>
-                        <option value="Vendable">💰 Stock vendable</option>
+                        <option value="Interne">Stock interne</option>
+                        <option value="Vendable">Stock vendable</option>
                     </select>
                 </div>
                 <div class="fg" id="priceGroup" style="display:none">
@@ -495,20 +565,20 @@
                 </div>
             </div>
             <div class="btn-row">
-                <button type="submit" class="btn btn-primary" id="submitBtn">✅ Générer le QR Code</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn"><svg class="ico"><use href="#i-ok"/></svg> Générer le QR Code</button>
             </div>
         </form>
     </div>
     <div id="qrResult" style="display:none">
         <div class="card" style="text-align:center;padding:28px 20px;border:1.5px solid #c7d7fd;background:var(--blue-soft);">
-            <div style="font-size:15px;font-weight:800;margin-bottom:4px;">✅ Article enregistré</div>
+            <div style="font-size:15px;font-weight:800;margin-bottom:4px;"><svg class="ico"><use href="#i-ok"/></svg> Article enregistré</div>
             <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">QR code prêt à imprimer et coller sur le colis</p>
             <div id="qrcode" style="display:inline-block;background:white;padding:14px;border-radius:var(--r2);box-shadow:var(--shadow-md);margin-bottom:16px;"></div>
             <div id="qrInfos" style="margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.9;"></div>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="printQR()">🖨️ Étiquettes standard</button>
-                <button class="btn btn-outline" onclick="printQRSmall()">🏷️ Format étroit (mitigeurs)</button>
-                <button class="btn btn-outline" onclick="resetForm()">➕ Nouvel article</button>
+                <button class="btn btn-primary" onclick="printQR()"><svg class="ico"><use href="#i-imprimante"/></svg> Étiquettes standard</button>
+                <button class="btn btn-outline" onclick="printQRSmall()"><svg class="ico"><use href="#i-etiquette"/></svg> Format étroit (mitigeurs)</button>
+                <button class="btn btn-outline" onclick="resetForm()"><svg class="ico"><use href="#i-plus"/></svg> Nouvel article</button>
             </div>
         </div>
     </div>
@@ -516,25 +586,28 @@
 
 <!-- ═══ MISES À DISPO ═══ -->
 <div id="mad" class="pane">
-    <div class="page-title">🚚 Mises à Disposition</div>
+    <div class="page-title"><svg class="ico"><use href="#i-mad"/></svg> Mises à Disposition</div>
     <div class="stats-row" id="madStats"></div>
     <div class="filter-bar">
         <select id="m_mag" onchange="renderMAD()">
             <option value="">Tous les magasins</option>
         </select>
+        <select id="m_vend" onchange="renderMAD()">
+            <option value="">Tous les vendeurs</option>
+        </select>
         <select id="m_subtype" onchange="renderMAD()">
             <option value="">Tous les types</option>
-            <option value="Commande">📦 Commandes uniquement</option>
-            <option value="SAV">🔧 SAV uniquement</option>
+            <option value="Commande">Commandes uniquement</option>
+            <option value="SAV">SAV uniquement</option>
         </select>
-        <input id="m_search" placeholder="🔍 Client, article, réf, AR..." oninput="debounceRender(renderMAD)" style="flex:1;min-width:180px;">
+        <input id="m_search" placeholder="Client, article, réf, AR..." oninput="debounceRender(renderMAD)" style="flex:1;min-width:180px;">
     </div>
     <div id="madList"></div>
 </div>
 
 <!-- ═══ STOCK ═══ -->
 <div id="stock" class="pane">
-    <div class="page-title">📦 Gestion du Stock</div>
+    <div class="page-title"><svg class="ico"><use href="#i-stock"/></svg> Gestion du Stock</div>
     <div class="stats-row" id="stockStats"></div>
     <div class="filter-bar">
         <select id="s_mag" onchange="renderStock()">
@@ -542,79 +615,79 @@
         </select>
         <select id="s_subtype" onchange="renderStock()">
             <option value="">Tous types</option>
-            <option value="Interne">📦 Stock interne</option>
-            <option value="Vendable">💰 Stock vendable</option>
+            <option value="Interne">Stock interne</option>
+            <option value="Vendable">Stock vendable</option>
         </select>
-        <input id="s_search" placeholder="🔍 Article, référence, emplacement..." oninput="debounceRender(renderStock)" style="flex:1;min-width:180px;">
+        <input id="s_search" placeholder="Article, référence, emplacement..." oninput="debounceRender(renderStock)" style="flex:1;min-width:180px;">
     </div>
     <div id="stockList"></div>
 </div>
 
 <!-- ═══ TLE - ARTICLES VENDUS ═══ -->
 <div id="tle" class="pane">
-    <div class="page-title">🚚 Articles vendus — TLE</div>
+    <div class="page-title"><svg class="ico"><use href="#i-tle"/></svg> Articles vendus — TLE</div>
     <div class="stats-row" id="tleStats"></div>
     <div class="filter-bar">
         <select id="t_mag" onchange="renderTLE()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="t_statut" onchange="renderTLE()">
-            <option value="attente" selected>📦 En attente TLE + Reprises SAV</option>
+            <option value="attente" selected>En attente TLE + Reprises SAV</option>
             <option value="">Tout type</option>
-            <option value="Vendu - Attente TLE">📦 Vente en attente TLE</option>
-            <option value="Reprise - Attente TLE">🔧 Reprise SAV</option>
-            <option value="Sorti - Remis TLE">✅ Remis à TLE</option>
+            <option value="Vendu - Attente TLE">Vente en attente TLE</option>
+            <option value="Reprise - Attente TLE">Reprise SAV</option>
+            <option value="Sorti - Remis TLE">Remis à TLE</option>
         </select>
-        <input id="t_search" placeholder="🔍 Article, référence..." oninput="debounceRender(renderTLE)" style="flex:1;min-width:180px;">
+        <input id="t_search" placeholder="Article, référence..." oninput="debounceRender(renderTLE)" style="flex:1;min-width:180px;">
     </div>
     <div id="tleList"></div>
 </div>
 
 <!-- ═══ RÉCUPÉRATIONS CLIENTS ═══ -->
 <div id="recup" class="pane">
-    <div class="page-title">🛍️ Récupérations Clients</div>
+    <div class="page-title"><svg class="ico"><use href="#i-recup"/></svg> Récupérations Clients</div>
     <div class="stats-row" id="recupStats"></div>
     <div class="filter-bar">
         <select id="rc_mag" onchange="renderRecupClients()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="rc_statut" onchange="renderRecupClients()">
-            <option value="En attente" selected>⏳ En attente</option>
+            <option value="En attente" selected>En attente</option>
             <option value="">Tout</option>
-            <option value="Récupéré">✅ Récupéré</option>
+            <option value="Récupéré">Récupéré</option>
         </select>
-        <input id="rc_search" placeholder="🔍 Article, client, référence..." oninput="debounceRender(renderRecupClients)" style="flex:1;min-width:180px;">
+        <input id="rc_search" placeholder="Article, client, référence..." oninput="debounceRender(renderRecupClients)" style="flex:1;min-width:180px;">
     </div>
     <div id="recupList"></div>
 </div>
 
 <!-- ═══ PRÊTS ═══ -->
 <div id="prets" class="pane">
-    <div class="page-title">🔄 Gestion des Prêts</div>
+    <div class="page-title"><svg class="ico"><use href="#i-prets"/></svg> Gestion des Prêts</div>
     <div class="stats-row" id="pretsStats"></div>
     <div class="filter-bar">
         <select id="p_mag" onchange="renderPrets()">
             <option value="">Tous les magasins</option>
         </select>
         <select id="p_dispo_filter" onchange="renderPrets()">
-            <option value="dispo" selected>🟣 Disponibles</option>
-            <option value="non_dispo">⚫ Non disponibles</option>
-            <option value="tout">📋 Tout</option>
+            <option value="dispo" selected>Disponibles</option>
+            <option value="non_dispo">Non disponibles</option>
+            <option value="tout">Tout</option>
         </select>
-        <input id="p_search" placeholder="🔍 Article, client emprunteur..." oninput="debounceRender(renderPrets)" style="flex:1;min-width:180px;">
+        <input id="p_search" placeholder="Article, client emprunteur..." oninput="debounceRender(renderPrets)" style="flex:1;min-width:180px;">
     </div>
     <div class="sub-tabs">
-        <button class="sub-tab s-purple active" id="stab_dispo" onclick="setPretTab('dispo')">🟣 Disponibles</button>
-        <button class="sub-tab" id="stab_encours" onclick="setPretTab('encours')">🔵 En cours</button>
-        <button class="sub-tab s-warn" id="stab_bientot" onclick="setPretTab('bientot')">🟡 Bientôt</button>
-        <button class="sub-tab s-danger" id="stab_retard" onclick="setPretTab('retard')">🔴 En retard</button>
+        <button class="sub-tab s-purple active" id="stab_dispo" onclick="setPretTab('dispo')">Disponibles</button>
+        <button class="sub-tab" id="stab_encours" onclick="setPretTab('encours')">En cours</button>
+        <button class="sub-tab s-warn" id="stab_bientot" onclick="setPretTab('bientot')">Bientôt</button>
+        <button class="sub-tab s-danger" id="stab_retard" onclick="setPretTab('retard')">En retard</button>
     </div>
     <div id="pretsList"></div>
 </div>
 
 <!-- ═══ ALERTES ═══ -->
 <div id="alertes" class="pane">
-    <div class="page-title">🔔 Alertes</div>
+    <div class="page-title"><svg class="ico"><use href="#i-alertes"/></svg> Alertes</div>
     <div class="filter-bar">
         <select id="a_mag" onchange="renderAlertes()">
             <option value="">Tous les magasins</option>
@@ -625,10 +698,13 @@
 
 <!-- ═══ HISTORIQUE (admin, direction, ADV ; directeur : son magasin) ═══ -->
 <div id="historique" class="pane">
-    <div class="page-title">🕘 Historique</div>
+    <div class="page-title"><svg class="ico"><use href="#i-historique"/></svg> Historique</div>
     <div class="filter-bar">
         <select id="h_mag" onchange="renderHistorique()">
             <option value="">Tous les magasins</option>
+        </select>
+        <select id="h_vend" onchange="renderHistorique()">
+            <option value="">Tous les vendeurs</option>
         </select>
         <select id="h_etat" onchange="renderHistorique()">
             <option value="">Tout</option>
@@ -636,7 +712,7 @@
             <option value="clos">Sortis, remis à TLE, récupérés</option>
             <option value="archives">Archivés</option>
         </select>
-        <input id="h_search" placeholder="🔍 Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
+        <input id="h_search" placeholder="Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
     </div>
     <div id="histoStats" style="font-size:13px;color:var(--text3);margin:0 0 10px 4px;"></div>
     <div id="histoList"></div>
@@ -644,11 +720,11 @@
 
 <!-- ═══ PARAMÈTRES (admin seulement) ═══ -->
 <div id="parametres" class="pane">
-    <div class="page-title">⚙️ Paramètres</div>
+    <div class="page-title"><svg class="ico"><use href="#i-parametres"/></svg> Paramètres</div>
 
     <div class="card">
         <div class="settings-section">
-            <h3>🔐 Qui a accès aux paramètres</h3>
+            <h3><svg class="ico"><use href="#i-cadenas"/></svg> Qui a accès aux paramètres</h3>
             <p style="font-size:13px;color:var(--text3);">Seuls les comptes au rôle <strong>Administrateur</strong> voient cet onglet. Le serveur refuse aussi toute modification des paramètres venant d'un autre compte. Le rôle se change dans l'appli HMC, puis « Recopier les utilisateurs » ci-dessous.</p>
             <div class="acces-liste" id="listeAdmins"><span>…</span></div>
         </div>
@@ -656,7 +732,7 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>🔔 Délais d'alerte</h3>
+            <h3><svg class="ico"><use href="#i-alertes"/></svg> Délais d'alerte</h3>
             <div class="setting-row">
                 <label>Prêt : « Retour bientôt » à partir de</label>
                 <div class="si"><input type="number" id="param_bientot" min="1" max="30" value="3"><span>jours avant</span></div>
@@ -678,7 +754,7 @@
                 <div class="si"><input type="number" id="param_recup_delai" min="0" max="10" value="2"><span>jours</span></div>
             </div>
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="saveParams()">💾 Enregistrer</button>
+                <button class="btn btn-primary" onclick="saveParams()"><svg class="ico"><use href="#i-disquette"/></svg> Enregistrer</button>
                 <button class="btn btn-outline" onclick="resetParams()">↺ Valeurs par défaut</button>
             </div>
         </div>
@@ -686,15 +762,15 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>🗄️ Archivage</h3>
+            <h3><svg class="ico"><use href="#i-archive"/></svg> Archivage</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Les articles sortis ou les prêts retournés depuis plus longtemps que ce délai partent dans les archives quand vous cliquez sur « Archiver maintenant ». Rien n'est perdu : les archives se téléchargent en Excel.</p>
             <div class="setting-row">
                 <label>Archiver les articles clos depuis plus de</label>
                 <div class="si"><input type="number" id="param_archive" min="30" max="365" value="90"><span>jours</span></div>
             </div>
             <div class="btn-row">
-                <button class="btn btn-outline" onclick="saveParams()">💾 Enregistrer le délai</button>
-                <button class="btn btn-danger" onclick="actArchiveOld()">🗑️ Archiver maintenant</button>
+                <button class="btn btn-outline" onclick="saveParams()"><svg class="ico"><use href="#i-disquette"/></svg> Enregistrer le délai</button>
+                <button class="btn btn-danger" onclick="actArchiveOld()"><svg class="ico"><use href="#i-corbeille"/></svg> Archiver maintenant</button>
                 <button class="btn btn-outline" onclick="lancerExportArchives()">⬇️ Télécharger les archives (Excel)</button>
             </div>
         </div>
@@ -702,22 +778,22 @@
 
     <div class="card">
         <div class="settings-section">
-            <h3>👥 Utilisateurs</h3>
+            <h3><svg class="ico"><use href="#i-equipe"/></svg> Utilisateurs</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Les collaborateurs et leurs rôles viennent de l'appli HMC. Après un ajout ou un changement dans l'appli HMC, cliquez ici (connexion Google demandée une seconde fois, lecture seule).</p>
-            <div class="btn-row"><button class="btn btn-primary" onclick="lancerRecopieUtilisateurs()">🔄 Recopier les utilisateurs de l'appli HMC</button></div>
+            <div class="btn-row"><button class="btn btn-primary" onclick="lancerRecopieUtilisateurs()"><svg class="ico"><use href="#i-prets"/></svg> Recopier les utilisateurs de l'appli HMC</button></div>
             <div id="resultatUtilisateurs" style="font-size:13px;color:var(--text2);margin-top:10px;"></div>
         </div>
         <div class="settings-section">
-            <h3>🏬 Magasins</h3>
+            <h3><svg class="ico"><use href="#i-magasin"/></svg> Magasins</h3>
             <p style="font-size:13px;color:var(--text3);margin-bottom:12px;">Un magasin par ligne. Pour ajouter Mobalpa ou Valencia, écrivez-le ici : il apparaît partout dans l'appli. Écrivez-le comme dans l'appli HMC pour que les droits des collaborateurs suivent.</p>
             <textarea id="param_magasins" rows="6" class="date-input" style="width:100%;"></textarea>
-            <div class="btn-row"><button class="btn btn-primary" onclick="enregistrerMagasins()">💾 Enregistrer les magasins</button></div>
+            <div class="btn-row"><button class="btn btn-primary" onclick="enregistrerMagasins()"><svg class="ico"><use href="#i-disquette"/></svg> Enregistrer les magasins</button></div>
         </div>
     </div>
 
     <div class="card">
         <details class="repli settings-section">
-            <summary>📋 Seuils d'alerte par article (stock interne) ▾</summary>
+            <summary><svg class="ico"><use href="#i-presse"/></svg> Seuils d'alerte par article (stock interne) ▾</summary>
             <p style="font-size:13px;color:var(--text3);margin-bottom:14px;">Un seuil par article. Il se règle aussi à la création de l'article ou dans sa fiche.</p>
             <div id="seuilsListe"></div>
         </details>
@@ -775,7 +851,7 @@
             <div id="inputMessage" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;"></div>
             <input type="text" id="inputField" class="date-input" onkeydown="if(event.key==='Enter'){event.preventDefault();closeInputDialog(true);}">
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="closeInputDialog(true)">✅ Valider</button>
+                <button class="btn btn-primary" onclick="closeInputDialog(true)">Valider</button>
                 <button class="btn btn-outline" onclick="closeInputDialog(false)">Annuler</button>
             </div>
         </div>
@@ -787,7 +863,7 @@
     <div class="modal" style="max-width:380px;">
         <div class="modal-top">
             <div>
-                <div style="font-size:16px;font-weight:800;" id="dateTitle">📅 Date</div>
+                <div style="font-size:16px;font-weight:800;" id="dateTitle">Date</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:2px;" id="dateSub"></div>
             </div>
             <button class="modal-close" onclick="closeDateDialog(false)">×</button>
@@ -796,7 +872,7 @@
             <div id="dateMessage" style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;"></div>
             <input type="date" id="dateInput" class="date-input">
             <div class="btn-row">
-                <button class="btn btn-primary" onclick="closeDateDialog(true)">✅ Valider</button>
+                <button class="btn btn-primary" onclick="closeDateDialog(true)">Valider</button>
                 <button class="btn btn-outline" onclick="closeDateDialog(false)">Annuler</button>
             </div>
         </div>
@@ -815,7 +891,7 @@
         <div class="modal-body">
             <div id="confirmMessage" style="font-size:14px;color:var(--text2);line-height:1.6;"></div>
             <div class="btn-row">
-                <button class="btn btn-primary" id="confirmOk" onclick="closeConfirmDialog(true)">✅ Confirmer</button>
+                <button class="btn btn-primary" id="confirmOk" onclick="closeConfirmDialog(true)">Confirmer</button>
                 <button class="btn btn-outline" onclick="closeConfirmDialog(false)">Annuler</button>
             </div>
         </div>
@@ -827,7 +903,7 @@
     <div class="modal" style="max-width:420px;">
         <div class="modal-top">
             <div>
-                <div style="font-size:17px;font-weight:800;">📷 Scanner un QR code</div>
+                <div style="font-size:17px;font-weight:800;"><svg class="ico"><use href="#i-photo"/></svg> Scanner un QR code</div>
                 <div style="font-size:12px;color:var(--text3);margin-top:2px;">Visez l'étiquette de l'article</div>
             </div>
             <button class="modal-close" onclick="closeScanner()">×</button>
