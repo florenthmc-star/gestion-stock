@@ -9,6 +9,7 @@ import { appel, articles as lireArticles, lireConfig, etatConnexion, lireArchive
 import { peutModifier, peutArchiver, estAdmin, magasinsModifiables, libelleRole, magasinDesAlertes, magasinHistorique, peutVoirHistorique } from './metier/droits.js';
 import { CATEGORIES, categorieDe, changerCategorie } from './metier/actions.js';
 import { vendeursConnus, memeVendeur } from './metier/vendeurs.js';
+import { estSorti, stockFaiblePertinent, dernierContactClient, joursDepuis, madAVerifier, grouperAlertes } from './metier/alertes.js';
 // Outils admin (lecture Excel, recopie des utilisateurs) chargés seulement quand l'admin s'en sert
 const outilsAdmin = () => import('./admin.js');
 
@@ -160,6 +161,7 @@ function applyParamsToForm() {
     set('param_mad_delai', params.madDelaiDefaut || 15);
     set('param_sav_delai', params.savDelaiDefaut || 30);
     set('param_recup_delai', params.recupClientDelai || 2);
+    set('param_relance', params.relanceJours || 7);
 
 }
 
@@ -176,6 +178,7 @@ function saveParams() {
     params.madDelaiDefaut    = num('param_mad_delai', 15);
     params.savDelaiDefaut    = num('param_sav_delai', 30);
     params.recupClientDelai  = num('param_recup_delai', 2);
+    params.relanceJours      = num('param_relance', 7);
 
     busy(true, 'Enregistrement...');
     saveParamsToAPI().then(r=>{ busy(false); if(r.error){ toast('' + r.error, 'err'); return; } toast('Paramètres enregistrés sur tous les appareils'); renderAlertes(); });
@@ -183,7 +186,7 @@ function saveParams() {
 
 async function resetParams() {
     if(!await showConfirmDialog('Réinitialiser', 'Remettre tous les délais d\'alerte à leurs valeurs par défaut ?')) return;
-    params = {...params, alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30, recupClientDelai:2};
+    params = {...params, alerteBientot:3, alerteUrgent:1, stockFaible:0, archiveJours:90, madDelaiDefaut:15, savDelaiDefaut:30, recupClientDelai:2, relanceJours:7};
     busy(true, 'Réinitialisation...');
     await saveParamsToAPI();
     busy(false);
@@ -292,7 +295,7 @@ function parseArticles(data) {
         nombreColis:parseInt(r.NombreColis)||1,
         quantiteStock:(r.QuantiteStock!==''&&r.QuantiteStock!=null)?parseInt(r.QuantiteStock):null,
         quantiteInitiale:(r.QuantiteInitiale!==''&&r.QuantiteInitiale!=null)?parseInt(r.QuantiteInitiale):null,
-        emplacement:r.Emplacement||'', kitchener:r.Kitchener||'', vendeur:r.Vendeur||'',
+        emplacement:r.Emplacement||'', kitchener:r.Kitchener||'', vendeur:r.Vendeur||'', datePrevenu:r.DatePrevenu||'',
         notes:r.Notes||'', statut:r.Statut||'Stock',
         dateReception:r.DateReception||'', datePret:r.DatePret||'',
         prenomEmprunteur:r.PrenomEmprunteur||'', parentId:r.ParentId||'',
@@ -388,16 +391,11 @@ function refreshBadges() {
     };
 
     setBadge('retardBadge', retards);
-    setBadge('madBadge', articles.filter(a => a.type==='Mise à disposition' && a.madSubtype==='SAV' && a.statut==='Stock').length);
+    setBadge('madBadge', articles.filter(a => a.type==='Mise à disposition' && a.madSubtype==='SAV' && !estSorti(a.statut)).length);
     setBadge('tleBadge', articles.filter(a => a.statut==='Vendu - Attente TLE' || a.statut==='Reprise - Attente TLE').length);
     setBadge('recupBadge', articles.filter(a => a.type==='Récupération client' && a.statut==='En attente').length);
 
-    const stockAlerts = articles.filter(a => {
-        if (a.type!=='Stock' || a.stockSubtype==='Vendable' || a.quantiteStock===null || a.statut!=='Stock') return false;
-        const s = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : params.stockFaible;
-        return a.quantiteStock <= s;
-    }).length;
-    setBadge('alertBadge', retards + stockAlerts);
+    setBadge('alertBadge', calculerAlertes(monMag).length);
 }
 
 // ─── SCANNER QR (usage interne) ───────────────────────────
@@ -849,7 +847,7 @@ function renderMAD() {
     const subtype = document.getElementById('m_subtype').value;
     const q = (document.getElementById('m_search')?.value || '').toLowerCase();
     // Une mise à dispo sortie quitte la rubrique (elle reste dans l'Historique)
-    const allF = articles.filter(a => a.type==='Mise à disposition' && a.statut!=='Sorti' && (!mag || a.magasin===mag));
+    const allF = articles.filter(a => a.type==='Mise à disposition' && !estSorti(a.statut) && (!mag || a.magasin===mag));
 
     document.getElementById('madStats').innerHTML = `
         <div class="stat-card blue"><div class="num">${allF.length}</div><div class="lbl">Total${mag ? ' ' + esc(mag) : ''}</div></div>
@@ -1184,102 +1182,102 @@ function renderPrets() {
 }
 
 // ─── RENDU : ALERTES ──────────────────────────────────────
-function renderAlertes() {
-    // Vendeurs, directeurs… : uniquement les alertes de leur magasin
-    const mag = magasinDesAlertes(moi) || document.getElementById('a_mag').value;
+/* Toutes les alertes d'un magasin ('' = tous), avec leur catégorie (voir metier/alertes.js) */
+function calculerAlertes(mag) {
     const arts = mag ? articles.filter(a => a.magasin === mag) : articles;
     const { encours } = collectPretsEnCours(mag);
     const now = new Date();
     const alertes = [];
+    const ajouter = (cat, type, t, m, id) => alertes.push({ cat, type, t, m, id });
 
     encours.filter(p => p.dateRetourPrevue && new Date(p.dateRetourPrevue) < now).forEach(p => {
-        const j = Math.floor((now - new Date(p.dateRetourPrevue)) / 86400000);
-        alertes.push({type:'danger', t:`Prêt en retard — ${p.article}`, m:`${p.magasin} · ${p.emprunteur} · ${j}j de retard`, id:p.parentId});
+        ajouter('pret', 'danger', `Prêt en retard — ${p.article}`, `${p.magasin} · ${p.emprunteur} · ${joursDepuis(p.dateRetourPrevue, now)}j de retard`, p.parentId);
     });
-
     encours.filter(p => {
         if(!p.dateRetourPrevue) return false;
         const d = (new Date(p.dateRetourPrevue) - now) / 86400000;
         return d >= 0 && d <= params.alerteBientot;
     }).forEach(p => {
         const j = Math.ceil((new Date(p.dateRetourPrevue) - now) / 86400000);
-        alertes.push({type:'warning', t:`Retour bientôt — ${p.article}`, m:`${p.magasin} · ${p.emprunteur} · dans ${j}j`, id:p.parentId});
+        ajouter('bientot', 'warning', `Retour de prêt bientôt — ${p.article}`, `${p.magasin} · ${p.emprunteur} · dans ${j}j`, p.parentId);
     });
 
-    arts.filter(a => {
-        if(a.type!=='Récupération client' || a.statut!=='En attente') return false;
-        const d = getDateRecup(a);
-        return d && new Date(d) < now;
-    }).forEach(a => {
-        const j = Math.floor((now - new Date(getDateRecup(a))) / 86400000);
-        alertes.push({type:'danger', t:`Récupération en retard — ${a.article}`, m:`${a.magasin} · ${a.client||a.recuperePar} · ${j}j de retard`, id:a.id});
+    arts.filter(a => a.type==='Récupération client' && a.statut==='En attente' && getDateRecup(a)).forEach(a => {
+        const dr = new Date(getDateRecup(a));
+        const qui = a.client || a.recuperePar || '';
+        if(dr < now){
+            const j = joursDepuis(dr, now);
+            // Date manifestement fausse (saisie d'une mauvaise année…) : on le dit plutôt qu'afficher 46 000 jours
+            ajouter('recup', 'danger', `Récupération en retard — ${a.article}`, `${a.magasin} · ${qui} · ${j > 3650 ? 'date de récupération à corriger' : j + 'j de retard'}`, a.id);
+        } else if((dr - now) / 86400000 <= (params.recupClientDelai || 2)){
+            ajouter('bientot', 'warning', `Récupération bientôt — ${a.article}`, `${a.magasin} · ${qui} · dans ${Math.ceil((dr - now) / 86400000)}j`, a.id);
+        }
     });
 
-    arts.filter(a => {
-        if(a.type!=='Récupération client' || a.statut!=='En attente') return false;
-        const dr = getDateRecup(a);
-        if(!dr) return false;
-        const d = (new Date(dr) - now) / 86400000;
-        return d >= 0 && d <= (params.recupClientDelai||2);
-    }).forEach(a => {
-        const j = Math.ceil((new Date(getDateRecup(a)) - now) / 86400000);
-        alertes.push({type:'warning', t:`Récupération bientôt — ${a.article}`, m:`${a.magasin} · ${a.client||a.recuperePar} · dans ${j}j`, id:a.id});
-    });
-
-    arts.filter(a => a.type==='Mise à disposition' && a.madSubtype==='SAV' && a.statut==='Sorti' && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui')
-        .forEach(a => alertes.push({type:'warning', t:`SAV — Reprise à réceptionner`, m:`${a.article} · Client: ${a.client} · ${a.magasin}`, id:a.id}));
-
-    arts.filter(a => {
-        if(a.type!=='Stock' || a.stockSubtype==='Vendable' || a.quantiteStock===null || a.statut!=='Stock') return false;
-        const s = seuilsPerso[a.id]!==undefined ? seuilsPerso[a.id] : params.stockFaible;
-        return a.quantiteStock > 0 && a.quantiteStock <= s;
-    }).forEach(a => {
-        const s = seuilsPerso[a.id]!==undefined ? seuilsPerso[a.id] : params.stockFaible;
-        alertes.push({type:'warning', t:`Stock faible — ${a.article}`, m:`${a.magasin} · ${a.quantiteStock} unité(s) (seuil: ${s})`, id:a.id});
-    });
-
-    arts.filter(a => a.type==='Stock' && a.stockSubtype!=='Vendable' && a.quantiteStock===0 && a.statut==='Stock')
-        .forEach(a => alertes.push({type:'danger', t:`Stock épuisé — ${a.article}`, m:`${a.magasin} · À réapprovisionner`, id:a.id}));
-
-    arts.filter(a => {
-        if(a.type!=='Mise à disposition' || a.statut==='Sorti' || !a.dateReception) return false;
-        const delai = seuilsMAD[a.id] || params.madDelaiDefaut || 15;
-        return Math.floor((now - new Date(a.dateReception)) / 86400000) > delai;
-    }).forEach(a => {
-        const jours = Math.floor((now - new Date(a.dateReception)) / 86400000);
-        const delai = seuilsMAD[a.id] || params.madDelaiDefaut || 15;
-        alertes.push({type:'warning', t:`MAD qui traîne — ${a.article}`, m:`${a.magasin} · En magasin depuis ${jours}j (seuil: ${delai}j)`, id:a.id});
-    });
-
-    arts.filter(a => {
-        if(a.type!=='Mise à disposition' || a.madSubtype!=='SAV' || a.statut==='Sorti' || !a.dateReception) return false;
-        const delai = a.savDelaiAlerte || seuilsSAV[a.id] || params.savDelaiDefaut || 30;
-        return Math.floor((now - new Date(a.dateReception)) / 86400000) > delai;
-    }).forEach(a => {
-        const jours = Math.floor((now - new Date(a.dateReception)) / 86400000);
-        const delai = a.savDelaiAlerte || seuilsSAV[a.id] || params.savDelaiDefaut || 30;
-        alertes.push({type:'danger', t:`SAV qui traîne — ${a.article}`, m:`${a.magasin} · Depuis ${jours}j (seuil: ${delai}j) · Client: ${a.client}`, id:a.id});
-    });
-
-    arts.filter(a => {
-        if(a.statut!=='Vendu - Attente TLE' || !a.dateTLE) return false;
+    arts.filter(a => a.statut==='Vendu - Attente TLE' && a.dateTLE).forEach(a => {
         const j = Math.ceil((new Date(a.dateTLE) - now) / 86400000);
-        return j <= 2 && j >= 0;
-    }).forEach(a => {
-        const j = Math.ceil((new Date(a.dateTLE) - now) / 86400000);
-        alertes.push({type:'warning', t:`TLE bientôt — ${a.article}`, m:`${a.magasin} · Client: ${a.client} · ${new Date(a.dateTLE).toLocaleDateString('fr-FR')} (J-${j})`, id:a.id});
+        if(j >= 0 && j <= 2) ajouter('bientot', 'warning', `TLE bientôt — ${a.article}`, `${a.magasin} · Client : ${a.client} · ${new Date(a.dateTLE).toLocaleDateString('fr-FR')} (J-${j})`, a.id);
     });
 
-    if(!alertes.length){
-        document.getElementById('alertList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucune alerte !</p></div>';
+    const madEnCours = arts.filter(a => a.type==='Mise à disposition' && !estSorti(a.statut));
+
+    // Client prévenu mais toujours pas venu : à relancer
+    const relance = params.relanceJours || 7;
+    madEnCours.filter(a => a.statutMAD==='Client prévenu').forEach(a => {
+        const d = dernierContactClient(a, lireLignesHisto(a.historique));
+        if(!d) return;
+        const j = joursDepuis(d, now);
+        if(j >= relance) ajouter('relance', 'warning', `Client à relancer — ${a.client || a.article}`, `${a.magasin} · ${a.article} · prévenu il y a ${j}j`, a.id);
+    });
+
+    // SAV : une seule alerte (« SAV qui traîne »), les commandes ont la leur
+    madEnCours.filter(a => a.dateReception).forEach(a => {
+        const jours = joursDepuis(a.dateReception, now);
+        if(a.madSubtype==='SAV'){
+            const delai = a.savDelaiAlerte || seuilsSAV[a.id] || params.savDelaiDefaut || 30;
+            if(jours > delai) ajouter('sav', 'danger', `SAV qui traîne — ${a.article}`, `${a.magasin} · Client : ${a.client} · depuis ${jours}j (seuil ${delai}j)`, a.id);
+        } else {
+            const delai = seuilsMAD[a.id] || params.madDelaiDefaut || 15;
+            if(jours > delai) ajouter('mad', 'warning', `Mise à dispo qui traîne — ${a.article}`, `${a.magasin} · Client : ${a.client} · en magasin depuis ${jours}j (seuil ${delai}j)`, a.id);
+        }
+    });
+
+    arts.filter(a => a.type==='Mise à disposition' && a.madSubtype==='SAV' && estSorti(a.statut) && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui')
+        .forEach(a => ajouter('reprise', 'warning', `Reprise à réceptionner — ${a.article}`, `${a.magasin} · Client : ${a.client}`, a.id));
+
+    arts.filter(a => a.type==='Stock' && a.stockSubtype!=='Vendable' && a.statut==='Stock' && a.quantiteStock!==null).forEach(a => {
+        const seuil = seuilsPerso[a.id] !== undefined ? seuilsPerso[a.id] : 0;
+        if(a.quantiteStock === 0 && (a.quantiteInitiale || 0) > 1)
+            ajouter('epuise', 'danger', `Stock épuisé — ${a.article}`, `${a.magasin} · à réapprovisionner`, a.id);
+        else if(stockFaiblePertinent(a, seuil))
+            ajouter('faible', 'warning', `Stock faible — ${a.article}`, `${a.magasin} · ${a.quantiteStock} unité(s) sur ${a.quantiteInitiale} (seuil ${seuil})`, a.id);
+    });
+    return alertes;
+}
+
+function renderAlertes() {
+    // Vendeurs, directeurs… : uniquement les alertes de leur magasin
+    const mag = magasinDesAlertes(moi) || document.getElementById('a_mag').value;
+    const groupes = grouperAlertes(calculerAlertes(mag));
+    const zone = document.getElementById('alertList');
+    // Les très vieilles mises à dispo sont sûrement parties : on propose de les vérifier
+    const vieilles = peutVoirHistorique(moi) ? articles.filter(a => (!mag || a.magasin === mag) && madAVerifier(a, JOURS_A_VERIFIER)).length : 0;
+    const bandeau = vieilles ? `<div class="bandeau-verif"><svg class="ico"><use href="#i-presse"/></svg>
+        <span><strong>${vieilles}</strong> mise(s) à dispo en magasin depuis plus de ${JOURS_A_VERIFIER} jours : sûrement déjà parties ?</span>
+        <button class="btn btn-outline" onclick="ouvrirAVerifier()">Vérifier</button></div>` : '';
+    if(!groupes.length){
+        zone.innerHTML = bandeau + '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-ok"/></svg></div><p>Aucune alerte</p></div>';
         return;
     }
-    alertes.sort((a,b) => (a.type==='danger'?0:1) - (b.type==='danger'?0:1));
-    document.getElementById('alertList').innerHTML = alertes.map(al => `
-        <div class="alert-item ${al.type}" onclick="openModal('${esc(al.id)}')">
-            <span class="alerte-point"></span>
-            <div><div style="font-size:13px;font-weight:700;">${esc(al.t)}</div><div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(al.m)}</div></div>
-        </div>`).join('');
+    // Une catégorie par bloc repliable ; les grosses catégories sont repliées au départ
+    zone.innerHTML = bandeau + groupes.map(g => `
+        <details class="groupe-alertes ${g.type}" ${g.alertes.length <= 10 ? 'open' : ''}>
+            <summary><span class="alerte-point"></span>${esc(g.titre)}<span class="groupe-nb">${g.alertes.length}</span></summary>
+            ${g.alertes.map(al => `
+            <div class="alert-item ${al.type}" onclick="openModal('${esc(al.id)}')">
+                <div><div style="font-size:13px;font-weight:700;">${esc(al.t)}</div><div style="font-size:12px;color:var(--text3);margin-top:2px;">${esc(al.m)}</div></div>
+            </div>`).join('')}
+        </details>`).join('');
 }
 
 // ─── BOÎTES DE DIALOGUE ───────────────────────────────────
@@ -1408,7 +1406,7 @@ function renderModalContent(a, histo) {
     const isRecup = a.type === 'Récupération client';
 
     const statutsInterdits = ['Sorti','Sorti - Remis TLE','Sorti - Récupéré client'];
-    const isSAVAvecRepriseNonRecue = isMAD && a.madSubtype==='SAV' && a.statut==='Sorti' && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui';
+    const isSAVAvecRepriseNonRecue = isMAD && a.madSubtype==='SAV' && String(a.statut).startsWith('Sorti') && a.repriseArticle==='Oui' && a.repriseRecue!=='Oui';
     const estSorti = statutsInterdits.includes(a.statut) && !isSAVAvecRepriseNonRecue;
     // Un collaborateur ne modifie que son magasin (ADV, direction et admin : tous)
     const lectureSeule = !peutModifier(moi, a.magasin);
@@ -1494,6 +1492,7 @@ function renderModalContent(a, histo) {
         let actionsHTML = '';
         if(isMAD && a.statut==='Stock'){
             if(a.statutMAD==='À prévenir') actionsHTML += `<button class="btn btn-warning" onclick="actPrevenirClient('${esc(a.id)}')"><svg class="ico"><use href="#i-tel"/></svg> Prévenir client</button>`;
+            if(a.statutMAD==='Client prévenu') actionsHTML += `<button class="btn btn-outline" onclick="actClientRelance('${esc(a.id)}')"><svg class="ico"><use href="#i-tel"/></svg> Client relancé</button>`;
             actionsHTML += `<button class="btn btn-success" onclick="actSortir('${esc(a.id)}')"><svg class="ico"><use href="#i-sortie"/></svg> Sortir</button>
                <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')"><svg class="ico"><use href="#i-lieu"/></svg> Emplacement</button>`;
         }
@@ -1707,7 +1706,7 @@ async function actPrevenirClient(id){
     const p = getPrenom(); if(!p) return;
     const a = articles.find(x => x.id === id); if(!a) return;
     busy(true, 'Enregistrement...');
-    const r = await doUpdate(id, { StatutMAD:'Client prévenu' });
+    const r = await doUpdate(id, { StatutMAD:'Client prévenu', DatePrevenu:new Date().toISOString() });
     if(!r.error) await doHisto(id, p, 'Client prévenu', `Client ${a.client} informé de la mise à disposition`);
     busy(false);
     if(r.error){ toast('' + r.error, 'err'); return; }
@@ -1727,6 +1726,20 @@ async function demanderModeSortie(question, modes){
     if(choix !== 'autre') return choix.replace(/^\S+\s/, '');   // sans l'emoji dans l'historique
     const libre = await showInputDialog('Sortie', 'Précisez comment l\'article est sorti.', '');
     return libre && libre.trim() ? libre.trim() : null;
+}
+
+// Client déjà prévenu, toujours pas venu : on note la relance (l'alerte repart de zéro)
+async function actClientRelance(id){
+    const p = getPrenom(); if(!p) return;
+    const a = articles.find(x => x.id === id); if(!a) return;
+    busy(true, 'Enregistrement...');
+    const r = await doUpdate(id, { DatePrevenu:new Date().toISOString() });
+    if(!r.error) await doHisto(id, p, 'Client relancé', `Client ${a.client} relancé`);
+    busy(false);
+    if(r.error){ toast('' + r.error, 'err'); return; }
+    toast('Relance notée');
+    await loadData();
+    openModal(id);
 }
 
 // ─── MAD : sortie complète ────────────────────────────────
@@ -2345,12 +2358,30 @@ function renderHistorique(){
     if(etat === 'encours') liste = liste.filter(a => !a.archive && STATUTS_EN_COURS.includes(a.statut));
     else if(etat === 'clos') liste = liste.filter(a => !a.archive && !STATUTS_EN_COURS.includes(a.statut));
     else if(etat === 'archives') liste = liste.filter(a => a.archive);
+    const aVerifier = etat === 'averifier';
+    if(aVerifier) liste = liste.filter(a => !a.archive && madAVerifier(a, JOURS_A_VERIFIER));
     // La recherche porte aussi sur l'historique (qui a fait quoi)
     if(q) liste = liste.filter(a => smartSearch(a, q) || String(a.historique || '').toLowerCase().includes(q));
     liste.sort((a, b) => String(dateHisto(b)).localeCompare(String(dateHisto(a))));
+    if(aVerifier) liste.reverse();   // les plus anciennes d'abord
 
     const MAX = 150;
-    document.getElementById('histoStats').textContent = `${liste.length} résultat(s)` + (liste.length > MAX ? ` · les ${MAX} plus récents affichés, précisez la recherche` : '');
+    const stats = document.getElementById('histoStats');
+    if(aVerifier){
+        // On ne garde cochés que les articles encore affichés
+        const visibles = new Set(liste.slice(0, MAX).map(a => a.id));
+        [...histoCoches].forEach(id => { if(!visibles.has(id)) histoCoches.delete(id); });
+        stats.innerHTML = `<div class="barre-verif">
+            <span>${liste.length} mise(s) à dispo en magasin depuis plus de ${JOURS_A_VERIFIER} jours. Si elles sont parties, cochez-les puis sortez-les.</span>
+            <span class="btn-row" style="margin:0;">
+                <button class="btn btn-outline" onclick="cocherHisto('*', true)">Tout cocher</button>
+                <button class="btn btn-primary" ${histoCoches.size ? '' : 'disabled'} onclick="sortirSelectionHisto()"><svg class="ico"><use href="#i-sortie"/></svg> Sortir la sélection (${histoCoches.size})</button>
+            </span></div>`;
+    } else {
+        histoCoches.clear();
+        stats.textContent = `${liste.length} résultat(s)` + (liste.length > MAX ? ` · les ${MAX} plus récents affichés, précisez la recherche` : '');
+    }
+    histoAffiches = liste.slice(0, MAX);
     if(!liste.length){ zone.innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucun résultat</p></div>'; return; }
 
     zone.innerHTML = liste.slice(0, MAX).map(a => {
@@ -2359,13 +2390,15 @@ function renderHistorique(){
         const quand = a.archive ? `<svg class="ico"><use href="#i-archive"/></svg> Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
             : a.dateSortie ? `<svg class="ico"><use href="#i-sortie"/></svg> Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
             : `<svg class="ico"><use href="#i-reception"/></svg> Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
+        const caseACocher = aVerifier && peutModifier(moi, a.magasin)
+            ? `<input type="checkbox" class="case-verif" ${histoCoches.has(a.id) ? 'checked' : ''} onclick="event.stopPropagation()" onchange="cocherHisto('${esc(a.id)}', this.checked)">` : '';
         return `<div class="article-item" onclick="${a.archive ? 'ouvrirArchive' : 'openModal'}('${esc(a.id)}')">
             <div class="item-head">
-                <div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">${caseACocher}<div>
                     <div class="item-title">${esc(a.article)}</div>
                     ${a.client && a.client !== 'Stock interne' ? `<div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(a.client)}</div>` : ''}
                     <div class="item-ref">${esc(a.reference)} · ${esc(a.type)}</div>
-                </div>
+                </div></div>
                 <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
             </div>
             <div class="item-meta">
@@ -2377,6 +2410,53 @@ function renderHistorique(){
             </div>
         </div>`;
     }).join('');
+}
+
+// ─── À VÉRIFIER : vieilles mises à dispo, sorties en groupe ───
+const JOURS_A_VERIFIER = 90;
+const histoCoches = new Set();
+let histoAffiches = [];
+
+function cocherHisto(id, coche){
+    const ids = id === '*' ? histoAffiches.filter(a => peutModifier(moi, a.magasin)).map(a => a.id) : [id];
+    ids.forEach(x => coche ? histoCoches.add(x) : histoCoches.delete(x));
+    renderHistorique();
+}
+
+async function sortirSelectionHisto(){
+    const choisis = articles.filter(a => histoCoches.has(a.id) && peutModifier(moi, a.magasin));
+    if(!choisis.length) return;
+    const prenom = await showInputDialog('Votre prénom', 'Il sera noté dans l\'historique de chaque article.', localStorage.getItem('hmc_prenom') || '');
+    if(!prenom || !prenom.trim()) return;
+    localStorage.setItem('hmc_prenom', prenom.trim());
+    const raison = await demanderModeSortie(`Comment ces ${choisis.length} article(s) sont-ils sortis ?`, [
+        'Récupéré par le client', 'Remis à TLE (navette)', 'Récupéré par le poseur']);
+    if(raison === null) return;
+    if(!await showConfirmDialog('Sortir la sélection',
+        `<strong>${choisis.length}</strong> mise(s) à dispo vont passer en « Sorti » (${esc(raison)}). Elles quittent la rubrique Mises à dispo et restent consultables ici.`)) return;
+
+    busy(true, 'Sortie en cours...');
+    let ok = 0;
+    const erreurs = [];
+    for(const a of choisis){
+        const r = await doUpdate(a.id, { Statut:'Sorti', DateSortie:new Date().toISOString(), RaisonSortie:raison });
+        if(r.error){ erreurs.push(a.article); continue; }
+        await doHisto(a.id, prenom.trim(), 'Sortie', raison + ' (vérification des anciennes mises à dispo)');
+        histoCoches.delete(a.id);
+        ok++;
+    }
+    busy(false);
+    toast(`${ok} article(s) sorti(s)` + (erreurs.length ? ` · ${erreurs.length} en erreur` : ''), erreurs.length ? 'err' : 'ok');
+    await loadData();
+    renderHistorique();
+}
+
+/* Raccourci depuis les alertes */
+function ouvrirAVerifier(){
+    const onglet = document.getElementById('tabHistorique');
+    const sel = document.getElementById('h_etat');
+    if(sel) sel.value = 'averifier';
+    if(onglet) switchTab('historique', onglet);
 }
 
 /* Fiche d'un article archivé : consultation seule */
@@ -2492,7 +2572,7 @@ Object.assign(window, {
     actModifierDateRetourArray,
     actModifierDateTLE,
     actPreter,
-    actPrevenirClient,
+    actPrevenirClient, actClientRelance, sortirSelectionHisto, cocherHisto, ouvrirAVerifier,
     actRecupClientRecuperee,
     actRemisTLE,
     actRepriseRecue,
