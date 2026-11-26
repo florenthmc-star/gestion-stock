@@ -29,7 +29,7 @@ let _paramsAppliques = '';
           + 'display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;">'
           + '<div style="background:#fff;border-radius:16px;padding:36px 28px;max-width:420px;text-align:center;'
           + 'box-shadow:0 10px 40px rgba(0,0,0,.08);">'
-          + ''
+          + '<div style="font-size:52px;margin-bottom:16px;"><svg class="ico"><use href="#i-cadenas"/></svg> </div>'
           + '<h1 style="font-size:19px;margin:0 0 12px;color:#111827;">Étiquette professionnelle</h1>'
           + '<p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;">'
           + 'Cette étiquette est réservée à un usage interne. Elle ne donne accès à aucune information.'
@@ -643,7 +643,7 @@ document.getElementById('receptionForm').addEventListener('submit', async e => {
     document.getElementById('qrInfos').innerHTML = `
         <strong>${esc(article)}</strong><br>
         ${isMAD ? `Client : <strong>${esc(client)}</strong><br>` : ''}
-        ${isPret ? `<span style="color:var(--purple);font-weight:600;">${qty} disponible(s) à prêter</span><br>` : ''}
+        ${isPret ? `<span style="color:var(--purple);font-weight:600;"><svg class="ico"><use href="#i-prets"/></svg> ${qty} disponible(s) à prêter</span><br>` : ''}
         Réf : ${esc(reference)} &nbsp;·&nbsp; ${esc(magasin)}
     `;
     document.getElementById('receptionForm').style.display = 'none';
@@ -863,30 +863,30 @@ function renderMAD() {
     if(vendeur) list = list.filter(a => memeVendeur(a, vendeur));
     if(q) list = list.filter(a => smartSearch(a,q));
 
-    if(!list.length){ document.getElementById('madList').innerHTML = '<div class="empty"><p>Aucun article</p></div>'; return; }
+    if(!list.length){ document.getElementById('madList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucun article</p></div>'; return; }
 
     const bMap = {Stock:'b-stock', Prêt:'b-pret', Sorti:'b-sorti', SAV:'b-sav'};
     document.getElementById('madList').innerHTML = list.map(a => {
         const badges = [`<span class="badge ${bMap[a.statut]||'b-stock'}">${esc(a.statut)}</span>`];
-        if(a.madSubtype==='SAV') badges.push(`<span class="badge b-purple">SAV</span>`);
-        if(a.statutMAD==='À prévenir' && a.statut==='Stock') badges.push(`<span class="badge b-warn">À prévenir</span>`);
-        if(a.statutMAD==='Client prévenu' && a.statut==='Stock') badges.push(`<span class="badge b-dispo">Prévenu</span>`);
+        if(a.madSubtype==='SAV') badges.push(`<span class="badge b-purple"><svg class="ico"><use href="#i-cle"/></svg> SAV</span>`);
+        if(a.statutMAD==='À prévenir' && a.statut==='Stock') badges.push(`<span class="badge b-warn"><svg class="ico"><use href="#i-tel"/></svg> À prévenir</span>`);
+        if(a.statutMAD==='Client prévenu' && a.statut==='Stock') badges.push(`<span class="badge b-dispo"><svg class="ico"><use href="#i-ok"/></svg> Prévenu</span>`);
 
         return `<div class="article-item" onclick="openModal('${esc(a.id)}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    ${a.client && a.client!=='Stock interne' ? `<div class="item-client">${esc(a.client)}</div>` : ''}
+                    ${a.client && a.client!=='Stock interne' ? `<div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(a.client)}</div>` : ''}
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
             </div>
             <div class="item-meta">
-                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-lieu"/></svg> <strong>${esc(a.emplacement)}</strong></span>
                 ${a.numeroAR ? `<span class="meta">AR: <strong>${esc(a.numeroAR)}</strong></span>` : ''}
-                ${a.vendeur ? `<span class="meta">Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
-                ${a.nombreColis > 1 ? `<span class="meta"><strong>${a.nombreColis} colis</strong></span>` : ''}
+                ${a.vendeur ? `<span class="meta" title="Vendeur de la cuisine"><svg class="ico"><use href="#i-vendeur"/></svg> Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
+                ${a.nombreColis > 1 ? `<span class="meta"><svg class="ico"><use href="#i-mad"/></svg> <strong>${a.nombreColis} colis</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -915,7 +915,7 @@ function renderStock() {
 
     let list = allF.slice();
     if(q) list = list.filter(a => smartSearch(a,q));
-    if(!list.length){ document.getElementById('stockList').innerHTML = '<div class="empty"><p>Aucun article</p></div>'; return; }
+    if(!list.length){ document.getElementById('stockList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucun article</p></div>'; return; }
 
     document.getElementById('stockList').innerHTML = list.map(a => {
         const qty = a.quantiteStock;
@@ -930,14 +930,14 @@ function renderStock() {
                 <div><div class="item-title">${esc(a.article)}</div><div class="item-ref">${esc(a.reference)}</div></div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${a.statut==='Sorti'?'b-sorti':'b-stock'}">${a.statut==='Sorti'?'Épuisé':'En stock'}</span>
-                    ${isVendable && a.prixVente ? `<span class="badge b-success" style="font-size:13px;">${a.prixVente}€</span>` : ''}
+                    ${isVendable && a.prixVente ? `<span class="badge b-success" style="font-size:13px;"><svg class="ico"><use href="#i-euro"/></svg> ${a.prixVente}€</span>` : ''}
                     ${qty!==null ? `<span class="qty-big ${qCls}">${qty}<span style="font-size:12px;font-weight:500;color:var(--text3)"> / ${a.quantiteInitiale}</span></span>` : ''}
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
-                ${isVendable ? `<span class="meta" style="color:var(--green);font-weight:600;">Article vendable</span>` : ''}
+                <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-lieu"/></svg> <strong>${esc(a.emplacement)}</strong></span>
+                ${isVendable ? `<span class="meta" style="color:var(--green);font-weight:600;"><svg class="ico"><use href="#i-euro"/></svg> Article vendable</span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -967,7 +967,7 @@ function renderTLE() {
         <div class="stat-card blue"><div class="num">${totalQty}</div><div class="lbl">Unités totales</div></div>
         <div class="stat-card green"><div class="num">${totalValeur.toFixed(2)}€</div><div class="lbl">Valeur totale</div></div>`;
 
-    if(!filtered.length){ document.getElementById('tleList').innerHTML = '<div class="empty"><p>Aucun article correspondant</p></div>'; return; }
+    if(!filtered.length){ document.getElementById('tleList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucun article correspondant</p></div>'; return; }
 
     const now = new Date();
     document.getElementById('tleList').innerHTML = filtered.map(a => {
@@ -985,21 +985,21 @@ function renderTLE() {
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    <div class="item-client">${esc(a.client || 'Client non renseigné')}</div>
+                    <div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(a.client || 'Client non renseigné')}</div>
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
                     <span class="badge ${badgeClass}">${badgeText}</span>
-                    ${urgentTLE ? `<span class="badge b-pret">J-${joursRestants}</span>` : ''}
+                    ${urgentTLE ? `<span class="badge b-pret"><svg class="ico"><use href="#i-alerte"/></svg> J-${joursRestants}</span>` : ''}
                     <span style="font-size:14px;font-weight:700;color:var(--orange);">${qty} unité(s)</span>
                     ${a.prixVente ? `<span style="font-size:13px;color:var(--text3);">${a.prixVente}€ × ${qty} = <strong style="color:var(--green)">${prixTotal}€</strong></span>` : ''}
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
-                <span class="meta">Réception <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                ${dateTLEStr ? `<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">TLE : <strong>${dateTLEStr}</strong></span>` : ''}
+                <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-lieu"/></svg> <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-calendrier"/></svg> Réception <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                ${dateTLEStr ? `<span class="meta" style="${urgentTLE?'color:var(--orange);font-weight:700;':''}">${urgentTLE?'<svg class="ico"><use href="#i-alerte"/></svg> ':'<svg class="ico"><use href="#i-mad"/></svg> '} TLE : <strong>${dateTLEStr}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -1029,7 +1029,7 @@ function renderRecupClients() {
         <div class="stat-card green"><div class="num">${allRecup.filter(a=>a.statut==='Récupéré').length}</div><div class="lbl">Récupéré</div></div>`;
 
     if(q) allRecup = allRecup.filter(a => smartSearch(a,q));
-    if(!allRecup.length){ document.getElementById('recupList').innerHTML = '<div class="empty"><p>Aucune récupération client</p></div>'; return; }
+    if(!allRecup.length){ document.getElementById('recupList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucune récupération client</p></div>'; return; }
 
     const now = new Date();
     document.getElementById('recupList').innerHTML = allRecup.map(a => {
@@ -1051,7 +1051,7 @@ function renderRecupClients() {
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    <div class="item-client">${esc(a.client || a.recuperePar || '?')}</div>
+                    <div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(a.client || a.recuperePar || '?')}</div>
                     <div class="item-ref">${esc(a.reference)}</div>
                 </div>
                 <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px;">
@@ -1061,10 +1061,10 @@ function renderRecupClients() {
                 </div>
             </div>
             <div class="item-meta">
-                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
-                <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
-                <span class="meta">Vendu le <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                ${dateRecupStr ? `<span class="meta" style="${(urgentRecup||enRetard)&&!estRecupere ? 'color:var(--orange);font-weight:700;' : ''}">${(urgentRecup||enRetard)&&!estRecupere?'':''} Récup: <strong>${dateRecupStr}</strong></span>` : ''}
+                <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-lieu"/></svg> <strong>${esc(a.emplacement)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-calendrier"/></svg> Vendu le <strong>${a.dateReception ? new Date(a.dateReception).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                ${dateRecupStr ? `<span class="meta" style="${(urgentRecup||enRetard)&&!estRecupere ? 'color:var(--orange);font-weight:700;' : ''}">${(urgentRecup||enRetard)&&!estRecupere?'<svg class="ico"><use href="#i-alerte"/></svg> ':'<svg class="ico"><use href="#i-recup"/></svg> '} Récup: <strong>${dateRecupStr}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -1136,7 +1136,7 @@ function renderPrets() {
 
     if(!list.length){
         document.getElementById('pretsList').innerHTML =
-            `<div class="empty"><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;
+            `<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>${currentPretTab==='retard'?'Aucun retard !':'Aucun élément'}</p></div>`;
         return;
     }
 
@@ -1154,9 +1154,9 @@ function renderPrets() {
                     </div>
                 </div>
                 <div class="item-meta">
-                    <span class="meta"><strong>${esc(a.magasin)}</strong></span>
-                    <span class="meta">Empl. <strong>${esc(a.emplacement)}</strong></span>
-                    ${pretsCet.length ? `<span class="meta"><strong>${pretsCet.length} en prêt</strong></span>` : ''}
+                    <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
+                    <span class="meta"><svg class="ico"><use href="#i-lieu"/></svg> <strong>${esc(a.emplacement)}</strong></span>
+                    ${pretsCet.length ? `<span class="meta"><svg class="ico"><use href="#i-prets"/></svg> <strong>${pretsCet.length} en prêt</strong></span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1168,15 +1168,15 @@ function renderPrets() {
                 <div class="item-head">
                     <div>
                         <div class="item-title">${esc(p.article)}</div>
-                        <div class="item-client">${esc(p.emprunteur || '?')}</div>
+                        <div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(p.emprunteur || '?')}</div>
                         <div class="item-ref">${esc(p.reference)}</div>
                     </div>
-                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `+${Math.abs(diff)}j` : diff!==null ? `Retour J-${diff}` : 'En prêt'}</span>
+                    <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `<svg class="ico"><use href="#i-alerte"/></svg> +${Math.abs(diff)}j` : diff!==null ? `<svg class="ico"><use href="#i-retour"/></svg> J-${diff}` : 'En prêt'}</span>
                 </div>
                 <div class="item-meta">
-                    <span class="meta"><strong>${esc(p.magasin)}</strong></span>
-                    <span class="meta">Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong></span>
-                    ${p.dateRetourPrevue ? `<span class="meta">Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
+                    <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(p.magasin)}</strong></span>
+                    <span class="meta"><svg class="ico"><use href="#i-calendrier"/></svg> Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong></span>
+                    ${p.dateRetourPrevue ? `<span class="meta"><svg class="ico"><use href="#i-retour"/></svg> Retour <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
                 </div>
             </div>`;
         }).join('');
@@ -1271,7 +1271,7 @@ function renderAlertes() {
     });
 
     if(!alertes.length){
-        document.getElementById('alertList').innerHTML = '<div class="empty"><p>Aucune alerte !</p></div>';
+        document.getElementById('alertList').innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucune alerte !</p></div>';
         return;
     }
     alertes.sort((a,b) => (a.type==='danger'?0:1) - (b.type==='danger'?0:1));
@@ -1422,19 +1422,19 @@ function renderModalContent(a, histo) {
     <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px;">
         <span class="badge ${typeClass}">${esc(a.type)}</span>
         <span class="badge ${bClass}">${esc(a.statut)}</span>
-        ${a.stockSubtype==='Vendable' ? `<span class="badge b-dispo">Vendable</span>` : ''}
-        ${a.madSubtype==='SAV' ? `<span class="badge b-purple">SAV</span>` : ''}
+        ${a.stockSubtype==='Vendable' ? `<span class="badge b-dispo"><svg class="ico"><use href="#i-euro"/></svg> Vendable</span>` : ''}
+        ${a.madSubtype==='SAV' ? `<span class="badge b-purple"><svg class="ico"><use href="#i-cle"/></svg> SAV</span>` : ''}
     </div>`;
 
     if(estSorti){
         html += `<div style="background:var(--red-soft);border:1px solid var(--red-border);color:var(--red);padding:12px;border-radius:8px;margin-bottom:16px;text-align:center;">
-            <div style="font-weight:700;margin-bottom:4px;">Article sorti du stock</div>
+            <div style="font-weight:700;margin-bottom:4px;"><svg class="ico"><use href="#i-cadenas"/></svg> Article sorti du stock</div>
             <div style="font-size:13px;">Aucune action possible · Historique consultable ci-dessous</div>
         </div>`;
     }
 
     if(lectureSeule && !estSorti){
-        html += `<div class="lecture-seule">Consultation seule — article du magasin <strong>${esc(a.magasin)}</strong></div>`;
+        html += `<div class="lecture-seule"><svg class="ico"><use href="#i-oeil"/></svg> Consultation seule — article du magasin <strong>${esc(a.magasin)}</strong></div>`;
     }
 
     if(isArticlePret){
@@ -1450,7 +1450,7 @@ function renderModalContent(a, histo) {
     if(isPretIndividuel){
         const retard = a.dateRetourPrevue && new Date(a.dateRetourPrevue) < new Date();
         html += `<div style="background:${retard?'var(--red-soft)':'var(--orange-soft)'};border:1.5px solid ${retard?'var(--red-border)':'var(--orange-border)'};border-radius:var(--r2);padding:13px;margin-bottom:14px;">
-            <div style="font-weight:800;color:${retard?'var(--red)':'var(--orange)'}">En prêt${retard?' — EN RETARD':''}</div>
+            <div style="font-weight:800;color:${retard?'var(--red)':'var(--orange)'}"><svg class="ico"><use href="#i-prets"/></svg> En prêt${retard?' — <svg class="ico"><use href="#i-alerte"/></svg> EN RETARD':''}</div>
             <div style="font-size:13px;color:var(--text2);margin-top:5px;">
                 Prêté à <strong>${esc(a.prenomEmprunteur)}</strong> le <strong>${a.datePret ? new Date(a.datePret).toLocaleDateString('fr-FR') : '?'}</strong><br>
                 Retour prévu le <strong>${a.dateRetourPrevue ? new Date(a.dateRetourPrevue).toLocaleDateString('fr-FR') : '?'}</strong>
@@ -1468,8 +1468,8 @@ function renderModalContent(a, histo) {
         ${a.numeroAR ? `<div class="detail-field"><div class="k">N° AR</div><div class="v">${esc(a.numeroAR)}</div></div>` : ''}
         ${a.stockSubtype && isStock ? `<div class="detail-field"><div class="k">Sous-type stock</div><div class="v">${esc(a.stockSubtype)}</div></div>` : ''}
         ${a.madSubtype && isMAD ? `<div class="detail-field"><div class="k">Sous-type MAD</div><div class="v">${esc(a.madSubtype)}</div></div>` : ''}
-        ${isMAD && a.madSubtype==='SAV' ? `<div class="detail-field"><div class="k">Reprise article</div><div class="v" style="font-weight:700;color:${a.repriseArticle==='Oui'?'var(--orange)':'var(--text3)'}">${a.repriseArticle==='Oui'?'OUI - À ramener':'NON'}</div></div>` : ''}
-        ${isMAD && a.madSubtype==='SAV' && a.repriseArticle==='Oui' && a.repriseRecue==='Oui' ? `<div class="detail-field"><div class="k">Statut reprise</div><div class="v" style="color:var(--green);font-weight:700;">Reprise reçue</div></div>` : ''}
+        ${isMAD && a.madSubtype==='SAV' ? `<div class="detail-field"><div class="k">Reprise article</div><div class="v" style="font-weight:700;color:${a.repriseArticle==='Oui'?'var(--orange)':'var(--text3)'}">${a.repriseArticle==='Oui'?'<svg class="ico"><use href="#i-ok"/></svg> OUI - À ramener':'<svg class="ico"><use href="#i-croix"/></svg> NON'}</div></div>` : ''}
+        ${isMAD && a.madSubtype==='SAV' && a.repriseArticle==='Oui' && a.repriseRecue==='Oui' ? `<div class="detail-field"><div class="k">Statut reprise</div><div class="v" style="color:var(--green);font-weight:700;"><svg class="ico"><use href="#i-ok"/></svg> Reprise reçue</div></div>` : ''}
         ${a.prixVente !== null && a.prixVente !== '' ? `<div class="detail-field"><div class="k">Prix de vente</div><div class="v" style="color:var(--green);font-weight:800;">${a.prixVente} €</div></div>` : ''}
         ${a.dateTLE ? `<div class="detail-field"><div class="k">Date TLE</div><div class="v">${new Date(a.dateTLE).toLocaleDateString('fr-FR')}</div></div>` : ''}
         ${a.dateRecupClient ? `<div class="detail-field"><div class="k">Date récupération client</div><div class="v">${new Date(a.dateRecupClient).toLocaleDateString('fr-FR')}</div></div>` : ''}
@@ -1482,10 +1482,10 @@ function renderModalContent(a, histo) {
 
     if(!isPretIndividuel && !estSorti){
         html += `<div style="background:var(--blue-soft);border:1.5px solid #c7d7fd;border-radius:var(--r2);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:600;color:var(--blue);">Étiquette QR</span>
+            <span style="font-size:12px;font-weight:600;color:var(--blue);"><svg class="ico"><use href="#i-qr"/></svg> Étiquette QR</span>
             <span style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="btn btn-primary" style="padding:7px 12px;font-size:12px;" onclick="printArticleQR('${esc(a.id)}')">Standard</button>
-                <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="printArticleQRSmall('${esc(a.id)}')">Étroite</button>
+                <button class="btn btn-primary" style="padding:7px 12px;font-size:12px;" onclick="printArticleQR('${esc(a.id)}')"><svg class="ico"><use href="#i-imprimante"/></svg> Standard</button>
+                <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="printArticleQRSmall('${esc(a.id)}')"><svg class="ico"><use href="#i-etiquette"/></svg> Étroite</button>
             </span>
         </div>`;
     }
@@ -1493,29 +1493,29 @@ function renderModalContent(a, histo) {
     if(!estSorti && !lectureSeule){
         let actionsHTML = '';
         if(isMAD && a.statut==='Stock'){
-            if(a.statutMAD==='À prévenir') actionsHTML += `<button class="btn btn-warning" onclick="actPrevenirClient('${esc(a.id)}')">Prévenir client</button>`;
-            actionsHTML += `<button class="btn btn-success" onclick="actSortir('${esc(a.id)}')">Sortir</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>`;
+            if(a.statutMAD==='À prévenir') actionsHTML += `<button class="btn btn-warning" onclick="actPrevenirClient('${esc(a.id)}')"><svg class="ico"><use href="#i-tel"/></svg> Prévenir client</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actSortir('${esc(a.id)}')"><svg class="ico"><use href="#i-sortie"/></svg> Sortir</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')"><svg class="ico"><use href="#i-lieu"/></svg> Emplacement</button>`;
         }
         if(isStock && a.statut==='Stock'){
-            if(a.stockSubtype==='Vendable' && a.quantiteStock>0) actionsHTML += `<button class="btn btn-warning" onclick="actVendre('${esc(a.id)}')">Vendre</button>`;
-            actionsHTML += `<button class="btn btn-primary" onclick="actSortirQte('${esc(a.id)}')">Sortir quantité</button>
-               <button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">Ajouter stock</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>
-               ${a.stockSubtype!=='Vendable' ? `<button class="btn btn-outline" onclick="actSetSeuil('${esc(a.id)}')">Seuil alerte</button>` : ''}`;
+            if(a.stockSubtype==='Vendable' && a.quantiteStock>0) actionsHTML += `<button class="btn btn-warning" onclick="actVendre('${esc(a.id)}')"><svg class="ico"><use href="#i-euro"/></svg> Vendre</button>`;
+            actionsHTML += `<button class="btn btn-primary" onclick="actSortirQte('${esc(a.id)}')"><svg class="ico"><use href="#i-mad"/></svg> Sortir quantité</button>
+               <button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')"><svg class="ico"><use href="#i-plus"/></svg> Ajouter stock</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')"><svg class="ico"><use href="#i-lieu"/></svg> Emplacement</button>
+               ${a.stockSubtype!=='Vendable' ? `<button class="btn btn-outline" onclick="actSetSeuil('${esc(a.id)}')"><svg class="ico"><use href="#i-parametres"/></svg> Seuil alerte</button>` : ''}`;
         }
         if(isArticlePret && a.statut==='Stock'){
-            if((a.quantiteStock||0) > 0) actionsHTML += `<button class="btn btn-warning" onclick="actPreter('${esc(a.id)}')">Prêter</button>`;
-            actionsHTML += `<button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')">Ajouter au stock prêt</button>
-               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')">Emplacement</button>`;
+            if((a.quantiteStock||0) > 0) actionsHTML += `<button class="btn btn-warning" onclick="actPreter('${esc(a.id)}')"><svg class="ico"><use href="#i-prets"/></svg> Prêter</button>`;
+            actionsHTML += `<button class="btn btn-teal" onclick="actAjouterQte('${esc(a.id)}')"><svg class="ico"><use href="#i-plus"/></svg> Ajouter au stock prêt</button>
+               <button class="btn btn-outline" onclick="actEmplacement('${esc(a.id)}')"><svg class="ico"><use href="#i-lieu"/></svg> Emplacement</button>`;
         }
         if(isPretIndividuel && a.statut==='En cours'){
-            actionsHTML += `<button class="btn btn-success" onclick="actRetourPret('${esc(a.id)}')">Retour de prêt</button>
-               <button class="btn btn-warning" onclick="actModifierDateRetour('${esc(a.id)}')">Modifier retour</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actRetourPret('${esc(a.id)}')"><svg class="ico"><use href="#i-retour"/></svg> Retour de prêt</button>
+               <button class="btn btn-warning" onclick="actModifierDateRetour('${esc(a.id)}')"><svg class="ico"><use href="#i-calendrier"/></svg> Modifier retour</button>`;
         }
         if(a.statut==='Vendu - Attente TLE' || a.statut==='Reprise - Attente TLE'){
-            actionsHTML += `<button class="btn btn-success" onclick="actRemisTLE('${esc(a.id)}')">Remis à TLE</button>`;
-            if(a.dateTLE) actionsHTML += `<button class="btn btn-outline" onclick="actModifierDateTLE('${esc(a.id)}')">Modifier date TLE</button>`;
+            actionsHTML += `<button class="btn btn-success" onclick="actRemisTLE('${esc(a.id)}')"><svg class="ico"><use href="#i-ok"/></svg> Remis à TLE</button>`;
+            if(a.dateTLE) actionsHTML += `<button class="btn btn-outline" onclick="actModifierDateTLE('${esc(a.id)}')"><svg class="ico"><use href="#i-calendrier"/></svg> Modifier date TLE</button>`;
         }
 
         if(actionsHTML){
@@ -1529,30 +1529,30 @@ function renderModalContent(a, histo) {
         const memo = localStorage.getItem('hmc_prenom') || '';
         html += `<div style="margin-top:16px;">
             <div class="prenom-bar"><label>Votre prénom</label><input type="text" id="actPrenom2" value="${esc(memo)}" placeholder="Obligatoire"></div>
-            <button class="btn btn-success" onclick="actRepriseRecue('${esc(a.id)}')">Reprise reçue en magasin</button>
+            <button class="btn btn-success" onclick="actRepriseRecue('${esc(a.id)}')"><svg class="ico"><use href="#i-reception"/></svg> Reprise reçue en magasin</button>
         </div>`;
     }
 
     if(isArticlePret && !estSorti){
         const pretsCet = (a.prets||[]).filter(p => p.statut === 'En cours');
-        html += `<div class="divider"></div><div class="section-lbl">Prêts en cours (${pretsCet.length})</div>`;
+        html += `<div class="divider"></div><div class="section-lbl"><svg class="ico"><use href="#i-prets"/></svg> Prêts en cours (${pretsCet.length})</div>`;
         if(!pretsCet.length) html += `<div style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Aucun prêt en cours pour cet article</div>`;
         else html += pretsCet.map(p => {
             const retard = p.dateRetourPrevue && new Date(p.dateRetourPrevue) < new Date();
             const diff = p.dateRetourPrevue ? Math.ceil((new Date(p.dateRetourPrevue) - new Date()) / 86400000) : null;
             return `<div class="loan-item ${retard?'retard':diff!==null&&diff<=params.alerteBientot?'bientot':''}">
                 <div class="loan-head">
-                    <span class="loan-client">${esc(p.emprunteur || '?')}</span>
+                    <span class="loan-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(p.emprunteur || '?')}</span>
                     <span class="badge ${retard?'b-retard':'b-pret'}">${retard ? `+${Math.abs(diff)}j retard` : diff!==null ? `J-${diff}` : 'En prêt'}</span>
                 </div>
                 <div class="loan-meta">
-                    <span>Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong>${p.pretePar ? ' par ' + esc(p.pretePar) : ''}</span>
-                    ${p.qte && p.qte > 1 ? `<span><strong>${p.qte} unité(s)</strong></span>` : ''}
-                    ${p.dateRetourPrevue ? `<span>Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
+                    <span><svg class="ico"><use href="#i-calendrier"/></svg> Prêté le <strong>${p.datePret ? new Date(p.datePret).toLocaleDateString('fr-FR') : '?'}</strong>${p.pretePar ? ' par ' + esc(p.pretePar) : ''}</span>
+                    ${p.qte && p.qte > 1 ? `<span><svg class="ico"><use href="#i-mad"/></svg> <strong>${p.qte} unité(s)</strong></span>` : ''}
+                    ${p.dateRetourPrevue ? `<span><svg class="ico"><use href="#i-retour"/></svg> Retour prévu le <strong>${new Date(p.dateRetourPrevue).toLocaleDateString('fr-FR')}</strong></span>` : ''}
                 </div>
                 ${lectureSeule ? '' : `<div class="btn-row" style="margin-top:8px;">
-                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretFromArray('${esc(a.id)}','${esc(p.pretId)}')">Retour</button>
-                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetourArray('${esc(a.id)}','${esc(p.pretId)}')">Modifier date</button>
+                    <button class="btn btn-success" style="padding:7px 12px;font-size:12px;" onclick="actRetourPretFromArray('${esc(a.id)}','${esc(p.pretId)}')"><svg class="ico"><use href="#i-retour"/></svg> Retour</button>
+                    <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="actModifierDateRetourArray('${esc(a.id)}','${esc(p.pretId)}')"><svg class="ico"><use href="#i-calendrier"/></svg> Modifier date</button>
                 </div>`}
             </div>`;
         }).join('');
@@ -1561,17 +1561,17 @@ function renderModalContent(a, histo) {
     if(isRecup && a.statut==='En attente' && !lectureSeule){
         const memo = localStorage.getItem('hmc_prenom') || '';
         html += `<div class="divider"></div>
-        <div class="section-lbl">Actions Récupération</div>
+        <div class="section-lbl"><svg class="ico"><use href="#i-recup"/></svg> Actions Récupération</div>
         <div class="prenom-bar"><label>Votre prénom</label><input type="text" id="actPrenom" value="${esc(memo)}" placeholder="Obligatoire pour toute action"></div>
         <div class="btn-row">
-            <button class="btn btn-success" onclick="actRecupClientRecuperee('${esc(a.id)}')">Client a récupéré</button>
-            <button class="btn btn-outline" onclick="actModifierDateRecupClient('${esc(a.id)}')">Modifier date récupération</button>
+            <button class="btn btn-success" onclick="actRecupClientRecuperee('${esc(a.id)}')"><svg class="ico"><use href="#i-ok"/></svg> Client a récupéré</button>
+            <button class="btn btn-outline" onclick="actModifierDateRecupClient('${esc(a.id)}')"><svg class="ico"><use href="#i-calendrier"/></svg> Modifier date récupération</button>
         </div>`;
     }
 
     html += buildEditSection(a, estSorti || lectureSeule);
 
-    html += `<div class="divider"></div><div class="section-lbl">Historique</div>`;
+    html += `<div class="divider"></div><div class="section-lbl"><svg class="ico"><use href="#i-historique"/></svg> Historique</div>`;
     if(!histo.length) html += `<div style="text-align:center;padding:16px;color:var(--text3);font-size:13px;">Aucun historique</div>`;
     else html += histo.map(h => `<div class="histo">
         <div class="histo-date">${esc(h.dateStr || '')}</div>
@@ -1601,7 +1601,7 @@ function buildEditSection(a, estSorti){
 
     return `<div class="divider"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-        <div class="section-lbl" style="margin:0;">Modifier la fiche</div>
+        <div class="section-lbl" style="margin:0;"><svg class="ico"><use href="#i-crayon"/></svg> Modifier la fiche</div>
         <button class="btn btn-outline" style="padding:6px 12px;font-size:12px;" onclick="toggleEdit('${esc(a.id)}')">Ouvrir / fermer</button>
     </div>
     <div id="editSection_${esc(a.id)}" class="edit-form" style="display:none;margin-top:10px;">
@@ -1642,9 +1642,9 @@ function buildEditSection(a, estSorti){
             <div class="fg full"><label>Votre prénom (obligatoire)</label><input id="e_prenom" value="${esc(memo)}" placeholder="Pour tracer la modification"></div>
         </div>
         <div class="btn-row">
-            <button class="btn btn-primary" onclick="actSaveEdit('${esc(a.id)}')">Enregistrer les modifications</button>
+            <button class="btn btn-primary" onclick="actSaveEdit('${esc(a.id)}')"><svg class="ico"><use href="#i-disquette"/></svg> Enregistrer les modifications</button>
             <button class="btn btn-outline" onclick="toggleEdit('${esc(a.id)}')">Annuler</button>
-            ${peutArchiver(moi, a.magasin) ? `<button class="btn btn-danger" onclick="actSupprimerArticle('${esc(a.id)}')">Archiver cet article</button>` : ''}
+            ${peutArchiver(moi, a.magasin) ? `<button class="btn btn-danger" onclick="actSupprimerArticle('${esc(a.id)}')"><svg class="ico"><use href="#i-corbeille"/></svg> Archiver cet article</button>` : ''}
         </div>
     </div>`;
 }
@@ -2351,29 +2351,29 @@ function renderHistorique(){
 
     const MAX = 150;
     document.getElementById('histoStats').textContent = `${liste.length} résultat(s)` + (liste.length > MAX ? ` · les ${MAX} plus récents affichés, précisez la recherche` : '');
-    if(!liste.length){ zone.innerHTML = '<div class="empty"><p>Aucun résultat</p></div>'; return; }
+    if(!liste.length){ zone.innerHTML = '<div class="empty"><div class="ico-vide"><svg class="ico"><use href="#i-reception"/></svg></div><p>Aucun résultat</p></div>'; return; }
 
     zone.innerHTML = liste.slice(0, MAX).map(a => {
         const badges = [`<span class="badge ${STATUTS_EN_COURS.includes(a.statut) ? 'b-stock' : 'b-sorti'}">${esc(a.statut)}</span>`];
-        if(a.archive) badges.push('<span class="badge b-purple">Archivé</span>');
-        const quand = a.archive ? `Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
-            : a.dateSortie ? `Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
-            : `Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
+        if(a.archive) badges.push('<span class="badge b-purple"><svg class="ico"><use href="#i-archive"/></svg> Archivé</span>');
+        const quand = a.archive ? `<svg class="ico"><use href="#i-archive"/></svg> Archivé le <strong>${fmtJour(a.dateArchivage)}</strong>`
+            : a.dateSortie ? `<svg class="ico"><use href="#i-sortie"/></svg> Sorti le <strong>${fmtJour(a.dateSortie)}</strong>`
+            : `<svg class="ico"><use href="#i-reception"/></svg> Reçu le <strong>${fmtJour(a.dateReception)}</strong>`;
         return `<div class="article-item" onclick="${a.archive ? 'ouvrirArchive' : 'openModal'}('${esc(a.id)}')">
             <div class="item-head">
                 <div>
                     <div class="item-title">${esc(a.article)}</div>
-                    ${a.client && a.client !== 'Stock interne' ? `<div class="item-client">${esc(a.client)}</div>` : ''}
+                    ${a.client && a.client !== 'Stock interne' ? `<div class="item-client"><svg class="ico"><use href="#i-personne"/></svg> ${esc(a.client)}</div>` : ''}
                     <div class="item-ref">${esc(a.reference)} · ${esc(a.type)}</div>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">${badges.join('')}</div>
             </div>
             <div class="item-meta">
-                <span class="meta"><strong>${esc(a.magasin)}</strong></span>
+                <span class="meta"><svg class="ico"><use href="#i-magasin"/></svg> <strong>${esc(a.magasin)}</strong></span>
                 <span class="meta">${quand}</span>
-                ${a.raisonSortie ? `<span class="meta">Sortie : <strong>${esc(a.raisonSortie)}</strong></span>` : ''}
+                ${a.raisonSortie ? `<span class="meta"><svg class="ico"><use href="#i-coin"/></svg> <strong>${esc(a.raisonSortie)}</strong></span>` : ''}
                 ${a.numeroAR ? `<span class="meta">AR: <strong>${esc(a.numeroAR)}</strong></span>` : ''}
-                ${a.vendeur ? `<span class="meta">Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
+                ${a.vendeur ? `<span class="meta" title="Vendeur de la cuisine"><svg class="ico"><use href="#i-vendeur"/></svg> Vendeur <strong>${esc(a.vendeur)}</strong></span>` : ''}
             </div>
         </div>`;
     }).join('');
@@ -2388,7 +2388,7 @@ function ouvrirArchive(id){
     document.getElementById('mTitle').textContent = a.article;
     document.getElementById('mSub').textContent = `${a.reference} · ${a.magasin} · ${a.type}`;
     document.getElementById('mBody').innerHTML = `
-        <div class="lecture-seule">Article archivé le <strong>${fmtJour(a.dateArchivage)}</strong>${a.raisonArchivage ? ' — ' + esc(a.raisonArchivage) : ''}</div>
+        <div class="lecture-seule"><svg class="ico"><use href="#i-archive"/></svg> Article archivé le <strong>${fmtJour(a.dateArchivage)}</strong>${a.raisonArchivage ? ' — ' + esc(a.raisonArchivage) : ''}</div>
         <div class="detail-grid">
             ${champ('Magasin', a.magasin)}${champ('Statut', a.statut)}
             ${champ('Client', a.client && a.client !== 'Stock interne' ? a.client : '')}${champ('N° AR', a.numeroAR)}
@@ -2396,7 +2396,7 @@ function ouvrirArchive(id){
             ${champ('Date réception', fmtJour(a.dateReception))}${champ('Date sortie', fmtJour(a.dateSortie))}
             ${champ('Comment il est sorti', a.raisonSortie, true)}${champ('Notes', a.notes, true)}
         </div>
-        <div class="divider"></div><div class="section-lbl">Historique</div>
+        <div class="divider"></div><div class="section-lbl"><svg class="ico"><use href="#i-historique"/></svg> Historique</div>
         ${histo.length ? histo.map(h => `<div class="histo">
             <div class="histo-date">${esc(h.dateStr || '')}</div>
             <div class="histo-action">${esc(h.action)}${h.utilisateur ? ' — ' + esc(h.utilisateur) : ''}</div>
