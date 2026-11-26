@@ -23,6 +23,12 @@ l'article (différent de « Réceptionné par »). Filtre « Tous les vendeurs �
 Historique ; les noms proposés viennent de l'équipe (vendeurs et directeurs actifs, publiée par l'admin)
 et des noms déjà saisis.
 
+**Alertes** (revues le 26/11/2026, voir `app/src/metier/alertes.js`) : rangées par catégorie,
+la plus urgente en haut. « Stock faible » seulement pour un article rangé en plusieurs exemplaires
+avec un seuil réglé ; un SAV n'est compté qu'une fois ; « client à relancer » quand un client
+prévenu n'est pas venu au bout du délai choisi (7 jours par défaut, Paramètres). Dans Historique,
+le filtre « À vérifier » liste les mises à dispo de plus de 90 jours pour les sortir en groupe.
+
 Le nettoyage en masse (archives selon le délai choisi) et les paramètres sont réservés à l'admin.
 Ces règles sont appliquées par le serveur dans `firestore.rules`, pas seulement par l'écran.
 

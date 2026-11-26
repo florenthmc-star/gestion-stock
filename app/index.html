@@ -365,6 +365,21 @@
         .alert-item.danger .alerte-point{background:var(--rouge);}
         .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;}
         #m_search,#s_search,#t_search,#rc_search,#p_search,#h_search,#a_search{padding-left:36px;background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") no-repeat 12px center;}
+        /* Alertes rangées par catégorie */
+        .groupe-alertes{margin-bottom:12px;}
+        .groupe-alertes > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 4px;font-size:14px;font-weight:700;color:var(--texte);}
+        .groupe-alertes > summary::-webkit-details-marker{display:none;}
+        .groupe-alertes > summary::after{content:"";width:8px;height:8px;margin-left:4px;border-right:2px solid var(--texte3);border-bottom:2px solid var(--texte3);transform:rotate(-45deg);transition:transform .15s;}
+        .groupe-alertes[open] > summary::after{transform:rotate(45deg);}
+        .groupe-alertes > summary .alerte-point{margin-top:0;}
+        .groupe-alertes.danger > summary .alerte-point{background:var(--rouge);}
+        .groupe-nb{padding:1px 8px;border-radius:999px;background:var(--grisDoux);color:var(--texte2);font-size:12px;font-weight:700;}
+        .groupe-alertes.danger .groupe-nb{background:var(--rougeDoux);color:var(--rouge);}
+        .bandeau-verif{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:14px;border-radius:var(--r2);background:var(--bleuDoux);border:1px solid var(--bleuBord);color:var(--texte);font-size:13.5px;}
+        .bandeau-verif > .ico{color:var(--bleu);width:18px;height:18px;}
+        .bandeau-verif span{flex:1;min-width:200px;}
+        .barre-verif{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:var(--r2);background:var(--surface);border:1px solid var(--bord);color:var(--texte2);}
+        .case-verif{width:20px;height:20px;margin-top:2px;accent-color:var(--bleu);cursor:pointer;flex:0 0 auto;}
         @media(prefers-reduced-motion:reduce){.pane,.modal,.toast{animation:none;}}
     </style>
 </head>
@@ -711,6 +726,7 @@
             <option value="encours">En cours (en stock, en attente)</option>
             <option value="clos">Sortis, remis à TLE, récupérés</option>
             <option value="archives">Archivés</option>
+            <option value="averifier">À vérifier : mises à dispo de plus de 90 jours</option>
         </select>
         <input id="h_search" placeholder="Client, article, référence, AR, prénom…" oninput="debounceRender(renderHistorique)" style="flex:1;min-width:200px;">
     </div>
@@ -752,6 +768,10 @@
             <div class="setting-row">
                 <label>Récupération client prévue dans moins de</label>
                 <div class="si"><input type="number" id="param_recup_delai" min="0" max="10" value="2"><span>jours</span></div>
+            </div>
+            <div class="setting-row">
+                <label>Client prévenu à relancer au bout de</label>
+                <div class="si"><input type="number" id="param_relance" min="1" max="60" value="7"><span>jours</span></div>
             </div>
             <div class="btn-row">
                 <button class="btn btn-primary" onclick="saveParams()"><svg class="ico"><use href="#i-disquette"/></svg> Enregistrer</button>

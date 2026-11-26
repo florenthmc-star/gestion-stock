@@ -22,6 +22,8 @@ export const COLS = [
   // Vendeur qui a vendu la cuisine d'où vient l'article (ajouté le 26/11/2026,
   // différent de Kitchener = la personne qui a réceptionné l'article)
   'Vendeur',
+  // Dernière fois que le client a été prévenu ou relancé (ajouté le 26/11/2026)
+  'DatePrevenu',
 ];
 
 /* « [20/02/2026 14:05] Amandine - Réception · Type: Stock » */
